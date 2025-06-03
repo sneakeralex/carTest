@@ -1,0 +1,276 @@
+/* 全局样式 */
+
+/* 重置样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Segoe UI, Arial, Roboto, 'PingFang SC', 'miui', 'Hiragino Sans GB', 'Microsoft Yahei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f7f8fa;
+  color: #323233;
+}
+
+/* 主题颜色变量 */
+:root {
+  --primary-color: #1989fa;
+  --success-color: #07c160;
+  --warning-color: #ff976a;
+  --danger-color: #ee0a24;
+  --text-color: #323233;
+  --text-color-secondary: #969799;
+  --border-color: #ebedf0;
+  --background-color: #f7f8fa;
+  --background-color-light: #ffffff;
+  --active-color: #f2f3f5;
+}
+
+/* 深色模式主题 */
+.dark {
+  --primary-color: #1989fa;
+  --success-color: #07c160;
+  --warning-color: #ff976a;
+  --danger-color: #ee0a24;
+  --text-color: #f5f5f5;
+  --text-color-secondary: #a2a2a2;
+  --border-color: #3a3a3c;
+  --background-color: #121212;
+  --background-color-light: #1c1c1e;
+  --active-color: #2c2c2e;
+  
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+/* 深色模式下的组件样式覆盖 */
+.dark {
+  .van-nav-bar,
+  .van-tabbar,
+  .van-cell,
+  .van-cell-group,
+  .van-popup {
+    background-color: var(--background-color-light);
+    color: var(--text-color);
+  }
+  
+  .van-nav-bar__title,
+  .van-cell__title,
+  .van-cell__value {
+    color: var(--text-color);
+  }
+  
+  .van-cell__label,
+  .van-nav-bar__text,
+  .van-tabbar-item--active {
+    color: var(--primary-color);
+  }
+  
+  .van-nav-bar__arrow,
+  .van-nav-bar .van-icon,
+  .van-cell .van-icon {
+    color: var(--text-color);
+  }
+  
+  .van-field__control {
+    color: var(--text-color);
+  }
+  
+  .van-field__control::placeholder {
+    color: var(--text-color-secondary);
+  }
+  
+  .van-search {
+    background-color: var(--background-color);
+  }
+  
+  .van-search__content {
+    background-color: var(--background-color-light);
+  }
+  
+  .van-dialog {
+    background-color: var(--background-color-light);
+  }
+  
+  .van-dialog__header {
+    color: var(--text-color);
+  }
+  
+  .van-dialog__message {
+    color: var(--text-color);
+  }
+  
+  .van-action-sheet {
+    background-color: var(--background-color-light);
+  }
+  
+  .van-action-sheet__item,
+  .van-action-sheet__cancel {
+    color: var(--text-color);
+  }
+  
+  .van-picker {
+    background-color: var(--background-color-light);
+  }
+  
+  .van-picker__title {
+    color: var(--text-color);
+  }
+  
+  .van-picker-column__item {
+    color: var(--text-color);
+  }
+  
+  .van-picker-column__item--disabled {
+    color: var(--text-color-secondary);
+  }
+  
+  .van-empty__description {
+    color: var(--text-color-secondary);
+  }
+}
+
+/* 通用样式 */
+.page-container {
+  padding: 16px;
+}
+
+.card {
+  background-color: var(--background-color-light);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(100, 101, 102, 0.08);
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-color);
+}
+
+.section-title {
+  font-size: 14px;
+  color: var(--text-color-secondary);
+  margin: 16px 0 8px;
+  padding-left: 16px;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.text-primary {
+  color: var(--primary-color);
+}
+
+.text-success {
+  color: var(--success-color);
+}
+
+.text-warning {
+  color: var(--warning-color);
+}
+
+.text-danger {
+  color: var(--danger-color);
+}
+
+.text-secondary {
+  color: var(--text-color-secondary);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.mb-8 {
+  margin-bottom: 8px;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}
+
+.ml-8 {
+  margin-left: 8px;
+}
+
+.mr-8 {
+  margin-right: 8px;
+}
+
+.p-16 {
+  padding: 16px;
+}
+
+/* 动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(100%);
+}
+
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-left-enter-from,
+.slide-left-leave-to {
+  transform: translateX(100%);
+}
+
+/* 修复底部安全区域 */
+.safe-area-bottom {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-top {
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
+}
