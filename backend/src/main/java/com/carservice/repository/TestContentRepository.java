@@ -97,4 +97,11 @@ public interface TestContentRepository extends JpaRepository<TestContent, Long> 
      */
     @Query("SELECT tc FROM TestContent tc WHERE tc.status = 'COMPLETED' ORDER BY tc.actualEndTime DESC")
     List<TestContent> findCompletedTestsOrderByEndTime();
+
+    /**
+     * 根据任务车辆ID查找试验内容列表
+     * @param taskVehicleId 任务车辆ID
+     * @return 试验内容列表
+     */
+    List<TestContent> findByTaskVehicleId(String taskVehicleId);
 }

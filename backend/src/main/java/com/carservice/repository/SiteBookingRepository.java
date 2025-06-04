@@ -1,6 +1,8 @@
 package com.carservice.repository;
 
 import com.carservice.entity.SiteBooking;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -119,4 +121,22 @@ public interface SiteBookingRepository extends JpaRepository<SiteBooking, Long> 
      * @return 预约列表
      */
     List<SiteBooking> findByStartTimeBetweenAndStatus(LocalDateTime startTime, LocalDateTime endTime, SiteBooking.BookingStatus status);
+
+    // Pageable methods for service layer
+    /**
+     * 根据用户ID查找预约列表（分页）
+     * @param userId 用户ID
+     * @param pageable 分页参数
+     * @return 预约分页列表
+     */
+    Page<SiteBooking> findByUserId(String userId, Pageable pageable);
+
+    /**
+     * 根据用户ID和状态查找预约（分页）
+     * @param userId 用户ID
+     * @param status 预约状态
+     * @param pageable 分页参数
+     * @return 预约分页列表
+     */
+    Page<SiteBooking> findByUserIdAndStatus(String userId, SiteBooking.BookingStatus status, Pageable pageable);
 }

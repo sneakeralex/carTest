@@ -104,5 +104,71 @@ public class Vehicle extends BaseEntity implements Serializable {
      */
     private String description;
 
+    /**
+     * 车牌号（用于DTO映射）
+     */
+    public String getPlateNo() {
+        return this.vehicleNo;
+    }
+
+    /**
+     * 车架号（用于DTO映射）
+     */
+    public String getVinNo() {
+        return this.vin;
+    }
+
+    /**
+     * 车辆类型（用于DTO映射）
+     */
+    public String getVehicleType() {
+        return this.typeId;
+    }
+
+    /**
+     * 燃料类型
+     */
+    private String fuelType;
+
+    /**
+     * 制造年份
+     */
+    private Integer manufactureYear;
+
+    /**
+     * 车主姓名
+     */
+    private String ownerName;
+
+    /**
+     * 车主电话
+     */
+    private String ownerPhone;
+
+    /**
+     * 车主身份证号
+     */
+    private String ownerIdCard;
+
+    /**
+     * 注册日期
+     */
+    private String registrationDate;
+
+    /**
+     * 保险信息
+     */
+    private String insuranceInfo;
+
+    /**
+     * 技术规格
+     */
+    private String technicalSpecs;
+
+    /**
+     * 备注
+     */
+    private String notes;
+
 
 }

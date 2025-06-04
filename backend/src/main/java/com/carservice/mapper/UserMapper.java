@@ -111,33 +111,31 @@ public interface UserMapper {
     
     default String getEmployeeStatusName(EmployeeInfo.EmployeeStatus status) {
         if (status == null) return null;
-        switch (status) {
-            case ACTIVE: return "在职";
-            case PROBATION: return "试用期";
-            case TERMINATED: return "离职";
-            default: return "未知";
-        }
+        return switch (status) {
+            case ACTIVE -> "在职";
+            case PROBATION -> "试用期";
+            case SUSPENDED -> "停职";
+            case TERMINATED -> "离职";
+        };
     }
-    
+
     default String getPersonStatusName(PersonInfo.PersonStatus status) {
         if (status == null) return null;
-        switch (status) {
-            case PENDING: return "待审核";
-            case ACTIVE: return "正常";
-            case SUSPENDED: return "暂停";
-            case REJECTED: return "已拒绝";
-            default: return "未知";
-        }
+        return switch (status) {
+            case PENDING -> "待审核";
+            case ACTIVE -> "正常";
+            case SUSPENDED -> "暂停";
+            case BLACKLISTED -> "黑名单";
+        };
     }
     
     default String getFaceAuthStatusName(FaceAuth.AuthStatus status) {
         if (status == null) return null;
-        switch (status) {
-            case PENDING: return "待认证";
-            case VERIFIED: return "已认证";
-            case FAILED: return "认证失败";
-            case EXPIRED: return "已过期";
-            default: return "未知";
-        }
+        return switch (status) {
+            case PENDING -> "待认证";
+            case VERIFIED -> "已认证";
+            case REJECTED -> "认证失败";
+            case EXPIRED -> "已过期";
+        };
     }
 }

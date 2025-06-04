@@ -47,7 +47,14 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
 
     /**
-     * 
+     * 根据车辆ID查找车辆
+     * @param vehicleId 车辆ID
+     * @return 车辆对象
+     */
+    Vehicle findByVehicleId(String vehicleId);
+
+    /**
+     *
      */
     Vehicle deleteByVehicleNo(String vehicleNo);
 

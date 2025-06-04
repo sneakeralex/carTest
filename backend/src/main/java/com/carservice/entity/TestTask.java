@@ -46,6 +46,12 @@ public class TestTask extends BaseEntity {
     @Column(length = 1000)
     private String description;  // 任务描述
 
+    @Column(length = 1000)
+    private String requirements;  // 任务要求
+
+    @Column(length = 1000)
+    private String notes;  // 备注
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TestTaskStatus status;  // 任务状态

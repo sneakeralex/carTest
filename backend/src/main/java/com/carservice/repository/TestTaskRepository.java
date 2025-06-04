@@ -1,6 +1,8 @@
 package com.carservice.repository;
 
 import com.carservice.entity.TestTask;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -103,4 +105,30 @@ public interface TestTaskRepository extends JpaRepository<TestTask, Long> {
      */
     @Query("SELECT tt FROM TestTask tt WHERE tt.plannedEndDate < :currentDate AND tt.status NOT IN ('COMPLETED', 'CANCELLED')")
     List<TestTask> findOverdueTasks(@Param("currentDate") LocalDateTime currentDate);
+
+    // Pageable methods for service layer
+    /**
+     * 根据授权人查找任务列表（分页）
+     * @param authorizerId 授权人ID
+     * @param pageable 分页参数
+     * @return 任务分页列表
+     */
+    Page<TestTask> findByAuthorizerId(String authorizerId, Pageable pageable);
+
+    /**
+     * 根据任务状态查找任务列表（分页）
+     * @param status 任务状态
+     * @param pageable 分页参数
+     * @return 任务分页列表
+     */
+    Page<TestTask> findByStatus(TestTask.TestTaskStatus status, Pageable pageable);
+
+    /**
+     * 根据授权人和状态查找任务（分页）
+     * @param authorizerId 授权人ID
+     * @param status 任务状态
+     * @param pageable 分页参数
+     * @return 任务分页列表
+     */
+    Page<TestTask> findByAuthorizerIdAndStatus(String authorizerId, TestTask.TestTaskStatus status, Pageable pageable);
 }

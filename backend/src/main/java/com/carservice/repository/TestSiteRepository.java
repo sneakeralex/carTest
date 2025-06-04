@@ -1,6 +1,8 @@
 package com.carservice.repository;
 
 import com.carservice.entity.TestSite;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -91,4 +93,30 @@ public interface TestSiteRepository extends JpaRepository<TestSite, Long> {
      */
     @Query("SELECT COUNT(ts) FROM TestSite ts WHERE ts.siteType = :siteType")
     long countBySiteType(@Param("siteType") TestSite.SiteType siteType);
+
+    // Pageable methods for service layer
+    /**
+     * 根据场地类型查找场地列表（分页）
+     * @param siteType 场地类型
+     * @param pageable 分页参数
+     * @return 场地分页列表
+     */
+    Page<TestSite> findBySiteType(TestSite.SiteType siteType, Pageable pageable);
+
+    /**
+     * 根据场地状态查找场地列表（分页）
+     * @param status 场地状态
+     * @param pageable 分页参数
+     * @return 场地分页列表
+     */
+    Page<TestSite> findByStatus(TestSite.SiteStatus status, Pageable pageable);
+
+    /**
+     * 根据场地类型和状态查找场地（分页）
+     * @param siteType 场地类型
+     * @param status 场地状态
+     * @param pageable 分页参数
+     * @return 场地分页列表
+     */
+    Page<TestSite> findBySiteTypeAndStatus(TestSite.SiteType siteType, TestSite.SiteStatus status, Pageable pageable);
 }

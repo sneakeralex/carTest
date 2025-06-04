@@ -59,11 +59,23 @@ public class SiteBooking extends BaseEntity {
     @Column(length = 500)
     private String cancellationReason;  // 取消原因
 
+    @Column(length = 100)
+    private String contactPerson;  // 联系人
+
+    @Column(length = 20)
+    private String contactPhone;  // 联系电话
+
+    @Column(length = 1000)
+    private String notes;  // 备注
+
     public enum BookingStatus {
         PENDING,     // 待确认
+        APPROVED,    // 已批准
+        REJECTED,    // 已拒绝
         CONFIRMED,   // 已确认
-        CANCELLED,   // 已取消
+        IN_PROGRESS, // 进行中
         COMPLETED,   // 已完成
+        CANCELLED,   // 已取消
         NO_SHOW      // 未到场
     }
 }

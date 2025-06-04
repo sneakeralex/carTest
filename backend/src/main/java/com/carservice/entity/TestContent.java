@@ -35,7 +35,10 @@ public class TestContent extends BaseEntity {
     private String testItem;  // 测试项目
 
     @Column(length = 1000)
-    private String testDescription;  // 测试描述
+    private String description;  // 测试描述
+
+    @Column(length = 500)
+    private String testStandard;  // 测试标准
 
     @Column(nullable = false)
     private LocalDateTime plannedStartTime;  // 计划开始时间
@@ -49,6 +52,9 @@ public class TestContent extends BaseEntity {
     @Column(length = 1000)
     private String testResults;  // 测试结果
 
+    @Column(length = 1000)
+    private String conclusion;  // 测试结论
+
     @Column(length = 500)
     private String testMethod;  // 测试方法
 
@@ -57,7 +63,7 @@ public class TestContent extends BaseEntity {
     private TestStatus status;  // 测试状态
 
     @Column(length = 1000)
-    private String remarks;  // 备注
+    private String notes;  // 备注
 
     public enum TestStatus {
         NOT_STARTED,    // 未开始

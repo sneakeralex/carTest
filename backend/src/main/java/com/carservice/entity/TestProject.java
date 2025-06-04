@@ -44,17 +44,26 @@ public class TestProject extends BaseEntity {
     @Column(length = 1000)
     private String requirements; // 项目要求
 
+    @Column(length = 1000)
+    private String description; // 项目描述
+
     @Column(length = 500)
-    private String standards; // 测试标准
+    private String testStandard; // 测试标准
+
+    @Column(length = 1000)
+    private String expectedResults; // 预期结果
+
+    @Column(length = 1000)
+    private String notes; // 备注
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProjectStatus status; // 项目状态
 
     public enum ProjectStatus {
-        NOT_STARTED, // 未开始
-        IN_PROGRESS, // 进行中
-        COMPLETED, // 已完成
-        SUSPENDED // 已暂停
+        DRAFT,       // 草稿
+        ACTIVE,      // 进行中
+        COMPLETED,   // 已完成
+        CANCELLED    // 已取消
     }
 }

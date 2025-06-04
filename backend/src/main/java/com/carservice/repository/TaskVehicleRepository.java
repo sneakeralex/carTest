@@ -64,4 +64,11 @@ public interface TaskVehicleRepository extends JpaRepository<TaskVehicle, Long> 
      * @return 任务车辆列表
      */
     List<TaskVehicle> findByVehicleIdAndStatus(String vehicleId, TaskVehicle.VehicleTestStatus status);
+
+    /**
+     * 根据项目ID查找任务车辆列表
+     * @param projectId 项目ID
+     * @return 任务车辆列表
+     */
+    List<TaskVehicle> findByProjectId(String projectId);
 }

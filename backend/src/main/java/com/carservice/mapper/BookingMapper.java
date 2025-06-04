@@ -85,62 +85,59 @@ public interface BookingMapper {
     // 辅助方法
     default String getBookingStatusName(SiteBooking.BookingStatus status) {
         if (status == null) return null;
-        switch (status) {
-            case PENDING: return "待审核";
-            case APPROVED: return "已批准";
-            case REJECTED: return "已拒绝";
-            case CONFIRMED: return "已确认";
-            case IN_PROGRESS: return "进行中";
-            case COMPLETED: return "已完成";
-            case CANCELLED: return "已取消";
-            default: return "未知";
-        }
+        return switch (status) {
+            case PENDING -> "待审核";
+            case APPROVED -> "已批准";
+            case REJECTED -> "已拒绝";
+            case CONFIRMED -> "已确认";
+            case IN_PROGRESS -> "进行中";
+            case COMPLETED -> "已完成";
+            case CANCELLED -> "已取消";
+            case NO_SHOW -> "未到场";
+        };
     }
     
     default String getSiteTypeName(TestSite.SiteType siteType) {
         if (siteType == null) return null;
-        switch (siteType) {
-            case INDOOR: return "室内场地";
-            case OUTDOOR: return "室外场地";
-            case TRACK: return "跑道";
-            case PARKING: return "停车场";
-            case WORKSHOP: return "车间";
-            default: return "未知";
-        }
+        return switch (siteType) {
+            case PERFORMANCE_TEST -> "性能测试场";
+            case SAFETY_TEST -> "安全测试场";
+            case DURABILITY_TEST -> "耐久性测试场";
+            case WEATHER_TEST -> "气候测试场";
+            case COMPREHENSIVE -> "综合测试场";
+        };
     }
-    
+
     default String getSiteStatusName(TestSite.SiteStatus status) {
         if (status == null) return null;
-        switch (status) {
-            case AVAILABLE: return "可用";
-            case OCCUPIED: return "占用中";
-            case MAINTENANCE: return "维护中";
-            case UNAVAILABLE: return "不可用";
-            default: return "未知";
-        }
+        return switch (status) {
+            case AVAILABLE -> "可用";
+            case RESERVED -> "已预约";
+            case MAINTENANCE -> "维护中";
+            case UNAVAILABLE -> "不可用";
+        };
     }
-    
+
     default String getScheduleTypeName(SiteSchedule.ScheduleType scheduleType) {
         if (scheduleType == null) return null;
-        switch (scheduleType) {
-            case NORMAL: return "正常排期";
-            case MAINTENANCE: return "维护排期";
-            case HOLIDAY: return "节假日";
-            case SPECIAL: return "特殊排期";
-            default: return "未知";
-        }
+        return switch (scheduleType) {
+            case NORMAL -> "正常营业";
+            case MAINTENANCE -> "场地维护";
+            case HOLIDAY -> "节假日";
+            case RESERVED -> "特殊预留";
+        };
     }
-    
+
     default String getWeatherTypeName(WeatherRecord.WeatherType weatherType) {
         if (weatherType == null) return null;
-        switch (weatherType) {
-            case SUNNY: return "晴天";
-            case CLOUDY: return "多云";
-            case RAINY: return "雨天";
-            case SNOWY: return "雪天";
-            case FOGGY: return "雾天";
-            case WINDY: return "大风";
-            default: return "未知";
-        }
+        return switch (weatherType) {
+            case SUNNY -> "晴天";
+            case CLOUDY -> "多云";
+            case OVERCAST -> "阴天";
+            case RAINY -> "雨天";
+            case SNOWY -> "雪天";
+            case FOGGY -> "雾天";
+            case WINDY -> "大风";
+        };
     }
 }
