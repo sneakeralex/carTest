@@ -23,8 +23,10 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 public class WeatherRecord extends BaseEntity {
 
-    @GeneratedValue(generator = "system-uuid")
-    @GenericGenerator(name = "system-uuid", strategy = "uuid2")
+    @GeneratedValue(generator = "weather-record-id")
+    @GenericGenerator(name = "weather-record-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
+                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "WR"))
+    @Column(name = "weather_id", unique = true)
     private String weatherId;
 
     private String siteId;  // 场地ID

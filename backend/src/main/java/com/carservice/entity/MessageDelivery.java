@@ -22,8 +22,10 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 public class MessageDelivery extends BaseEntity {
 
-    @GeneratedValue(generator = "system-uuid")
-    @GenericGenerator(name = "system-uuid", strategy = "uuid2")
+    @GeneratedValue(generator = "message-delivery-id")
+    @GenericGenerator(name = "message-delivery-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
+                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "MD"))
+    @Column(name = "delivery_id", unique = true)
     private String deliveryId;
 
     private String messageId;     // 消息ID

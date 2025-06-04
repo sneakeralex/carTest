@@ -22,8 +22,10 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 public class SiteSchedule extends BaseEntity {
 
-    @GeneratedValue(generator = "system-uuid")
-    @GenericGenerator(name = "system-uuid", strategy = "uuid2")
+    @GeneratedValue(generator = "site-schedule-id")
+    @GenericGenerator(name = "site-schedule-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
+                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "SS"))
+    @Column(name = "schedule_id", unique = true)
     private String scheduleId;
 
     private String siteId;  // 场地ID

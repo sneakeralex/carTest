@@ -20,7 +20,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "employee_info")
 @EqualsAndHashCode(callSuper = true)
-public class EmployeeInfo extends BaseEntity {
+public class EmployeeInfo extends BasePersonEntity {
 
     @GeneratedValue(generator = "employee-id")
     @GenericGenerator(name = "employee-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
@@ -33,21 +33,6 @@ public class EmployeeInfo extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String employeeNo;  // 工号
 
-    @Column(nullable = false, unique = true)
-    private String idCardNo;    // 身份证号
-
-    @Column(nullable = false)
-    private LocalDate birthDate;  // 出生日期
-
-    @Column(length = 500)
-    private String address;  // 居住地址
-
-    @Column(length = 100)
-    private String emergencyContact;  // 紧急联系人
-
-    @Column(length = 20)
-    private String emergencyPhone;  // 紧急联系电话
-
     @Column(nullable = false)
     private LocalDate entryDate;  // 入职日期
 
@@ -56,18 +41,12 @@ public class EmployeeInfo extends BaseEntity {
     @Column(length = 100)
     private String department;  // 所属部门
 
-    @Column(length = 100)
-    private String position;    // 职位
-
     @Column(length = 500)
     private String qualifications;  // 资质证书
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EmployeeStatus status;  // 员工状态
-
-    @Column(length = 1000)
-    private String notes;  // 备注
 
     public enum EmployeeStatus {
         ACTIVE,       // 在职

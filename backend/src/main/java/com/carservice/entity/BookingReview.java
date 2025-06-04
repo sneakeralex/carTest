@@ -22,8 +22,10 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 public class BookingReview extends BaseEntity {
 
-    @GeneratedValue(generator = "system-uuid")
-    @GenericGenerator(name = "system-uuid", strategy = "uuid2")
+    @GeneratedValue(generator = "booking-review-id")
+    @GenericGenerator(name = "booking-review-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
+                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "BR"))
+    @Column(name = "review_id", unique = true)
     private String reviewId;
 
     private String bookingId;  // 预约ID

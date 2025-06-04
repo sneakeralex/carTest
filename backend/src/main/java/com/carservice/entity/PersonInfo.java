@@ -20,7 +20,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "person_info")
 @EqualsAndHashCode(callSuper = true)
-public class PersonInfo extends BaseEntity {
+public class PersonInfo extends BasePersonEntity {
 
     @GeneratedValue(generator = "person-info-id")
     @GenericGenerator(name = "person-info-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
@@ -30,26 +30,8 @@ public class PersonInfo extends BaseEntity {
 
     private String userId;  // 关联的用户ID
 
-    @Column(nullable = false, unique = true)
-    private String idCardNo;    // 身份证号
-
-    @Column(nullable = false)
-    private LocalDate birthDate;  // 出生日期
-
-    @Column(length = 500)
-    private String address;  // 居住地址
-
     @Column(length = 100)
     private String company;  // 所属公司
-
-    @Column(length = 100)
-    private String position;    // 职位
-
-    @Column(length = 100)
-    private String emergencyContact;  // 紧急联系人
-
-    @Column(length = 20)
-    private String emergencyPhone;  // 紧急联系电话
 
     @Column(length = 500)
     private String businessLicense;  // 营业执照号（如果是企业用户）
@@ -63,9 +45,6 @@ public class PersonInfo extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PersonStatus status;  // 用户状态
-
-    @Column(length = 1000)
-    private String notes;  // 备注
 
     @Column(length = 500)
     private String verificationDoc;  // 身份验证文件

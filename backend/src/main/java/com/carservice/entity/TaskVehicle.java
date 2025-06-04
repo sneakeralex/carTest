@@ -22,9 +22,11 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class TaskVehicle extends BaseEntity {
 
-    @GeneratedValue(generator = "system-uuid")
-    @GenericGenerator(name = "system-uuid", strategy = "uuid2")
-    private String taskId;
+    @GeneratedValue(generator = "task-vehicle-id")
+    @GenericGenerator(name = "task-vehicle-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
+                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "TV"))
+    @Column(name = "task_vehicle_id", unique = true)
+    private String taskVehicleId;
 
     @Column(name = "project_id", nullable = false)
     private TestProject testProject; // 所属试验项目

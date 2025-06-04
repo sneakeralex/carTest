@@ -3,6 +3,8 @@ package com.carservice.entity.generator;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.id.IdentifierGenerator;
+import org.hibernate.service.ServiceRegistry;
+import org.hibernate.type.Type;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -40,8 +42,8 @@ public class PrefixedIdGenerator implements IdentifierGenerator {
     private String prefix;
     
     @Override
-    public void configure(Properties params) {
-        this.prefix = params.getProperty(PREFIX_PARAM, "ID");
+    public void configure(Type type, Properties parameters, ServiceRegistry serviceRegistry) {
+        this.prefix = parameters.getProperty(PREFIX_PARAM, "ID");
     }
     
     @Override
