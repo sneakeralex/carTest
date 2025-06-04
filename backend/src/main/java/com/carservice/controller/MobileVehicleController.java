@@ -1,6 +1,7 @@
 package com.carservice.controller;
 
 import com.carservice.common.api.ApiResponse;
+import com.carservice.service.MobileVehicleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,8 +29,7 @@ import java.util.List;
 @Tag(name = "移动端车辆管理", description = "移动端车辆信息查询、管理等功能")
 public class MobileVehicleController {
     
-    // 注释掉服务依赖，避免编译错误
-    // private final VehicleService vehicleService;
+    private final MobileVehicleService mobileVehicleService;
     
     /**
      * 获取车辆列表
@@ -45,16 +45,15 @@ public class MobileVehicleController {
             @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") int size) {
         try {
             Pageable pageable = PageRequest.of(page, size);
-            // TODO: 实现获取车辆列表逻辑
-            // Page<VehicleDTO> vehicles = vehicleService.getVehicleList(brand, model, status, keyword, pageable);
-            log.info("获取车辆列表: 品牌={}, 型号={}, 状态={}, 关键词={}", brand, model, status, keyword);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取车辆列表功能开发中"));
+            Page<VehicleDTO> vehicles = mobileVehicleService.getVehicleList(brand, model, status, keyword, pageable);
+            log.info("获取车辆列表成功: 品牌={}, 型号={}, 状态={}, 关键词={}", brand, model, status, keyword);
+            return ResponseEntity.ok(ApiResponse.success(vehicles));
         } catch (Exception e) {
             log.error("获取车辆列表失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取车辆详情
      */
@@ -62,16 +61,15 @@ public class MobileVehicleController {
     @Operation(summary = "获取车辆详情")
     public ResponseEntity<ApiResponse<VehicleDTO>> getVehicleDetail(@PathVariable String vehicleId) {
         try {
-            // TODO: 实现获取车辆详情逻辑
-            // VehicleDTO vehicle = vehicleService.getVehicleDetail(vehicleId);
-            log.info("获取车辆详情: {}", vehicleId);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取车辆详情功能开发中"));
+            VehicleDTO vehicle = mobileVehicleService.getVehicleDetail(vehicleId);
+            log.info("获取车辆详情成功: {}", vehicleId);
+            return ResponseEntity.ok(ApiResponse.success(vehicle));
         } catch (Exception e) {
             log.error("获取车辆详情失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取用户车辆列表
      */
@@ -79,16 +77,15 @@ public class MobileVehicleController {
     @Operation(summary = "获取用户车辆列表")
     public ResponseEntity<ApiResponse<List<VehicleDTO>>> getUserVehicles(@PathVariable String userId) {
         try {
-            // TODO: 实现获取用户车辆列表逻辑
-            // List<VehicleDTO> vehicles = vehicleService.getUserVehicles(userId);
-            log.info("获取用户车辆列表: {}", userId);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取用户车辆列表功能开发中"));
+            List<VehicleDTO> vehicles = mobileVehicleService.getUserVehicles(userId);
+            log.info("获取用户车辆列表成功: {}", userId);
+            return ResponseEntity.ok(ApiResponse.success(vehicles));
         } catch (Exception e) {
             log.error("获取用户车辆列表失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 添加用户车辆
      */
@@ -98,16 +95,15 @@ public class MobileVehicleController {
             @PathVariable String userId,
             @Valid @RequestBody VehicleDTO vehicleDTO) {
         try {
-            // TODO: 实现添加用户车辆逻辑
-            // VehicleDTO vehicle = vehicleService.addUserVehicle(userId, vehicleDTO);
-            log.info("添加用户车辆: 用户={}, 车牌号={}", userId, vehicleDTO.getLicensePlate());
-            return ResponseEntity.ok(ApiResponse.success(null, "添加用户车辆功能开发中"));
+            VehicleDTO vehicle = mobileVehicleService.addUserVehicle(userId, vehicleDTO);
+            log.info("添加用户车辆成功: 用户={}, 车牌号={}", userId, vehicleDTO.getLicensePlate());
+            return ResponseEntity.ok(ApiResponse.success(vehicle, "车辆添加成功"));
         } catch (Exception e) {
             log.error("添加用户车辆失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 更新车辆信息
      */
@@ -117,16 +113,15 @@ public class MobileVehicleController {
             @PathVariable String vehicleId,
             @Valid @RequestBody VehicleDTO vehicleDTO) {
         try {
-            // TODO: 实现更新车辆信息逻辑
-            // VehicleDTO vehicle = vehicleService.updateVehicle(vehicleId, vehicleDTO);
-            log.info("更新车辆信息: {}", vehicleId);
-            return ResponseEntity.ok(ApiResponse.success(null, "更新车辆信息功能开发中"));
+            VehicleDTO vehicle = mobileVehicleService.updateVehicle(vehicleId, vehicleDTO);
+            log.info("更新车辆信息成功: {}", vehicleId);
+            return ResponseEntity.ok(ApiResponse.success(vehicle, "车辆信息更新成功"));
         } catch (Exception e) {
             log.error("更新车辆信息失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 删除车辆信息
      */
@@ -134,10 +129,9 @@ public class MobileVehicleController {
     @Operation(summary = "删除车辆信息")
     public ResponseEntity<ApiResponse<Void>> deleteVehicle(@PathVariable String vehicleId) {
         try {
-            // TODO: 实现删除车辆信息逻辑
-            // vehicleService.deleteVehicle(vehicleId);
-            log.info("删除车辆信息: {}", vehicleId);
-            return ResponseEntity.ok(ApiResponse.success(null, "删除车辆信息功能开发中"));
+            mobileVehicleService.deleteVehicle(vehicleId);
+            log.info("删除车辆信息成功: {}", vehicleId);
+            return ResponseEntity.ok(ApiResponse.success(null, "车辆删除成功"));
         } catch (Exception e) {
             log.error("删除车辆信息失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
@@ -153,16 +147,15 @@ public class MobileVehicleController {
             @PathVariable String vehicleId,
             @RequestParam("files") List<MultipartFile> files) {
         try {
-            // TODO: 实现上传车辆图片逻辑
-            // List<String> imageUrls = vehicleService.uploadVehicleImages(vehicleId, files);
-            log.info("上传车辆图片: 车辆={}, 图片数量={}", vehicleId, files.size());
-            return ResponseEntity.ok(ApiResponse.success(null, "上传车辆图片功能开发中"));
+            List<String> imageUrls = mobileVehicleService.uploadVehicleImages(vehicleId, files);
+            log.info("上传车辆图片成功: 车辆={}, 图片数量={}", vehicleId, files.size());
+            return ResponseEntity.ok(ApiResponse.success(imageUrls, "车辆图片上传成功"));
         } catch (Exception e) {
             log.error("上传车辆图片失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取车辆图片列表
      */
@@ -170,16 +163,15 @@ public class MobileVehicleController {
     @Operation(summary = "获取车辆图片列表")
     public ResponseEntity<ApiResponse<List<VehicleImageDTO>>> getVehicleImages(@PathVariable String vehicleId) {
         try {
-            // TODO: 实现获取车辆图片列表逻辑
-            // List<VehicleImageDTO> images = vehicleService.getVehicleImages(vehicleId);
-            log.info("获取车辆图片列表: {}", vehicleId);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取车辆图片列表功能开发中"));
+            List<VehicleImageDTO> images = mobileVehicleService.getVehicleImages(vehicleId);
+            log.info("获取车辆图片列表成功: {}", vehicleId);
+            return ResponseEntity.ok(ApiResponse.success(images));
         } catch (Exception e) {
             log.error("获取车辆图片列表失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取车辆品牌列表
      */
@@ -187,16 +179,15 @@ public class MobileVehicleController {
     @Operation(summary = "获取车辆品牌列表")
     public ResponseEntity<ApiResponse<List<VehicleBrandDTO>>> getVehicleBrands() {
         try {
-            // TODO: 实现获取车辆品牌列表逻辑
-            // List<VehicleBrandDTO> brands = vehicleService.getVehicleBrands();
-            log.info("获取车辆品牌列表");
-            return ResponseEntity.ok(ApiResponse.success(null, "获取车辆品牌列表功能开发中"));
+            List<VehicleBrandDTO> brands = mobileVehicleService.getVehicleBrands();
+            log.info("获取车辆品牌列表成功");
+            return ResponseEntity.ok(ApiResponse.success(brands));
         } catch (Exception e) {
             log.error("获取车辆品牌列表失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取车辆型号列表
      */
@@ -205,10 +196,9 @@ public class MobileVehicleController {
     public ResponseEntity<ApiResponse<List<VehicleModelDTO>>> getVehicleModels(
             @Parameter(description = "品牌ID") @RequestParam(required = false) String brandId) {
         try {
-            // TODO: 实现获取车辆型号列表逻辑
-            // List<VehicleModelDTO> models = vehicleService.getVehicleModels(brandId);
-            log.info("获取车辆型号列表: 品牌={}", brandId);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取车辆型号列表功能开发中"));
+            List<VehicleModelDTO> models = mobileVehicleService.getVehicleModels(brandId);
+            log.info("获取车辆型号列表成功: 品牌={}", brandId);
+            return ResponseEntity.ok(ApiResponse.success(models));
         } catch (Exception e) {
             log.error("获取车辆型号列表失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
