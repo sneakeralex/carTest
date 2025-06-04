@@ -23,8 +23,10 @@ import jakarta.persistence.Table;
 @EqualsAndHashCode(callSuper = true)
 public class MessageTemplate extends BaseEntity {
 
-    @GeneratedValue(generator = "system-uuid")
-    @GenericGenerator(name = "system-uuid", strategy = "uuid2")
+    @GeneratedValue(generator = "message-template-id")
+    @GenericGenerator(name = "message-template-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
+                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "MT"))
+    @Column(name = "template_id", unique = true)
     private String templateId;
 
     @Column(nullable = false)

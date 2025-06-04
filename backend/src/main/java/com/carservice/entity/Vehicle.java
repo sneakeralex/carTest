@@ -1,9 +1,11 @@
 package com.carservice.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,6 +25,10 @@ public class Vehicle extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @GeneratedValue(generator = "vehicle-id")
+    @GenericGenerator(name = "vehicle-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
+                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "VEH"))
+    @Column(name = "vehicle_id", unique = true)
     private String vehicleId;
     /**
      * 车牌号

@@ -22,8 +22,10 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 public class ApprovalMessage extends BaseEntity {
 
-    @GeneratedValue(generator = "system-uuid")
-    @GenericGenerator(name = "system-uuid", strategy = "uuid2")
+    @GeneratedValue(generator = "approval-message-id")
+    @GenericGenerator(name = "approval-message-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
+                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "APM"))
+    @Column(name = "approval_message_id", unique = true)
     private String approvalMessageId;
 
     private String messageId;  // 关联的消息ID

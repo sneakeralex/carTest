@@ -23,8 +23,10 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class TestProject extends BaseEntity {
 
-    @GeneratedValue(generator = "system-uuid")
-    @GenericGenerator(name = "system-uuid", strategy = "uuid2")
+    @GeneratedValue(generator = "test-project-id")
+    @GenericGenerator(name = "test-project-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
+                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "TP"))
+    @Column(name = "project_id", unique = true)
     private String projectId;
 
     @JoinColumn(name = "task_id", nullable = false)

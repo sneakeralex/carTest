@@ -2,9 +2,11 @@ package com.carservice.entity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -20,6 +22,12 @@ import java.time.LocalDateTime;
 public class Equipment extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    @GeneratedValue(generator = "equipment-id")
+    @GenericGenerator(name = "equipment-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
+                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "EQP"))
+    @Column(name = "equipment_id", unique = true)
+    private String equipmentId;
 
     /**
      * 设备编号

@@ -22,8 +22,10 @@ import java.time.LocalDate;
 @EqualsAndHashCode(callSuper = true)
 public class PersonInfo extends BaseEntity {
 
-    @GeneratedValue(generator = "system-uuid")
-    @GenericGenerator(name = "system-uuid", strategy = "uuid2")
+    @GeneratedValue(generator = "person-info-id")
+    @GenericGenerator(name = "person-info-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
+                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "PI"))
+    @Column(name = "person_id", unique = true)
     private String personId;
 
     private String userId;  // 关联的用户ID

@@ -22,8 +22,10 @@ import java.math.BigDecimal;
 @EqualsAndHashCode(callSuper = true)
 public class TestSite extends BaseEntity {
 
-    @GeneratedValue(generator = "system-uuid")
-    @GenericGenerator(name = "system-uuid", strategy = "uuid2")
+    @GeneratedValue(generator = "test-site-id")
+    @GenericGenerator(name = "test-site-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
+                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "TS"))
+    @Column(name = "site_id", unique = true)
     private String siteId;
 
     @Column(nullable = false, unique = true)
