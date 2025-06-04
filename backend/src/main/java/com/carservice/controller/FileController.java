@@ -1,6 +1,7 @@
 package com.carservice.controller;
 
 import com.carservice.common.api.ApiResponse;
+import com.carservice.service.FileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,8 +30,7 @@ import java.util.List;
 @Tag(name = "文件管理", description = "文件上传、下载、管理等功能")
 public class FileController {
     
-    // 注释掉服务依赖，避免编译错误
-    // private final FileService fileService;
+    private final FileService fileService;
     
     /**
      * 上传单个文件
@@ -43,16 +43,15 @@ public class FileController {
             @Parameter(description = "文件描述") @RequestParam(required = false) String description,
             @Parameter(description = "上传者ID") @RequestParam String uploaderId) {
         try {
-            // TODO: 实现上传单个文件逻辑
-            // FileInfoDTO fileInfo = fileService.uploadFile(file, fileType, description, uploaderId);
-            log.info("上传单个文件: 文件名={}, 大小={}, 上传者={}", file.getOriginalFilename(), file.getSize(), uploaderId);
-            return ResponseEntity.ok(ApiResponse.success(null, "上传单个文件功能开发中"));
+            FileInfoDTO fileInfo = fileService.uploadFile(file, fileType, description, uploaderId);
+            log.info("上传单个文件成功: 文件名={}, 大小={}, 上传者={}", file.getOriginalFilename(), file.getSize(), uploaderId);
+            return ResponseEntity.ok(ApiResponse.success(fileInfo, "文件上传成功"));
         } catch (Exception e) {
             log.error("上传单个文件失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 批量上传文件
      */
@@ -63,16 +62,15 @@ public class FileController {
             @Parameter(description = "文件类型") @RequestParam(required = false) String fileType,
             @Parameter(description = "上传者ID") @RequestParam String uploaderId) {
         try {
-            // TODO: 实现批量上传文件逻辑
-            // List<FileInfoDTO> fileInfos = fileService.batchUploadFiles(files, fileType, uploaderId);
-            log.info("批量上传文件: 文件数量={}, 上传者={}", files.size(), uploaderId);
-            return ResponseEntity.ok(ApiResponse.success(null, "批量上传文件功能开发中"));
+            List<FileInfoDTO> fileInfos = fileService.batchUploadFiles(files, fileType, uploaderId);
+            log.info("批量上传文件成功: 文件数量={}, 上传者={}", files.size(), uploaderId);
+            return ResponseEntity.ok(ApiResponse.success(fileInfos, "批量文件上传成功"));
         } catch (Exception e) {
             log.error("批量上传文件失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 下载文件
      */
@@ -80,22 +78,20 @@ public class FileController {
     @Operation(summary = "下载文件")
     public ResponseEntity<Resource> downloadFile(@PathVariable String fileId) {
         try {
-            // TODO: 实现下载文件逻辑
-            // Resource resource = fileService.downloadFile(fileId);
-            // FileInfoDTO fileInfo = fileService.getFileInfo(fileId);
-            log.info("下载文件: {}", fileId);
-            
-            // 临时返回，实际应该返回文件资源
+            Resource resource = fileService.downloadFile(fileId);
+            FileInfoDTO fileInfo = fileService.getFileInfo(fileId);
+            log.info("下载文件成功: {}", fileId);
+
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"file.txt\"")
-                    .body(null);
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileInfo.getFileName() + "\"")
+                    .body(resource);
         } catch (Exception e) {
             log.error("下载文件失败: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }
-    
+
     /**
      * 获取文件信息
      */
@@ -103,10 +99,9 @@ public class FileController {
     @Operation(summary = "获取文件信息")
     public ResponseEntity<ApiResponse<FileInfoDTO>> getFileInfo(@PathVariable String fileId) {
         try {
-            // TODO: 实现获取文件信息逻辑
-            // FileInfoDTO fileInfo = fileService.getFileInfo(fileId);
-            log.info("获取文件信息: {}", fileId);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取文件信息功能开发中"));
+            FileInfoDTO fileInfo = fileService.getFileInfo(fileId);
+            log.info("获取文件信息成功: {}", fileId);
+            return ResponseEntity.ok(ApiResponse.success(fileInfo));
         } catch (Exception e) {
             log.error("获取文件信息失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
@@ -126,16 +121,15 @@ public class FileController {
             @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") int size) {
         try {
             Pageable pageable = PageRequest.of(page, size);
-            // TODO: 实现获取文件列表逻辑
-            // Page<FileInfoDTO> files = fileService.getFileList(fileType, uploaderId, keyword, pageable);
-            log.info("获取文件列表: 类型={}, 上传者={}, 关键词={}", fileType, uploaderId, keyword);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取文件列表功能开发中"));
+            Page<FileInfoDTO> files = fileService.getFileList(fileType, uploaderId, keyword, pageable);
+            log.info("获取文件列表成功: 类型={}, 上传者={}, 关键词={}", fileType, uploaderId, keyword);
+            return ResponseEntity.ok(ApiResponse.success(files));
         } catch (Exception e) {
             log.error("获取文件列表失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 删除文件
      */
@@ -143,16 +137,15 @@ public class FileController {
     @Operation(summary = "删除文件")
     public ResponseEntity<ApiResponse<Void>> deleteFile(@PathVariable String fileId) {
         try {
-            // TODO: 实现删除文件逻辑
-            // fileService.deleteFile(fileId);
-            log.info("删除文件: {}", fileId);
+            fileService.deleteFile(fileId);
+            log.info("删除文件成功: {}", fileId);
             return ResponseEntity.ok(ApiResponse.success(null, "删除文件成功"));
         } catch (Exception e) {
             log.error("删除文件失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 批量删除文件
      */
@@ -160,16 +153,15 @@ public class FileController {
     @Operation(summary = "批量删除文件")
     public ResponseEntity<ApiResponse<Void>> batchDeleteFiles(@RequestBody BatchDeleteRequest request) {
         try {
-            // TODO: 实现批量删除文件逻辑
-            // fileService.batchDeleteFiles(request.getFileIds());
-            log.info("批量删除文件: 数量={}", request.getFileIds().size());
+            fileService.batchDeleteFiles(request.getFileIds());
+            log.info("批量删除文件成功: 数量={}", request.getFileIds().size());
             return ResponseEntity.ok(ApiResponse.success(null, "批量删除文件成功"));
         } catch (Exception e) {
             log.error("批量删除文件失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取文件预览URL
      */
@@ -177,16 +169,15 @@ public class FileController {
     @Operation(summary = "获取文件预览URL")
     public ResponseEntity<ApiResponse<String>> getFilePreviewUrl(@PathVariable String fileId) {
         try {
-            // TODO: 实现获取文件预览URL逻辑
-            // String previewUrl = fileService.getFilePreviewUrl(fileId);
-            log.info("获取文件预览URL: {}", fileId);
-            return ResponseEntity.ok(ApiResponse.success("http://example.com/preview/" + fileId, "获取文件预览URL功能开发中"));
+            String previewUrl = fileService.getFilePreviewUrl(fileId);
+            log.info("获取文件预览URL成功: {}", fileId);
+            return ResponseEntity.ok(ApiResponse.success(previewUrl));
         } catch (Exception e) {
             log.error("获取文件预览URL失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 更新文件信息
      */
@@ -196,16 +187,15 @@ public class FileController {
             @PathVariable String fileId,
             @RequestBody UpdateFileInfoRequest request) {
         try {
-            // TODO: 实现更新文件信息逻辑
-            // FileInfoDTO fileInfo = fileService.updateFileInfo(fileId, request);
-            log.info("更新文件信息: {}", fileId);
-            return ResponseEntity.ok(ApiResponse.success(null, "更新文件信息功能开发中"));
+            FileInfoDTO fileInfo = fileService.updateFileInfo(fileId, request);
+            log.info("更新文件信息成功: {}", fileId);
+            return ResponseEntity.ok(ApiResponse.success(fileInfo, "文件信息更新成功"));
         } catch (Exception e) {
             log.error("更新文件信息失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取文件统计信息
      */
@@ -214,10 +204,9 @@ public class FileController {
     public ResponseEntity<ApiResponse<FileStatsDTO>> getFileStats(
             @Parameter(description = "上传者ID") @RequestParam(required = false) String uploaderId) {
         try {
-            // TODO: 实现获取文件统计信息逻辑
-            // FileStatsDTO stats = fileService.getFileStats(uploaderId);
-            log.info("获取文件统计信息: 上传者={}", uploaderId);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取文件统计信息功能开发中"));
+            FileStatsDTO stats = fileService.getFileStats(uploaderId);
+            log.info("获取文件统计信息成功: 上传者={}", uploaderId);
+            return ResponseEntity.ok(ApiResponse.success(stats));
         } catch (Exception e) {
             log.error("获取文件统计信息失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));

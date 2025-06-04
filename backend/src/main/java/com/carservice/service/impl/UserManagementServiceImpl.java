@@ -115,6 +115,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     @Override
     public String uploadAvatar(String userId, MultipartFile avatarFile) {
         // TODO: 实现文件上传逻辑
+        // 保存头像文件并返回URL
         String avatarUrl = "http://example.com/avatar/" + userId + ".jpg";
         
         User user = userRepository.findByUserId(userId);
