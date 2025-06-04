@@ -18,13 +18,13 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 /**
- * 试验登记控制器
+ * 汽车测试任务登记控制器
  */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/test-registration")
 @RequiredArgsConstructor
-@Tag(name = "试验登记", description = "试验任务、项目、车辆、内容管理")
+@Tag(name = "汽车测试任务登记", description = "汽车测试任务、项目、车辆、内容管理")
 public class TestRegistrationController {
     
     private final TestRegistrationService testRegistrationService;

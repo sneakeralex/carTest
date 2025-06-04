@@ -1,7 +1,7 @@
-# Car Service Management System - API Documentation
+# Car Test Site Booking Management System - API Documentation
 
 ## Overview
-This document provides comprehensive API documentation for the Car Service Management System. The system provides RESTful APIs for managing users, vehicles, bookings, maintenance, and other car service operations.
+This document provides comprehensive API documentation for the Car Test Site Booking Management System. The system provides RESTful APIs for managing users, vehicles, test site bookings, test tasks, and other car testing operations.
 
 **Base URL**: `http://localhost:8080/api`
 **API Version**: v1
@@ -394,8 +394,8 @@ Authorization: Bearer {token}
         "bookingDate": "2024-01-15",
         "timeSlot": "09:00-10:00",
         "status": "PENDING",
-        "serviceType": "年检",
-        "notes": "首次年检",
+        "serviceType": "性能测试",
+        "notes": "首次性能测试",
         "createdTime": "2024-01-01T10:00:00"
       }
     ],
@@ -416,8 +416,8 @@ Content-Type: application/json
   "testSiteId": "SITE001",
   "bookingDate": "2024-01-15",
   "timeSlot": "09:00-10:00",
-  "serviceType": "年检",
-  "notes": "首次年检"
+  "serviceType": "性能测试",
+  "notes": "首次性能测试"
 }
 ```
 
@@ -474,13 +474,15 @@ Authorization: Bearer {token}
   "data": [
     {
       "testSiteId": "SITE001",
-      "name": "北京检测站",
+      "name": "北京汽车测试场",
       "address": "北京市朝阳区xxx路123号",
       "phone": "010-12345678",
       "city": "北京",
       "district": "朝阳区",
       "operatingHours": "08:00-18:00",
-      "services": ["年检", "环保检测", "安全检测"],
+      "testTypes": ["性能测试", "安全测试", "环保测试"],
+      "facilities": "专业测试跑道、安全设施完备",
+      "safetyRequirements": "必须佩戴安全帽，穿着防护服",
       "rating": 4.5,
       "latitude": 39.9042,
       "longitude": 116.4074

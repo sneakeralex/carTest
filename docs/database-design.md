@@ -1,30 +1,47 @@
-# 车辆管理系统数据库设计
+# 汽车测试场预约管理系统数据库设计
 
 ## 数据库概述
 
-本文档详细描述了车辆管理系统的数据库设计，包括表结构、字段说明、关系模型等。系统采用MySQL数据库，设计遵循第三范式规范。
+本文档详细描述了汽车测试场预约管理系统的数据库设计，包括表结构、字段说明、关系模型等。系统采用MySQL数据库，设计遵循第三范式规范。
+
+## 业务背景
+
+汽车测试场预约管理系统主要用于管理汽车测试场地的预约和测试业务流程，包括：
+- 用户管理：注册用户、管理员、测试人员等
+- 车辆管理：用户车辆信息登记和管理
+- 测试场管理：测试场地信息、设施、安全要求等
+- 预约管理：测试场地时间段预约、预约状态跟踪
+- 测试任务管理：各种测试项目的定义和管理
+- 测试报名：用户报名参加各种测试任务
 
 ## ER图
 
 ```
 +---------------+       +---------------+       +---------------+
-|    用户表      |       |    车辆表      |       |   维修保养表   |
-|   (user)      |       |  (vehicle)    |       | (maintenance) |
+|    用户表      |       |    车辆表      |       |   测试场表     |
+|   (user)      |       |  (vehicle)    |       |  (test_site)  |
 +---------------+       +---------------+       +---------------+
         |                      |                       |
         |                      |                       |
         v                      v                       v
 +---------------+       +---------------+       +---------------+
-|    角色表      |       |   车辆类型表   |       |   维修项目表   |
-|    (role)     |       | (vehicle_type)|       |(maintenance_item)|
+|    角色表      |       |   车辆类型表   |       |   时间段表     |
+|    (role)     |       | (vehicle_type)|       |  (time_slot)  |
 +---------------+       +---------------+       +---------------+
         |                      |                       |
         |                      |                       |
         v                      v                       v
 +---------------+       +---------------+       +---------------+
-|  用户角色关联表 |       |   预约试驾表   |       |   维修工单表   |
-|(user_role_rel)|       | (appointment) |       |  (work_order) |
+|  用户角色关联表 |       |   预约测试表   |       |   测试任务表   |
+|(user_role_rel)|       |   (booking)   |       |  (test_task)  |
 +---------------+       +---------------+       +---------------+
+                                |
+                                |
+                                v
+                        +---------------+
+                        |   测试报名表   |
+                        |(test_registration)|
+                        +---------------+
 ```
 
 ## 表结构设计
@@ -111,79 +128,114 @@
 | update_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 更新时间 |
 | deleted | tinyint | 1 | 否 | 否 | 0 | 是否删除：0否，1是 |
 
-### 6. 维修保养表 (maintenance)
+### 6. 测试场表 (test_site)
 
-存储车辆维修保养记录。
+存储汽车测试场地信息。
 
 | 字段名 | 数据类型 | 长度 | 允许空 | 主键 | 默认值 | 说明 |
 | ------ | ------- | ---- | ------ | ---- | ------ | ---- |
-| id | bigint | 20 | 否 | 是 | 自增 | 维修保养ID |
-| vehicle_id | bigint | 20 | 否 | 否 | 无 | 车辆ID |
-| maintenance_type | tinyint | 1 | 否 | 否 | 1 | 类型：1保养，2维修 |
-| start_time | datetime | - | 否 | 否 | 无 | 开始时间 |
-| end_time | datetime | - | 是 | 否 | 无 | 结束时间 |
-| mileage | decimal | (10,2) | 是 | 否 | 0 | 当前里程(km) |
-| description | varchar | 500 | 是 | 否 | 无 | 维修保养描述 |
-| cost | decimal | (10,2) | 是 | 否 | 0 | 费用 |
-| status | tinyint | 1 | 否 | 否 | 0 | 状态：0待处理，1处理中，2已完成，3已取消 |
-| operator_id | bigint | 20 | 是 | 否 | 无 | 操作人ID |
+| id | bigint | 20 | 否 | 是 | 自增 | 测试场ID |
+| site_name | varchar | 100 | 否 | 否 | 无 | 测试场名称 |
+| site_code | varchar | 50 | 否 | 否 | 无 | 测试场编码 |
+| address | varchar | 255 | 否 | 否 | 无 | 测试场地址 |
+| city | varchar | 50 | 否 | 否 | 无 | 所在城市 |
+| district | varchar | 50 | 是 | 否 | 无 | 所在区域 |
+| latitude | decimal | (10,8) | 是 | 否 | 无 | 纬度 |
+| longitude | decimal | (11,8) | 是 | 否 | 无 | 经度 |
+| contact_phone | varchar | 20 | 是 | 否 | 无 | 联系电话 |
+| operating_hours | varchar | 100 | 是 | 否 | 无 | 营业时间 |
+| test_types | varchar | 255 | 是 | 否 | 无 | 支持的测试类型 |
+| facilities | text | - | 是 | 否 | 无 | 设施描述 |
+| safety_requirements | text | - | 是 | 否 | 无 | 安全要求 |
+| rating | decimal | (3,2) | 是 | 否 | 0 | 评分(0-5) |
+| status | tinyint | 1 | 否 | 否 | 1 | 状态：0停用，1正常 |
 | create_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 创建时间 |
 | update_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 更新时间 |
 | deleted | tinyint | 1 | 否 | 否 | 0 | 是否删除：0否，1是 |
 
-### 7. 维修项目表 (maintenance_item)
+### 7. 时间段表 (time_slot)
 
-存储维修保养项目明细。
-
-| 字段名 | 数据类型 | 长度 | 允许空 | 主键 | 默认值 | 说明 |
-| ------ | ------- | ---- | ------ | ---- | ------ | ---- |
-| id | bigint | 20 | 否 | 是 | 自增 | 项目ID |
-| maintenance_id | bigint | 20 | 否 | 否 | 无 | 维修保养ID |
-| item_name | varchar | 100 | 否 | 否 | 无 | 项目名称 |
-| item_code | varchar | 50 | 是 | 否 | 无 | 项目编码 |
-| quantity | int | 11 | 否 | 否 | 1 | 数量 |
-| unit_price | decimal | (10,2) | 是 | 否 | 0 | 单价 |
-| total_price | decimal | (10,2) | 是 | 否 | 0 | 总价 |
-| remark | varchar | 255 | 是 | 否 | 无 | 备注 |
-| create_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 创建时间 |
-| update_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 更新时间 |
-
-### 8. 维修工单表 (work_order)
-
-存储维修工单信息。
+存储测试场可预约的时间段。
 
 | 字段名 | 数据类型 | 长度 | 允许空 | 主键 | 默认值 | 说明 |
 | ------ | ------- | ---- | ------ | ---- | ------ | ---- |
-| id | bigint | 20 | 否 | 是 | 自增 | 工单ID |
-| order_no | varchar | 50 | 否 | 否 | 无 | 工单编号 |
-| maintenance_id | bigint | 20 | 否 | 否 | 无 | 维修保养ID |
-| vehicle_id | bigint | 20 | 否 | 否 | 无 | 车辆ID |
-| technician_id | bigint | 20 | 是 | 否 | 无 | 技术人员ID |
-| status | tinyint | 1 | 否 | 否 | 0 | 状态：0待分配，1处理中，2已完成，3已取消 |
-| start_time | datetime | - | 是 | 否 | 无 | 开始时间 |
-| end_time | datetime | - | 是 | 否 | 无 | 结束时间 |
-| remark | varchar | 500 | 是 | 否 | 无 | 备注 |
+| id | bigint | 20 | 否 | 是 | 自增 | 时间段ID |
+| site_id | bigint | 20 | 否 | 否 | 无 | 测试场ID |
+| date | date | - | 否 | 否 | 无 | 日期 |
+| start_time | time | - | 否 | 否 | 无 | 开始时间 |
+| end_time | time | - | 否 | 否 | 无 | 结束时间 |
+| total_slots | int | 11 | 否 | 否 | 10 | 总槽位数 |
+| available_slots | int | 11 | 否 | 否 | 10 | 可用槽位数 |
+| status | tinyint | 1 | 否 | 否 | 1 | 状态：0不可用，1可用 |
 | create_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 创建时间 |
 | update_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 更新时间 |
-| deleted | tinyint | 1 | 否 | 否 | 0 | 是否删除：0否，1是 |
 
-### 9. 预约试驾表 (appointment)
+### 8. 预约测试表 (booking)
 
-存储预约试驾信息。
+存储汽车测试预约信息。
 
 | 字段名 | 数据类型 | 长度 | 允许空 | 主键 | 默认值 | 说明 |
 | ------ | ------- | ---- | ------ | ---- | ------ | ---- |
 | id | bigint | 20 | 否 | 是 | 自增 | 预约ID |
-| appointment_no | varchar | 50 | 否 | 否 | 无 | 预约编号 |
+| booking_no | varchar | 50 | 否 | 否 | 无 | 预约编号 |
 | user_id | bigint | 20 | 否 | 否 | 无 | 用户ID |
 | vehicle_id | bigint | 20 | 否 | 否 | 无 | 车辆ID |
-| appointment_time | datetime | - | 否 | 否 | 无 | 预约时间 |
+| site_id | bigint | 20 | 否 | 否 | 无 | 测试场ID |
+| time_slot_id | bigint | 20 | 否 | 否 | 无 | 时间段ID |
+| booking_date | date | - | 否 | 否 | 无 | 预约日期 |
+| time_slot | varchar | 20 | 否 | 否 | 无 | 时间段 |
+| test_type | varchar | 50 | 否 | 否 | 无 | 测试类型 |
+| status | tinyint | 1 | 否 | 否 | 0 | 状态：0待确认，1已确认，2已完成，3已取消 |
+| estimated_duration | int | 11 | 是 | 否 | 60 | 预计时长(分钟) |
+| actual_start_time | datetime | - | 是 | 否 | 无 | 实际开始时间 |
+| actual_end_time | datetime | - | 是 | 否 | 无 | 实际结束时间 |
+| test_result | varchar | 20 | 是 | 否 | 无 | 测试结果：PASS通过，FAIL未通过 |
+| notes | varchar | 500 | 是 | 否 | 无 | 备注 |
+| cancellation_reason | varchar | 255 | 是 | 否 | 无 | 取消原因 |
+| create_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 更新时间 |
+| deleted | tinyint | 1 | 否 | 否 | 0 | 是否删除：0否，1是 |
+
+### 9. 测试任务表 (test_task)
+
+存储测试任务信息。
+
+| 字段名 | 数据类型 | 长度 | 允许空 | 主键 | 默认值 | 说明 |
+| ------ | ------- | ---- | ------ | ---- | ------ | ---- |
+| id | bigint | 20 | 否 | 是 | 自增 | 任务ID |
+| task_name | varchar | 100 | 否 | 否 | 无 | 任务名称 |
+| task_code | varchar | 50 | 否 | 否 | 无 | 任务编码 |
+| task_type | varchar | 50 | 否 | 否 | 无 | 任务类型 |
+| description | text | - | 是 | 否 | 无 | 任务描述 |
+| difficulty | varchar | 20 | 是 | 否 | MEDIUM | 难度：EASY简单，MEDIUM中等，HARD困难 |
 | duration | int | 11 | 是 | 否 | 60 | 预计时长(分钟) |
-| status | tinyint | 1 | 否 | 否 | 0 | 状态：0待审核，1已审核，2已完成，3已取消 |
-| contact_name | varchar | 50 | 否 | 否 | 无 | 联系人姓名 |
-| contact_phone | varchar | 20 | 否 | 否 | 无 | 联系人电话 |
-| remark | varchar | 500 | 是 | 否 | 无 | 备注 |
-| feedback | varchar | 500 | 是 | 否 | 无 | 试驾反馈 |
+| max_score | decimal | (5,2) | 是 | 否 | 100 | 满分 |
+| pass_score | decimal | (5,2) | 是 | 否 | 60 | 及格分 |
+| requirements | text | - | 是 | 否 | 无 | 测试要求 |
+| instructions | text | - | 是 | 否 | 无 | 操作说明 |
+| status | tinyint | 1 | 否 | 否 | 1 | 状态：0停用，1启用 |
+| create_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 更新时间 |
+| deleted | tinyint | 1 | 否 | 否 | 0 | 是否删除：0否，1是 |
+
+### 10. 测试报名表 (test_registration)
+
+存储用户测试报名信息。
+
+| 字段名 | 数据类型 | 长度 | 允许空 | 主键 | 默认值 | 说明 |
+| ------ | ------- | ---- | ------ | ---- | ------ | ---- |
+| id | bigint | 20 | 否 | 是 | 自增 | 报名ID |
+| registration_no | varchar | 50 | 否 | 否 | 无 | 报名编号 |
+| user_id | bigint | 20 | 否 | 否 | 无 | 用户ID |
+| task_id | bigint | 20 | 否 | 否 | 无 | 任务ID |
+| registration_date | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 报名时间 |
+| scheduled_date | datetime | - | 是 | 否 | 无 | 预约考试时间 |
+| status | tinyint | 1 | 否 | 否 | 0 | 状态：0已报名，1已预约，2已完成，3已取消 |
+| score | decimal | (5,2) | 是 | 否 | 无 | 得分 |
+| result | varchar | 20 | 是 | 否 | 无 | 结果：PASS通过，FAIL未通过 |
+| attempt_count | int | 11 | 否 | 否 | 0 | 尝试次数 |
+| notes | varchar | 500 | 是 | 否 | 无 | 备注 |
+| completed_time | datetime | - | 是 | 否 | 无 | 完成时间 |
 | create_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 创建时间 |
 | update_time | datetime | - | 否 | 否 | CURRENT_TIMESTAMP | 更新时间 |
 | deleted | tinyint | 1 | 否 | 否 | 0 | 是否删除：0否，1是 |
@@ -212,34 +264,42 @@
 - 主键索引：id
 - 唯一索引：type_code
 
-### 6. 维修保养表 (maintenance)
+### 6. 测试场表 (test_site)
 - 主键索引：id
-- 普通索引：vehicle_id, status, maintenance_type
+- 唯一索引：site_code
+- 普通索引：city, district, status
 
-### 7. 维修项目表 (maintenance_item)
+### 7. 时间段表 (time_slot)
 - 主键索引：id
-- 普通索引：maintenance_id
+- 普通索引：site_id, date, status
 
-### 8. 维修工单表 (work_order)
+### 8. 预约测试表 (booking)
 - 主键索引：id
-- 唯一索引：order_no
-- 普通索引：maintenance_id, vehicle_id, technician_id, status
+- 唯一索引：booking_no
+- 普通索引：user_id, vehicle_id, site_id, time_slot_id, status, booking_date
 
-### 9. 预约试驾表 (appointment)
+### 9. 测试任务表 (test_task)
 - 主键索引：id
-- 唯一索引：appointment_no
-- 普通索引：user_id, vehicle_id, status, appointment_time
+- 唯一索引：task_code
+- 普通索引：task_type, difficulty, status
+
+### 10. 测试报名表 (test_registration)
+- 主键索引：id
+- 唯一索引：registration_no
+- 普通索引：user_id, task_id, status, scheduled_date
 
 ## 表关系说明
 
 1. 用户表(user) 与 角色表(role) 是多对多关系，通过用户角色关联表(user_role_rel)建立关联
 2. 用户表(user) 与 车辆表(vehicle) 是一对多关系，一个用户可以拥有多辆车辆
 3. 车辆表(vehicle) 与 车辆类型表(vehicle_type) 是多对一关系，多辆车辆可以属于同一类型
-4. 车辆表(vehicle) 与 维修保养表(maintenance) 是一对多关系，一辆车可以有多条维修保养记录
-5. 维修保养表(maintenance) 与 维修项目表(maintenance_item) 是一对多关系，一次维修保养可以包含多个项目
-6. 维修保养表(maintenance) 与 维修工单表(work_order) 是一对一关系，一次维修保养对应一个工单
-7. 用户表(user) 与 预约试驾表(appointment) 是一对多关系，一个用户可以有多次预约试驾记录
-8. 车辆表(vehicle) 与 预约试驾表(appointment) 是一对多关系，一辆车可以被多次预约试驾
+4. 测试场表(test_site) 与 时间段表(time_slot) 是一对多关系，一个测试场可以有多个时间段
+5. 用户表(user) 与 预约测试表(booking) 是一对多关系，一个用户可以有多次预约测试记录
+6. 车辆表(vehicle) 与 预约测试表(booking) 是一对多关系，一辆车可以被多次预约测试
+7. 测试场表(test_site) 与 预约测试表(booking) 是一对多关系，一个测试场可以被多次预约
+8. 时间段表(time_slot) 与 预约测试表(booking) 是一对多关系，一个时间段可以有多个预约
+9. 用户表(user) 与 测试报名表(test_registration) 是一对多关系，一个用户可以报名多个测试任务
+10. 测试任务表(test_task) 与 测试报名表(test_registration) 是一对多关系，一个测试任务可以有多个报名记录
 
 ## 数据库初始化脚本
 

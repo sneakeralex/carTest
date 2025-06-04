@@ -1,17 +1,19 @@
-# Car Service Management System - Documentation
+# Car Test Site Booking Management System - Documentation
 
 ## 📋 Overview
-This documentation package provides comprehensive information about the Car Service Management System, including API specifications, database schema, and implementation details.
+This documentation package provides comprehensive information about the Car Test Site Booking Management System, including API specifications, database schema, and implementation details.
 
 ## 🎯 System Features
 - **User Management**: Registration, authentication, profile management
 - **Vehicle Management**: Vehicle registration, information management, image uploads
+- **Test Site Management**: Test site information, facilities, safety requirements
 - **Booking System**: Test site reservations, time slot management
-- **Maintenance Tracking**: Service records, work orders, technician assignments
+- **Test Task Management**: Test task definitions, difficulty levels, scoring
+- **Test Registration**: User registration for test tasks, scheduling, results tracking
 - **Equipment Management**: Equipment requests, usage tracking, maintenance scheduling
 - **Messaging System**: Internal communications, notifications, templates
 - **File Management**: Document uploads, storage, and retrieval
-- **Role-Based Access**: Admin, Customer, and Technician roles
+- **Role-Based Access**: Admin, Customer, and Test Personnel roles
 - **Mobile Dashboard**: Real-time statistics and quick actions
 
 ## 📚 Documentation Structure

@@ -1,4 +1,4 @@
-# Car Service Management System - Database Schema (Part 2)
+# Car Test Site Booking Management System - Database Schema (Part 2)
 
 ## Additional Tables
 

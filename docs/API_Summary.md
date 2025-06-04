@@ -1,7 +1,7 @@
-# Car Service Management System - API Summary
+# Car Test Site Booking Management System - API Summary
 
 ## Overview
-Complete API endpoint summary for the Car Service Management System with 139 endpoints across 17 controllers.
+Complete API endpoint summary for the Car Test Site Booking Management System with 139 endpoints across 17 controllers.
 
 ## API Endpoints Summary
 

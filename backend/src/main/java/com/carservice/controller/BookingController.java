@@ -26,7 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/bookings")
 @RequiredArgsConstructor
-@Tag(name = "预约管理", description = "场地预约、排期查询、天气信息等功能")
+@Tag(name = "测试场预约管理", description = "测试场地预约、排期查询、天气信息等功能")
 public class BookingController {
     
     private final BookingService bookingService;

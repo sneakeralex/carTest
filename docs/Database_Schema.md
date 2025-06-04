@@ -1,7 +1,7 @@
-# Car Service Management System - Database Schema
+# Car Test Site Booking Management System - Database Schema
 
 ## Overview
-This document describes the database schema for the Car Service Management System. The system uses MySQL as the primary database with JPA/Hibernate for ORM mapping.
+This document describes the database schema for the Car Test Site Booking Management System. The system uses MySQL as the primary database with JPA/Hibernate for ORM mapping.
 
 ## Database Configuration
 - **Database**: MySQL 8.0+
