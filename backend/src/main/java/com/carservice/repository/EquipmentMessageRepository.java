@@ -37,58 +37,82 @@ public interface EquipmentMessageRepository extends JpaRepository<EquipmentMessa
     List<EquipmentMessage> findByMessageId(String messageId);
     
     /**
-     * 根据消息类型查找设备消息列表
-     * @param messageType 消息类型
+     * 根据通知类型查找设备消息列表
+     * @param notificationType 通知类型
      * @return 设备消息列表
      */
-    List<EquipmentMessage> findByMessageType(EquipmentMessage.EquipmentMessageType messageType);
-    
+    List<EquipmentMessage> findByNotificationType(EquipmentMessage.EquipmentNotificationType notificationType);
+
     /**
-     * 根据消息状态查找设备消息列表
-     * @param status 消息状态
+     * 根据借用记录ID查找设备消息列表
+     * @param borrowRecordId 借用记录ID
      * @return 设备消息列表
      */
-    List<EquipmentMessage> findByStatus(EquipmentMessage.MessageStatus status);
-    
+    List<EquipmentMessage> findByBorrowRecordId(String borrowRecordId);
+
     /**
-     * 根据发送时间范围查找设备消息
-     * @param startTime 开始时间
-     * @param endTime 结束时间
+     * 根据归还截止日期范围查找设备消息
+     * @param startDate 开始日期
+     * @param endDate 结束日期
      * @return 设备消息列表
      */
-    List<EquipmentMessage> findBySendTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
-    
+    List<EquipmentMessage> findByDueDateBetween(LocalDateTime startDate, LocalDateTime endDate);
+
     /**
-     * 根据设备ID和消息类型查找设备消息
+     * 根据设备ID和通知类型查找设备消息
      * @param equipmentId 设备ID
-     * @param messageType 消息类型
+     * @param notificationType 通知类型
      * @return 设备消息列表
      */
-    List<EquipmentMessage> findByEquipmentIdAndMessageType(String equipmentId, EquipmentMessage.EquipmentMessageType messageType);
-    
+    List<EquipmentMessage> findByEquipmentIdAndNotificationType(String equipmentId, EquipmentMessage.EquipmentNotificationType notificationType);
+
     /**
-     * 根据设备ID和状态查找设备消息
+     * 根据设备ID和借用记录ID查找设备消息
      * @param equipmentId 设备ID
-     * @param status 消息状态
+     * @param borrowRecordId 借用记录ID
      * @return 设备消息列表
      */
-    List<EquipmentMessage> findByEquipmentIdAndStatus(String equipmentId, EquipmentMessage.MessageStatus status);
+    List<EquipmentMessage> findByEquipmentIdAndBorrowRecordId(String equipmentId, String borrowRecordId);
     
     /**
-     * 查找未处理的设备消息
-     * @return 未处理设备消息列表
-     */
-    @Query("SELECT em FROM EquipmentMessage em WHERE em.status = 'PENDING' ORDER BY em.sendTime ASC")
-    List<EquipmentMessage> findPendingMessages();
-    
-    /**
-     * 查找设备告警消息
+     * 查找归还提醒消息
      * @param equipmentId 设备ID
-     * @return 告警消息列表
+     * @return 归还提醒消息列表
      */
-    @Query("SELECT em FROM EquipmentMessage em WHERE em.equipmentId = :equipmentId AND em.messageType = 'ALERT' ORDER BY em.sendTime DESC")
-    List<EquipmentMessage> findAlertMessagesByEquipmentId(@Param("equipmentId") String equipmentId);
-    
+    @Query("SELECT em FROM EquipmentMessage em WHERE em.equipmentId = :equipmentId AND em.notificationType = 'RETURN_REMINDER' ORDER BY em.dueDate ASC")
+    List<EquipmentMessage> findReturnRemindersByEquipmentId(@Param("equipmentId") String equipmentId);
+
+    /**
+     * 查找超期提醒消息
+     * @param equipmentId 设备ID
+     * @return 超期提醒消息列表
+     */
+    @Query("SELECT em FROM EquipmentMessage em WHERE em.equipmentId = :equipmentId AND em.notificationType = 'OVERDUE_ALERT' ORDER BY em.dueDate DESC")
+    List<EquipmentMessage> findOverdueAlertsByEquipmentId(@Param("equipmentId") String equipmentId);
+
+    /**
+     * 查找维护到期消息
+     * @return 维护到期消息列表
+     */
+    @Query("SELECT em FROM EquipmentMessage em WHERE em.notificationType = 'MAINTENANCE_DUE' ORDER BY em.dueDate ASC")
+    List<EquipmentMessage> findMaintenanceDueMessages();
+
+    /**
+     * 查找损坏报告消息
+     * @param equipmentId 设备ID
+     * @return 损坏报告消息列表
+     */
+    @Query("SELECT em FROM EquipmentMessage em WHERE em.equipmentId = :equipmentId AND em.notificationType = 'DAMAGE_REPORT' ORDER BY em.dueDate DESC")
+    List<EquipmentMessage> findDamageReportsByEquipmentId(@Param("equipmentId") String equipmentId);
+
+    /**
+     * 查找即将到期的设备消息
+     * @param dueDate 到期日期
+     * @return 即将到期的设备消息列表
+     */
+    @Query("SELECT em FROM EquipmentMessage em WHERE em.dueDate <= :dueDate AND em.actualReturnDate IS NULL ORDER BY em.dueDate ASC")
+    List<EquipmentMessage> findUpcomingDueMessages(@Param("dueDate") LocalDateTime dueDate);
+
     /**
      * 统计指定设备的消息数量
      * @param equipmentId 设备ID
@@ -96,12 +120,20 @@ public interface EquipmentMessageRepository extends JpaRepository<EquipmentMessa
      */
     @Query("SELECT COUNT(em) FROM EquipmentMessage em WHERE em.equipmentId = :equipmentId")
     long countMessagesByEquipmentId(@Param("equipmentId") String equipmentId);
-    
+
     /**
-     * 统计指定状态的消息数量
-     * @param status 消息状态
+     * 统计指定通知类型的消息数量
+     * @param notificationType 通知类型
      * @return 消息数量
      */
-    @Query("SELECT COUNT(em) FROM EquipmentMessage em WHERE em.status = :status")
-    long countByStatus(@Param("status") EquipmentMessage.MessageStatus status);
+    @Query("SELECT COUNT(em) FROM EquipmentMessage em WHERE em.notificationType = :notificationType")
+    long countByNotificationType(@Param("notificationType") EquipmentMessage.EquipmentNotificationType notificationType);
+
+    /**
+     * 查找超期未归还的设备消息
+     * @param currentDate 当前日期
+     * @return 超期未归还的设备消息列表
+     */
+    @Query("SELECT em FROM EquipmentMessage em WHERE em.dueDate < :currentDate AND em.actualReturnDate IS NULL ORDER BY em.overdueHours DESC")
+    List<EquipmentMessage> findOverdueEquipmentMessages(@Param("currentDate") LocalDateTime currentDate);
 }
