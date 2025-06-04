@@ -7,11 +7,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 /**
  * 用户实体
@@ -77,8 +73,9 @@ public class User extends BaseEntity implements Serializable {
     /**
      * 人员类型
      */
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Integer userType;
+    private PersonType personType;
 
     /**
      * 发布状态
@@ -89,11 +86,22 @@ public class User extends BaseEntity implements Serializable {
     /**
      * 附件列表
      */
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Column(columnDefinition = "json")
     private List<UserAttachment> attachments;
 
     /**
      * 最后登录时间
      */
     private LocalDateTime lastLoginTime;
+
+    /**
+     * 人员类型枚举
+     */
+    public enum PersonType {
+        EMPLOYEE, // 员工
+        CUSTOMER, // 客户
+        SUPPLIER, // 供应商
+        PARTNER, // 合作伙伴
+        VISITOR // 访客
+    }
 }
