@@ -1,6 +1,7 @@
 package com.carservice.controller;
 
 import com.carservice.common.api.ApiResponse;
+import com.carservice.service.DashboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,8 +24,7 @@ import java.util.List;
 @Tag(name = "移动端仪表板", description = "移动端首页数据、统计信息等功能")
 public class DashboardController {
     
-    // 注释掉服务依赖，避免编译错误
-    // private final DashboardService dashboardService;
+    private final DashboardService dashboardService;
     
     /**
      * 获取用户仪表板数据
@@ -33,16 +33,15 @@ public class DashboardController {
     @Operation(summary = "获取用户仪表板数据", description = "获取用户首页展示的各种统计数据")
     public ResponseEntity<ApiResponse<UserDashboardDTO>> getUserDashboard(@PathVariable String userId) {
         try {
-            // TODO: 实现获取用户仪表板数据逻辑
-            // UserDashboardDTO dashboard = dashboardService.getUserDashboard(userId);
-            log.info("获取用户仪表板数据: {}", userId);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取用户仪表板数据功能开发中"));
+            UserDashboardDTO dashboard = dashboardService.getUserDashboard(userId);
+            log.info("获取用户仪表板数据成功: {}", userId);
+            return ResponseEntity.ok(ApiResponse.success(dashboard));
         } catch (Exception e) {
             log.error("获取用户仪表板数据失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取用户统计信息
      */
@@ -53,16 +52,15 @@ public class DashboardController {
             @Parameter(description = "统计开始时间") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
             @Parameter(description = "统计结束时间") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
         try {
-            // TODO: 实现获取用户统计信息逻辑
-            // UserStatsDTO stats = dashboardService.getUserStats(userId, startTime, endTime);
-            log.info("获取用户统计信息: 用户={}, 时间范围: {} - {}", userId, startTime, endTime);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取用户统计信息功能开发中"));
+            UserStatsDTO stats = dashboardService.getUserStats(userId, startTime, endTime);
+            log.info("获取用户统计信息成功: 用户={}, 时间范围: {} - {}", userId, startTime, endTime);
+            return ResponseEntity.ok(ApiResponse.success(stats));
         } catch (Exception e) {
             log.error("获取用户统计信息失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取最近活动
      */
@@ -72,16 +70,15 @@ public class DashboardController {
             @PathVariable String userId,
             @Parameter(description = "活动数量限制") @RequestParam(defaultValue = "10") int limit) {
         try {
-            // TODO: 实现获取最近活动逻辑
-            // List<ActivityDTO> activities = dashboardService.getRecentActivities(userId, limit);
-            log.info("获取最近活动: 用户={}, 限制数量={}", userId, limit);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取最近活动功能开发中"));
+            List<ActivityDTO> activities = dashboardService.getRecentActivities(userId, limit);
+            log.info("获取最近活动成功: 用户={}, 限制数量={}", userId, limit);
+            return ResponseEntity.ok(ApiResponse.success(activities));
         } catch (Exception e) {
             log.error("获取最近活动失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取待办事项
      */
@@ -89,16 +86,15 @@ public class DashboardController {
     @Operation(summary = "获取待办事项")
     public ResponseEntity<ApiResponse<List<TodoDTO>>> getUserTodos(@PathVariable String userId) {
         try {
-            // TODO: 实现获取待办事项逻辑
-            // List<TodoDTO> todos = dashboardService.getUserTodos(userId);
-            log.info("获取待办事项: {}", userId);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取待办事项功能开发中"));
+            List<TodoDTO> todos = dashboardService.getUserTodos(userId);
+            log.info("获取待办事项成功: {}", userId);
+            return ResponseEntity.ok(ApiResponse.success(todos));
         } catch (Exception e) {
             log.error("获取待办事项失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取快捷操作
      */
@@ -106,16 +102,15 @@ public class DashboardController {
     @Operation(summary = "获取快捷操作")
     public ResponseEntity<ApiResponse<List<QuickActionDTO>>> getQuickActions(@PathVariable String userId) {
         try {
-            // TODO: 实现获取快捷操作逻辑
-            // List<QuickActionDTO> actions = dashboardService.getQuickActions(userId);
-            log.info("获取快捷操作: {}", userId);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取快捷操作功能开发中"));
+            List<QuickActionDTO> actions = dashboardService.getQuickActions(userId);
+            log.info("获取快捷操作成功: {}", userId);
+            return ResponseEntity.ok(ApiResponse.success(actions));
         } catch (Exception e) {
             log.error("获取快捷操作失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取系统公告
      */
@@ -124,16 +119,15 @@ public class DashboardController {
     public ResponseEntity<ApiResponse<List<AnnouncementDTO>>> getAnnouncements(
             @Parameter(description = "公告数量限制") @RequestParam(defaultValue = "5") int limit) {
         try {
-            // TODO: 实现获取系统公告逻辑
-            // List<AnnouncementDTO> announcements = dashboardService.getAnnouncements(limit);
-            log.info("获取系统公告: 限制数量={}", limit);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取系统公告功能开发中"));
+            List<AnnouncementDTO> announcements = dashboardService.getAnnouncements(limit);
+            log.info("获取系统公告成功: 限制数量={}", limit);
+            return ResponseEntity.ok(ApiResponse.success(announcements));
         } catch (Exception e) {
             log.error("获取系统公告失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * 获取天气信息
      */
@@ -142,10 +136,9 @@ public class DashboardController {
     public ResponseEntity<ApiResponse<WeatherInfoDTO>> getWeatherInfo(
             @Parameter(description = "位置") @RequestParam(required = false) String location) {
         try {
-            // TODO: 实现获取天气信息逻辑
-            // WeatherInfoDTO weather = dashboardService.getWeatherInfo(location);
-            log.info("获取天气信息: 位置={}", location);
-            return ResponseEntity.ok(ApiResponse.success(null, "获取天气信息功能开发中"));
+            WeatherInfoDTO weather = dashboardService.getWeatherInfo(location);
+            log.info("获取天气信息成功: 位置={}", location);
+            return ResponseEntity.ok(ApiResponse.success(weather));
         } catch (Exception e) {
             log.error("获取天气信息失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
