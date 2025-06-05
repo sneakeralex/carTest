@@ -31,39 +31,69 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'test-sites',
+        name: 'TestSites',
+        component: () => import('../views/TestSites.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'test-sites/:id',
+        name: 'TestSiteDetail',
+        component: () => import('../views/TestSiteDetail.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'test-tasks',
+        name: 'TestTasks',
+        component: () => import('../views/TestTasks.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'test-tasks/:id',
+        name: 'TestTaskDetail',
+        component: () => import('../views/TestTaskDetail.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'bookings',
+        name: 'Bookings',
+        component: () => import('../views/Bookings.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'bookings/new',
+        name: 'NewBooking',
+        component: () => import('../views/NewBooking.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'bookings/:id',
+        name: 'BookingDetail',
+        component: () => import('../views/BookingDetail.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'appointments',
-        name: 'Appointments',
+        name: 'TestConsultationAppointments',
         component: () => import('../views/Appointments.vue'),
         meta: { requiresAuth: true }
       },
       {
         path: 'appointments/new',
-        name: 'NewAppointment',
+        name: 'NewTestConsultationAppointment',
         component: () => import('../views/NewAppointment.vue'),
         meta: { requiresAuth: true }
       },
       {
         path: 'appointments/:id',
-        name: 'AppointmentDetail',
+        name: 'TestConsultationAppointmentDetail',
         component: () => import('../views/AppointmentDetail.vue'),
         meta: { requiresAuth: true }
       },
       {
-        path: 'maintenance',
-        name: 'Maintenance',
-        component: () => import('../views/Maintenance.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'maintenance/new',
-        name: 'NewMaintenance',
-        component: () => import('../views/NewMaintenance.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'maintenance/:id',
-        name: 'MaintenanceDetail',
-        component: () => import('../views/MaintenanceDetail.vue'),
+        path: 'my-registrations',
+        name: 'MyTestRegistrations',
+        component: () => import('../views/MyTestRegistrations.vue'),
         meta: { requiresAuth: true }
       },
       {

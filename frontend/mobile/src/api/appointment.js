@@ -1,80 +1,108 @@
 import request from './request';
 
 /**
- * 获取预约列表
+ * 获取测试咨询预约列表
+ * @param {Object} params - 查询参数
+ * @param {string} params.status - 预约状态
+ * @param {number} params.page - 页码
+ * @param {number} params.size - 每页数量
  * @returns {Promise} - 返回Promise对象
  */
-export function getAppointments() {
+export function getTestConsultationAppointments(params = {}) {
   return request({
-    url: '/appointments',
+    url: '/api/appointments',
+    method: 'get',
+    params
+  });
+}
+
+/**
+ * 根据ID获取测试咨询预约详情
+ * @param {string} appointmentNo - 预约编号
+ * @returns {Promise} - 返回Promise对象
+ */
+export function getTestConsultationAppointmentById(appointmentNo) {
+  return request({
+    url: `/api/appointments/${appointmentNo}`,
     method: 'get'
   });
 }
 
 /**
- * 根据ID获取预约详情
- * @param {number|string} id - 预约ID
- * @returns {Promise} - 返回Promise对象
- */
-export function getAppointmentById(id) {
-  return request({
-    url: `/appointments/${id}`,
-    method: 'get'
-  });
-}
-
-/**
- * 创建预约
+ * 创建测试咨询预约
  * @param {Object} appointmentData - 预约数据
- * @param {number|string} appointmentData.vehicleId - 车辆ID
- * @param {string} appointmentData.appointmentTime - 预约时间
- * @param {string} appointmentData.serviceType - 服务类型
- * @param {string} appointmentData.description - 描述
+ * @param {string} appointmentData.serviceType - 服务类型 (测试咨询)
+ * @param {string} appointmentData.appointmentDate - 预约时间
+ * @param {string} appointmentData.description - 咨询内容描述
+ * @param {string} appointmentData.phone - 联系电话
  * @returns {Promise} - 返回Promise对象
  */
-export function createAppointment(appointmentData) {
+export function createTestConsultationAppointment(appointmentData) {
   return request({
-    url: '/appointments',
+    url: '/api/appointments',
     method: 'post',
     data: appointmentData
   });
 }
 
 /**
- * 更新预约信息
- * @param {number|string} id - 预约ID
+ * 更新测试咨询预约信息
+ * @param {string} appointmentNo - 预约编号
  * @param {Object} appointmentData - 预约数据
  * @returns {Promise} - 返回Promise对象
  */
-export function updateAppointment(id, appointmentData) {
+export function updateTestConsultationAppointment(appointmentNo, appointmentData) {
   return request({
-    url: `/appointments/${id}`,
+    url: `/api/appointments/${appointmentNo}`,
     method: 'put',
     data: appointmentData
   });
 }
 
 /**
- * 取消预约
- * @param {number|string} id - 预约ID
+ * 取消测试咨询预约
+ * @param {string} appointmentNo - 预约编号
  * @returns {Promise} - 返回Promise对象
  */
-export function cancelAppointment(id) {
+export function cancelTestConsultationAppointment(appointmentNo) {
   return request({
-    url: `/appointments/${id}/cancel`,
+    url: `/api/appointments/${appointmentNo}/cancel`,
     method: 'put'
   });
 }
 
 /**
- * 获取可用的预约时间段
- * @param {string} date - 日期，格式：YYYY-MM-DD
+ * 获取用户的测试咨询预约列表
+ * @param {string} userId - 用户ID
  * @returns {Promise} - 返回Promise对象
  */
-export function getAvailableTimeSlots(date) {
+export function getUserTestConsultationAppointments(userId) {
   return request({
-    url: '/appointments/available-slots',
-    method: 'get',
-    params: { date }
+    url: `/api/appointments/user/${userId}`,
+    method: 'get'
+  });
+}
+
+/**
+ * 审批测试咨询预约 (管理员)
+ * @param {string} appointmentNo - 预约编号
+ * @returns {Promise} - 返回Promise对象
+ */
+export function approveTestConsultationAppointment(appointmentNo) {
+  return request({
+    url: `/api/appointments/${appointmentNo}/approve`,
+    method: 'put'
+  });
+}
+
+/**
+ * 完成测试咨询预约 (管理员)
+ * @param {string} appointmentNo - 预约编号
+ * @returns {Promise} - 返回Promise对象
+ */
+export function completeTestConsultationAppointment(appointmentNo) {
+  return request({
+    url: `/api/appointments/${appointmentNo}/complete`,
+    method: 'put'
   });
 }
