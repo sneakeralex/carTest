@@ -10,7 +10,7 @@ This documentation package provides comprehensive information about the Car Test
 - **Booking System**: Test site reservations, time slot management
 - **Test Task Management**: Test task definitions, difficulty levels, scoring
 - **Test Registration**: User registration for test tasks, scheduling, results tracking
-- **Equipment Management**: Equipment requests, usage tracking, maintenance scheduling
+- **Equipment Management**: Test equipment requests, usage tracking, calibration scheduling
 - **Messaging System**: Internal communications, notifications, templates
 - **File Management**: Document uploads, storage, and retrieval
 - **Role-Based Access**: Admin, Customer, and Test Personnel roles
@@ -106,9 +106,9 @@ mvn spring-boot:run
 | EquipmentController | 11 | Equipment management |
 | MessageController | 13 | Messaging system |
 | MobileVehicleController | 11 | Mobile vehicle management |
-| MaintenanceController | 8 | Maintenance tracking |
-| WorkOrderController | 9 | Work order management |
-| AppointmentController | 7 | Appointment scheduling |
+| MaintenanceController | 8 | Test equipment maintenance |
+| WorkOrderController | 9 | Test work order management |
+| AppointmentController | 7 | Test consultation scheduling |
 | DashboardController | 7 | Mobile dashboard |
 | FileController | 11 | File management |
 | VehicleController | 6 | Vehicle administration |
@@ -116,11 +116,11 @@ mvn spring-boot:run
 | RoleController | 7 | Role management |
 | UserController | 5 | Authentication |
 | VehicleTypeController | 5 | Vehicle type management |
-| MaintenanceItemController | 4 | Maintenance item tracking |
+| MaintenanceItemController | 4 | Test equipment item tracking |
 | **Total** | **139** | **Complete API Coverage** |
 
 ### Database Tables
-- **20 Core Tables**: Users, Vehicles, Bookings, Maintenance, etc.
+- **20 Core Tables**: Users, Vehicles, Test Sites, Bookings, Test Tasks, etc.
 - **Proper Relationships**: Foreign keys and constraints
 - **Optimized Indexes**: Performance-focused design
 - **Data Integrity**: Comprehensive validation rules

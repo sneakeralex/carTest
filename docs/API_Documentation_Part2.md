@@ -1,10 +1,10 @@
 # Car Test Site Booking Management System - API Documentation (Part 2)
 
-## 4. Maintenance Management APIs
+## 4. Test Task Management APIs
 
-### 4.1 Get Maintenance List
+### 4.1 Get Test Task List
 ```http
-GET /api/maintenances?page=0&size=10
+GET /api/v1/test-registration/tasks?page=0&size=10
 Authorization: Bearer {admin_token}
 ```
 
@@ -16,16 +16,16 @@ Authorization: Bearer {admin_token}
   "data": {
     "content": [
       {
-        "maintenanceNo": "MT20240101001",
-        "vehicleId": "VEH001",
-        "licensePlate": "京A12345",
-        "userId": "USER001",
-        "userName": "张三",
-        "type": "保养",
-        "description": "定期保养",
-        "status": "PENDING",
-        "scheduledDate": "2024-01-15T09:00:00",
-        "estimatedCost": 500.00,
+        "taskId": "TASK001",
+        "taskName": "车辆性能测试",
+        "taskCode": "PERF_TEST_001",
+        "taskType": "性能测试",
+        "description": "车辆加速、制动、操控性能综合测试",
+        "difficulty": "MEDIUM",
+        "duration": 120,
+        "maxScore": 100.00,
+        "passScore": 70.00,
+        "status": "ACTIVE",
         "createdTime": "2024-01-01T10:00:00"
       }
     ],
@@ -35,60 +35,64 @@ Authorization: Bearer {admin_token}
 }
 ```
 
-### 4.2 Create Maintenance
+### 4.2 Create Test Task
 ```http
-POST /api/maintenances
-Authorization: Bearer {token}
+POST /api/v1/test-registration/tasks
+Authorization: Bearer {admin_token}
 Content-Type: application/json
 
 {
-  "vehicleId": "VEH001",
-  "type": "维修",
-  "description": "发动机异响检修",
-  "scheduledDate": "2024-01-15T09:00:00",
-  "priority": "HIGH",
-  "notes": "客户反映发动机有异响"
+  "taskName": "车辆安全测试",
+  "taskCode": "SAFETY_TEST_001",
+  "taskType": "安全测试",
+  "description": "车辆制动系统、安全气囊、碰撞安全测试",
+  "difficulty": "HARD",
+  "duration": 180,
+  "maxScore": 100.00,
+  "passScore": 80.00,
+  "requirements": "车辆必须通过基础检查",
+  "instructions": "按照安全测试标准流程执行"
 }
 ```
 
-### 4.3 Update Maintenance
+### 4.3 Update Test Task
 ```http
-PUT /api/maintenances/MT20240101001
-Authorization: Bearer {token}
+PUT /api/v1/test-registration/tasks/TASK001
+Authorization: Bearer {admin_token}
 Content-Type: application/json
 
 {
-  "scheduledDate": "2024-01-16T09:00:00",
-  "description": "发动机异响检修（更新时间）",
-  "notes": "客户要求延期"
+  "description": "车辆加速、制动、操控性能综合测试（更新版）",
+  "duration": 150,
+  "passScore": 75.00
 }
 ```
 
-### 4.4 Complete Maintenance
+### 4.4 Complete Test Task
 ```http
-PUT /api/maintenances/MT20240101001/complete
+PUT /api/v1/test-registration/registrations/REG001/complete
 Authorization: Bearer {admin_token}
 ```
 
-### 4.5 Cancel Maintenance
+### 4.5 Cancel Test Registration
 ```http
-PUT /api/maintenances/MT20240101001/cancel
+DELETE /api/v1/test-registration/registrations/REG001
 Authorization: Bearer {token}
 ```
 
-### 4.6 Get User Maintenances
+### 4.6 Get User Test Registrations
 ```http
-GET /api/maintenances/my-maintenances
+GET /api/v1/test-registration/user/USER001/registrations
 Authorization: Bearer {token}
 ```
 
-### 4.7 Get Vehicle Maintenances
+### 4.7 Get Task Registrations
 ```http
-GET /api/maintenances/vehicle/VEH001
-Authorization: Bearer {token}
+GET /api/v1/test-registration/task/TASK001/registrations
+Authorization: Bearer {admin_token}
 ```
 
-## 5. Appointment Management APIs
+## 5. Test Consultation Appointment APIs
 
 ### 5.1 Get Appointment List
 ```http
@@ -108,10 +112,10 @@ Authorization: Bearer {admin_token}
         "userId": "USER001",
         "userName": "张三",
         "phone": "13800138000",
-        "serviceType": "维修咨询",
+        "serviceType": "测试咨询",
         "appointmentDate": "2024-01-15T14:00:00",
         "status": "PENDING",
-        "description": "车辆异响问题咨询",
+        "description": "车辆性能测试项目咨询",
         "createdTime": "2024-01-01T10:00:00"
       }
     ],
@@ -128,9 +132,9 @@ Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "serviceType": "维修咨询",
+  "serviceType": "测试咨询",
   "appointmentDate": "2024-01-15T14:00:00",
-  "description": "车辆异响问题咨询",
+  "description": "车辆安全测试项目咨询",
   "phone": "13800138000"
 }
 ```
@@ -188,12 +192,12 @@ Authorization: Bearer {token}
     "content": [
       {
         "equipmentId": "EQP001",
-        "name": "发动机检测仪",
-        "category": "检测设备",
-        "model": "ED-2000",
+        "name": "车辆性能测试仪",
+        "category": "测试设备",
+        "model": "PT-3000",
         "manufacturer": "博世",
         "status": "AVAILABLE",
-        "location": "检测车间A",
+        "location": "测试场A区",
         "purchaseDate": "2023-01-01",
         "warrantyExpiry": "2025-01-01",
         "lastMaintenanceDate": "2024-01-01",
@@ -217,8 +221,8 @@ Content-Type: application/json
   "requestType": "BORROW",
   "startDate": "2024-01-15T09:00:00",
   "endDate": "2024-01-15T17:00:00",
-  "purpose": "车辆检测",
-  "notes": "需要进行发动机检测"
+  "purpose": "车辆性能测试",
+  "notes": "需要进行车辆加速和制动性能测试"
 }
 ```
 
@@ -254,14 +258,14 @@ Authorization: Bearer {token}
   "data": [
     {
       "categoryId": "CAT001",
-      "name": "检测设备",
-      "description": "用于车辆检测的设备",
+      "name": "性能测试设备",
+      "description": "用于车辆性能测试的专业设备",
       "equipmentCount": 15
     },
     {
       "categoryId": "CAT002",
-      "name": "维修工具",
-      "description": "车辆维修使用的工具",
+      "name": "安全测试设备",
+      "description": "车辆安全测试使用的专业设备",
       "equipmentCount": 25
     }
   ]
@@ -275,9 +279,9 @@ Authorization: Bearer {admin_token}
 Content-Type: application/json
 
 {
-  "maintenanceType": "定期保养",
+  "maintenanceType": "定期校准",
   "scheduledDate": "2024-01-20T09:00:00",
-  "description": "设备定期保养检查",
+  "description": "测试设备精度校准和功能检查",
   "technicianId": "TECH001"
 }
 ```

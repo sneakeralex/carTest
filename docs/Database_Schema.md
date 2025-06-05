@@ -95,7 +95,7 @@ CREATE TABLE vehicles (
     engine_no VARCHAR(50) COMMENT '发动机号',
     purchase_date DATE COMMENT '购买日期',
     mileage DECIMAL(10,2) COMMENT '里程数',
-    status INT DEFAULT 1 COMMENT '状态: 1-正常, 2-维修中, 3-报废',
+    status INT DEFAULT 1 COMMENT '状态: 1-正常, 2-测试中, 3-报废',
     created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     created_by VARCHAR(50) COMMENT '创建人',
@@ -217,14 +217,14 @@ CREATE TABLE bookings (
     FOREIGN KEY (time_slot_id) REFERENCES time_slots(slot_id) ON DELETE CASCADE
 ) COMMENT '预约表';
 
-### 9. Maintenance Table (maintenance)
+### 9. Test Equipment Maintenance Table (equipment_maintenance)
 ```sql
-CREATE TABLE maintenance (
+CREATE TABLE equipment_maintenance (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    maintenance_no VARCHAR(50) UNIQUE NOT NULL COMMENT '维修单号',
-    vehicle_id VARCHAR(50) NOT NULL COMMENT '车辆ID',
-    user_id VARCHAR(50) NOT NULL COMMENT '用户ID',
-    type VARCHAR(50) NOT NULL COMMENT '类型: 保养, 维修, 检查',
+    maintenance_no VARCHAR(50) UNIQUE NOT NULL COMMENT '设备维护单号',
+    equipment_id VARCHAR(50) NOT NULL COMMENT '设备ID',
+    user_id VARCHAR(50) NOT NULL COMMENT '申请用户ID',
+    type VARCHAR(50) NOT NULL COMMENT '类型: 校准, 维护, 检查',
     description TEXT NOT NULL COMMENT '描述',
     status VARCHAR(20) DEFAULT 'PENDING' COMMENT '状态: PENDING, IN_PROGRESS, COMPLETED, CANCELLED',
     priority VARCHAR(20) DEFAULT 'NORMAL' COMMENT '优先级: LOW, NORMAL, HIGH, URGENT',
@@ -243,23 +243,23 @@ CREATE TABLE maintenance (
     version INT DEFAULT 0 COMMENT '版本号',
 
     INDEX idx_maintenance_no (maintenance_no),
-    INDEX idx_vehicle_id (vehicle_id),
+    INDEX idx_equipment_id (equipment_id),
     INDEX idx_user_id (user_id),
     INDEX idx_status (status),
     INDEX idx_scheduled_date (scheduled_date),
     INDEX idx_technician_id (technician_id),
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_no) ON DELETE CASCADE,
+    FOREIGN KEY (equipment_id) REFERENCES equipment(equipment_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (technician_id) REFERENCES users(user_id) ON DELETE SET NULL
-) COMMENT '维修保养表';
+) COMMENT '测试设备维护表';
 ```
 
-### 10. Maintenance Items Table (maintenance_items)
+### 10. Equipment Maintenance Items Table (equipment_maintenance_items)
 ```sql
-CREATE TABLE maintenance_items (
+CREATE TABLE equipment_maintenance_items (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     item_id VARCHAR(50) UNIQUE NOT NULL COMMENT '项目ID',
-    maintenance_no VARCHAR(50) NOT NULL COMMENT '维修单号',
+    maintenance_no VARCHAR(50) NOT NULL COMMENT '设备维护单号',
     item_name VARCHAR(200) NOT NULL COMMENT '项目名称',
     item_type VARCHAR(50) COMMENT '项目类型',
     description TEXT COMMENT '描述',
@@ -274,39 +274,40 @@ CREATE TABLE maintenance_items (
     INDEX idx_item_id (item_id),
     INDEX idx_maintenance_no (maintenance_no),
     INDEX idx_item_type (item_type),
-    FOREIGN KEY (maintenance_no) REFERENCES maintenance(maintenance_no) ON DELETE CASCADE
-) COMMENT '维修项目表';
+    FOREIGN KEY (maintenance_no) REFERENCES equipment_maintenance(maintenance_no) ON DELETE CASCADE
+) COMMENT '设备维护项目表';
 ```
 
-### 11. Work Orders Table (work_orders)
+### 11. Test Work Orders Table (test_work_orders)
 ```sql
-CREATE TABLE work_orders (
+CREATE TABLE test_work_orders (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    order_no VARCHAR(50) UNIQUE NOT NULL COMMENT '工单号',
-    maintenance_id VARCHAR(50) COMMENT '维修ID',
+    order_no VARCHAR(50) UNIQUE NOT NULL COMMENT '测试工单号',
+    booking_id VARCHAR(50) COMMENT '预约ID',
     title VARCHAR(200) NOT NULL COMMENT '工单标题',
     description TEXT NOT NULL COMMENT '工单描述',
     priority VARCHAR(20) DEFAULT 'NORMAL' COMMENT '优先级',
     status VARCHAR(20) DEFAULT 'PENDING' COMMENT '状态: PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED',
-    assigned_to VARCHAR(50) COMMENT '分配给技师ID',
+    assigned_to VARCHAR(50) COMMENT '分配给测试员ID',
     estimated_hours DECIMAL(5,2) COMMENT '预估工时',
     actual_hours DECIMAL(5,2) COMMENT '实际工时',
     start_time TIMESTAMP NULL COMMENT '开始时间',
     end_time TIMESTAMP NULL COMMENT '结束时间',
     completion_notes TEXT COMMENT '完成备注',
+    test_result VARCHAR(20) COMMENT '测试结果',
     created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     created_by VARCHAR(50) COMMENT '创建人',
     updated_by VARCHAR(50) COMMENT '更新人',
 
     INDEX idx_order_no (order_no),
-    INDEX idx_maintenance_id (maintenance_id),
+    INDEX idx_booking_id (booking_id),
     INDEX idx_assigned_to (assigned_to),
     INDEX idx_status (status),
     INDEX idx_priority (priority),
-    FOREIGN KEY (maintenance_id) REFERENCES maintenance(maintenance_no) ON DELETE CASCADE,
+    FOREIGN KEY (booking_id) REFERENCES bookings(booking_no) ON DELETE CASCADE,
     FOREIGN KEY (assigned_to) REFERENCES users(user_id) ON DELETE SET NULL
-) COMMENT '工单表';
+) COMMENT '测试工单表';
 ```
 
 ### 12. Appointments Table (appointments)
@@ -344,13 +345,13 @@ CREATE TABLE equipment (
     model VARCHAR(100) COMMENT '型号',
     manufacturer VARCHAR(100) COMMENT '制造商',
     serial_number VARCHAR(100) COMMENT '序列号',
-    status VARCHAR(20) DEFAULT 'AVAILABLE' COMMENT '状态: AVAILABLE, IN_USE, MAINTENANCE, OUT_OF_SERVICE',
+    status VARCHAR(20) DEFAULT 'AVAILABLE' COMMENT '状态: AVAILABLE, IN_USE, CALIBRATION, OUT_OF_SERVICE',
     location VARCHAR(200) COMMENT '位置',
     purchase_date DATE COMMENT '购买日期',
     purchase_price DECIMAL(12,2) COMMENT '购买价格',
     warranty_expiry DATE COMMENT '保修到期日',
-    last_maintenance_date DATE COMMENT '上次维护日期',
-    next_maintenance_date DATE COMMENT '下次维护日期',
+    last_calibration_date DATE COMMENT '上次校准日期',
+    next_calibration_date DATE COMMENT '下次校准日期',
     specifications JSON COMMENT '规格参数',
     notes TEXT COMMENT '备注',
     created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

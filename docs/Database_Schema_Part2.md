@@ -9,7 +9,7 @@ CREATE TABLE equipment_requests (
     request_id VARCHAR(50) UNIQUE NOT NULL COMMENT '申请ID',
     equipment_id VARCHAR(50) NOT NULL COMMENT '设备ID',
     user_id VARCHAR(50) NOT NULL COMMENT '申请人ID',
-    request_type VARCHAR(20) NOT NULL COMMENT '申请类型: BORROW, RESERVE, MAINTENANCE',
+    request_type VARCHAR(20) NOT NULL COMMENT '申请类型: BORROW, RESERVE, CALIBRATION',
     start_date TIMESTAMP NOT NULL COMMENT '开始时间',
     end_date TIMESTAMP NOT NULL COMMENT '结束时间',
     purpose TEXT COMMENT '使用目的',
@@ -195,7 +195,7 @@ CREATE TABLE test_registrations (
 1. **Users** (Central Entity)
    - One-to-Many with Vehicles (owner_id)
    - One-to-Many with Bookings (user_id)
-   - One-to-Many with Maintenance (user_id, technician_id)
+   - One-to-Many with Equipment Maintenance (user_id, technician_id)
    - One-to-Many with Appointments (user_id)
    - One-to-Many with Equipment Requests (user_id)
    - One-to-Many with Messages (sender_id, receiver_id)
@@ -206,7 +206,7 @@ CREATE TABLE test_registrations (
    - Many-to-One with Users (owner_id)
    - Many-to-One with Vehicle Types (type_id)
    - One-to-Many with Bookings (vehicle_id)
-   - One-to-Many with Maintenance (vehicle_id)
+   - One-to-Many with Test Registrations (vehicle_id)
 
 3. **Test Sites**
    - One-to-Many with Time Slots (test_site_id)
@@ -218,11 +218,11 @@ CREATE TABLE test_registrations (
    - Many-to-One with Test Sites (test_site_id)
    - Many-to-One with Time Slots (time_slot_id)
 
-5. **Maintenance**
+5. **Equipment Maintenance**
    - Many-to-One with Users (user_id, technician_id)
-   - Many-to-One with Vehicles (vehicle_id)
-   - One-to-Many with Maintenance Items (maintenance_no)
-   - One-to-Many with Work Orders (maintenance_id)
+   - Many-to-One with Equipment (equipment_id)
+   - One-to-Many with Equipment Maintenance Items (maintenance_no)
+   - One-to-Many with Test Work Orders (maintenance_id)
 
 6. **Equipment**
    - One-to-Many with Equipment Requests (equipment_id)
@@ -240,7 +240,7 @@ CREATE TABLE test_registrations (
 - Composite indexes for common query patterns
 
 ### Performance Considerations
-1. **Partitioning**: Consider partitioning large tables by date (bookings, maintenance, messages)
+1. **Partitioning**: Consider partitioning large tables by date (bookings, equipment_maintenance, messages)
 2. **Archiving**: Implement data archiving strategy for historical records
 3. **Caching**: Use Redis for frequently accessed data
 4. **Read Replicas**: Consider read replicas for reporting queries
