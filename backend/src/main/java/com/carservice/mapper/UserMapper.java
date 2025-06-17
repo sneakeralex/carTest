@@ -10,7 +10,7 @@ import org.mapstruct.factory.Mappers;
 /**
  * 用户DTO映射器
  */
-@Mapper(componentModel = "spring")
+//@Mapper(componentModel = "spring")
 public interface UserMapper {
     
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);

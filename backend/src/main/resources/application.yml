@@ -7,12 +7,12 @@ server:
 spring:
   application:
     name: car-management-system
-  
+
   # 数据源配置
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:13316/car_management_system?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/car_management_system?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
     password: 123456
     druid:
@@ -29,7 +29,20 @@ spring:
       pool-prepared-statements: true
       max-pool-prepared-statement-per-connection-size: 20
       filters: stat,wall
-  
+
+  # JPA/Hibernate配置
+  jpa:
+    hibernate:
+      ddl-auto: update  # 自动创建/更新表结构
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true  # 显示SQL语句
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        '[format_sql]': true
+        '[use_sql_comments]': true
+
   # Redis配置
   # redis:
   #   host: localhost
@@ -54,5 +67,5 @@ jwt:
 # 日志配置
 logging:
   level:
-    com.carservice: debug
-    org.springframework: warn
+    '[com.carservice]': debug
+    '[org.springframework]': warn

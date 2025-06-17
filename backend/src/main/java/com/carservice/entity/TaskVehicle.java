@@ -11,8 +11,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Table;
 
-import java.util.List;
-
 /**
  * 任务车辆关联实体
  */
@@ -29,13 +27,13 @@ public class TaskVehicle extends BaseEntity {
     private String taskVehicleId;
 
     @Column(name = "project_id", nullable = false)
-    private TestProject testProject; // 所属试验项目
+    private String projectId; // 所属试验项目ID
 
     @Column(name = "vehicle_id", nullable = false)
-    private String vehicleId; // 试验车辆
+    private String vehicleId; // 试验车辆ID
 
     @Column(columnDefinition = "json")
-    private List<TestContent> testContents; // 试验内容列表
+    private String testContents; // 试验内容列表(JSON格式)
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
