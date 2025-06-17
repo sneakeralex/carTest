@@ -30,7 +30,7 @@ const tabbarItems = [
   { title: '首页', icon: 'home-o', path: '/' },
   { title: '车辆', icon: 'logistics', path: '/vehicles' },
   { title: '预约', icon: 'calendar-o', path: '/appointments' },
-  { title: '维修', icon: 'setting-o', path: '/maintenance' },
+  { title: '测试', icon: 'medal-o', path: '/test-tasks' },
   { title: '我的', icon: 'contact', path: '/profile' }
 ];
 
