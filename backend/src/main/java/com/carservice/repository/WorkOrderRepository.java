@@ -26,5 +26,5 @@ public interface WorkOrderRepository extends JpaRepository<WorkOrder, Long> {
      * @param technicianId 技师ID
      * @return 工单列表
      */
-    List<WorkOrder> findByTechnicianIdOrderByCreateTimeDesc(String technicianId);
+    List<WorkOrder> findByTechnicianIdOrderByCreatedTimeDesc(String technicianId);
 }

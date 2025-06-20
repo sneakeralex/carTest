@@ -215,3 +215,6 @@ export const useMobileVehicleStore = defineStore('mobileVehicle', () => {
     fetchVehicleModels
   };
 });
+
+// Export alias for compatibility
+export const useVehicleStore = useMobileVehicleStore;

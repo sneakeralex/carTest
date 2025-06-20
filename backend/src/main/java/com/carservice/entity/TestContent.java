@@ -29,7 +29,7 @@ public class TestContent extends BaseEntity {
     private String contentId;
 
     @Column(name = "task_vehicle_id", nullable = false)
-    private TaskVehicle taskVehicle;  // 所属任务车辆
+    private String taskVehicleId;  // 所属任务车辆ID
 
     @Column(nullable = false)
     private String testItem;  // 测试项目

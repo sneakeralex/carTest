@@ -29,13 +29,7 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
      */
     Contract findByContractName(String contractName);
     
-    /**
-     * 根据客户ID查找合同列表
-     * @param customerId 客户ID
-     * @return 合同列表
-     */
-    List<Contract> findByCustomerId(String customerId);
-    
+
     /**
      * 根据合同状态查找合同列表
      * @param status 合同状态
@@ -49,7 +43,7 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
      * @param endTime 结束时间
      * @return 合同列表
      */
-    List<Contract> findBySignTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+    List<Contract> findBySigningDateBetween(LocalDateTime startTime, LocalDateTime endTime);
     
     /**
      * 根据生效时间范围查找合同
@@ -57,7 +51,7 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
      * @param endTime 结束时间
      * @return 合同列表
      */
-    List<Contract> findByEffectiveTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+    List<Contract> findByEffectiveDateBetween(LocalDateTime startTime, LocalDateTime endTime);
     
     /**
      * 根据到期时间范围查找合同
@@ -65,13 +59,13 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
      * @param endTime 结束时间
      * @return 合同列表
      */
-    List<Contract> findByExpiryTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+    List<Contract> findByExpiryDateBetween(LocalDateTime startTime, LocalDateTime endTime);
     
     /**
      * 查找有效的合同
      * @return 有效合同列表
      */
-    @Query("SELECT c FROM Contract c WHERE c.status = 1 ORDER BY c.signTime DESC")
+    @Query("SELECT c FROM Contract c WHERE c.status = 1 ORDER BY c.signingDate DESC")
     List<Contract> findActiveContracts();
     
     /**
@@ -79,7 +73,7 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
      * @param expiryDate 到期日期
      * @return 即将到期的合同列表
      */
-    @Query("SELECT c FROM Contract c WHERE c.expiryTime <= :expiryDate AND c.status = 1 ORDER BY c.expiryTime ASC")
+    @Query("SELECT c FROM Contract c WHERE c.expiryDate <= :expiryDate AND c.status = 1 ORDER BY c.expiryDate ASC")
     List<Contract> findExpiringContracts(@Param("expiryDate") LocalDateTime expiryDate);
     
     /**
@@ -92,9 +86,16 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
     
     /**
      * 根据客户ID和状态查找合同
-     * @param customerId 客户ID
+     * @param unitId 客户ID
      * @param status 合同状态
      * @return 合同列表
      */
-    List<Contract> findByCustomerIdAndStatus(String customerId, Integer status);
+    List<Contract> findByUnitIdAndStatus(String unitId, Integer status);
+
+    /**
+     * 根据客户ID查找合同
+     * @param unitId 客户ID
+     * @return 合同列表
+     */
+    List<Contract> findByUnitId(String unitId);
 }

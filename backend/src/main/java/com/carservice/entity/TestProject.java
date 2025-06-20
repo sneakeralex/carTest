@@ -12,8 +12,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 
-import java.util.List;
-
 /**
  * 试验项目信息实体
  */
@@ -38,8 +36,7 @@ public class TestProject extends BaseEntity {
     @Column(nullable = false)
     private String projectCode; // 项目编号
 
-    @Column(columnDefinition = "json")
-    private List<TaskVehicle> taskVehicles; // 项目相关车辆
+    // 项目相关车辆 - 通过 TaskVehicle.projectId 关联，不需要在这里定义
 
     @Column(length = 1000)
     private String requirements; // 项目要求

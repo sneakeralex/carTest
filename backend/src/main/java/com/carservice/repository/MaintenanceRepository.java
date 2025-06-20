@@ -22,11 +22,11 @@ public interface MaintenanceRepository extends JpaRepository<Maintenance, Long> 
     List<Maintenance> findByUserId(String userId);
     
     /**
-     * 根据车辆ID查找维修保养记录
-     * @param vehicleId 车辆ID
+     * 根据车辆编号查找维修保养记录
+     * @param vehicleNo 车辆编号
      * @return 维修保养记录列表
      */
-    List<Maintenance> findByVehicleId(String vehicleId);
+    List<Maintenance> findByVehicleNo(String vehicleNo);
     
     /**
      * 根据维修保养编号查找维修保养记录
@@ -62,5 +62,5 @@ public interface MaintenanceRepository extends JpaRepository<Maintenance, Long> 
      * @param operatorId 操作人ID
      * @return 维修保养记录列表
      */
-    List<Maintenance> findByOperatorId(Long operatorId);
+    List<Maintenance> findByOperatorId(String operatorId);
 }

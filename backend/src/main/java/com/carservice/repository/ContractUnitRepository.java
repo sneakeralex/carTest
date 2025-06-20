@@ -23,10 +23,10 @@ public interface ContractUnitRepository extends JpaRepository<ContractUnit, Long
     
     /**
      * 根据单位编码查找合同单位
-     * @param unitCode 单位编码
+     * @param unitId 单位编码
      * @return 合同单位对象
      */
-    ContractUnit findByUnitCode(String unitCode);
+    ContractUnit findByUnitId(String unitId);
     
     /**
      * 根据单位类型查找合同单位列表

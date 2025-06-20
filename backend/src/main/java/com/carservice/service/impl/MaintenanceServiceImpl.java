@@ -72,7 +72,7 @@ public class MaintenanceServiceImpl implements MaintenanceService {
 
     @Override
     public List<Maintenance> getMaintenancesByVehicleId(String vehicleId) {
-        return maintenanceRepository.findByVehicleId(vehicleId);
+        return maintenanceRepository.findByVehicleNo(vehicleId);
     }
 
     @Override

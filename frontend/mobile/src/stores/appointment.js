@@ -181,3 +181,6 @@ export const useTestConsultationAppointmentStore = defineStore('testConsultation
     completeAppointmentById
   };
 });
+
+// Export alias for compatibility
+export const useAppointmentStore = useTestConsultationAppointmentStore;

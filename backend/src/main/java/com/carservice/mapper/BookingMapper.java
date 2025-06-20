@@ -1,7 +1,13 @@
 package com.carservice.mapper;
 
-import com.carservice.dto.booking.*;
-import com.carservice.entity.*;
+import com.carservice.dto.booking.SiteBookingDTO;
+import com.carservice.dto.booking.TestSiteDTO;
+import com.carservice.dto.booking.SiteScheduleDTO;
+import com.carservice.dto.booking.WeatherRecordDTO;
+import com.carservice.entity.SiteBooking;
+import com.carservice.entity.TestSite;
+import com.carservice.entity.SiteSchedule;
+import com.carservice.entity.WeatherRecord;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -10,7 +16,7 @@ import org.mapstruct.factory.Mappers;
 /**
  * 预约DTO映射器
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {})
 public interface BookingMapper {
     
     BookingMapper INSTANCE = Mappers.getMapper(BookingMapper.class);
@@ -33,6 +39,9 @@ public interface BookingMapper {
      */
     @Mapping(target = "siteTypeName", expression = "java(getSiteTypeName(testSite.getSiteType()))")
     @Mapping(target = "statusName", expression = "java(getSiteStatusName(testSite.getStatus()))")
+    @Mapping(target = "safetyRequirements", ignore = true)
+    @Mapping(target = "operatingHours", ignore = true)
+    @Mapping(target = "contactInfo", ignore = true)
     TestSiteDTO toTestSiteDTO(TestSite testSite);
     
     /**
@@ -40,6 +49,9 @@ public interface BookingMapper {
      */
     @Mapping(target = "scheduleTypeName", expression = "java(getScheduleTypeName(siteSchedule.getScheduleType()))")
     @Mapping(target = "siteName", ignore = true)
+    @Mapping(target = "totalSlots", ignore = true)
+    @Mapping(target = "availableSlots", ignore = true)
+    @Mapping(target = "description", ignore = true)
     SiteScheduleDTO toSiteScheduleDTO(SiteSchedule siteSchedule);
     
     /**
@@ -47,6 +59,7 @@ public interface BookingMapper {
      */
     @Mapping(target = "weatherTypeName", expression = "java(getWeatherTypeName(weatherRecord.getWeatherType()))")
     @Mapping(target = "siteName", ignore = true)
+    @Mapping(target = "suitabilityReason", ignore = true)
     WeatherRecordDTO toWeatherRecordDTO(WeatherRecord weatherRecord);
     
     /**
@@ -55,6 +68,12 @@ public interface BookingMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdTime", ignore = true)
     @Mapping(target = "updatedTime", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "updatedBy", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "weatherId", ignore = true)
+    @Mapping(target = "cancellationReason", ignore = true)
     SiteBooking toSiteBooking(SiteBookingDTO siteBookingDTO);
     
     /**
@@ -63,16 +82,26 @@ public interface BookingMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdTime", ignore = true)
     @Mapping(target = "updatedTime", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "updatedBy", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "version", ignore = true)
     TestSite toTestSite(TestSiteDTO testSiteDTO);
-    
+
     /**
      * SiteScheduleDTO转SiteSchedule实体
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdTime", ignore = true)
     @Mapping(target = "updatedTime", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "updatedBy", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "reason", ignore = true)
+    @Mapping(target = "remainingSlots", ignore = true)
     SiteSchedule toSiteSchedule(SiteScheduleDTO siteScheduleDTO);
-    
+
     /**
      * 更新SiteBooking实体
      */
@@ -80,6 +109,12 @@ public interface BookingMapper {
     @Mapping(target = "bookingId", ignore = true)
     @Mapping(target = "createdTime", ignore = true)
     @Mapping(target = "updatedTime", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "updatedBy", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "weatherId", ignore = true)
+    @Mapping(target = "cancellationReason", ignore = true)
     void updateSiteBooking(@MappingTarget SiteBooking siteBooking, SiteBookingDTO siteBookingDTO);
     
     // 辅助方法

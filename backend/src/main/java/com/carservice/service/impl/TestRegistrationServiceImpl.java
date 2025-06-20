@@ -332,7 +332,7 @@ public class TestRegistrationServiceImpl implements TestRegistrationService {
     @Override
     @Transactional(readOnly = true)
     public List<ContractDTO> getUserContracts(String userId) {
-        List<Contract> contracts = contractRepository.findByCustomerId(userId);
+        List<Contract> contracts = contractRepository.findByUnitId(userId);
         return contracts.stream().map(this::convertToContractDTO).collect(Collectors.toList());
     }
     

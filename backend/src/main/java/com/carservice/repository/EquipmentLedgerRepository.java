@@ -24,10 +24,10 @@ public interface EquipmentLedgerRepository extends JpaRepository<EquipmentLedger
     
     /**
      * 根据操作类型查找台账记录列表
-     * @param operationType 操作类型
+     * @param recordType 记录类型
      * @return 台账记录列表
      */
-    List<EquipmentLedger> findByOperationType(String operationType);
+    List<EquipmentLedger> findByRecordType(Integer recordType);
     
     /**
      * 根据操作人查找台账记录列表
@@ -47,10 +47,10 @@ public interface EquipmentLedgerRepository extends JpaRepository<EquipmentLedger
     /**
      * 根据设备ID和操作类型查找台账记录
      * @param equipmentId 设备ID
-     * @param operationType 操作类型
+     * @param recordType 记录类型
      * @return 台账记录列表
      */
-    List<EquipmentLedger> findByEquipmentIdAndOperationType(String equipmentId, String operationType);
+    List<EquipmentLedger> findByEquipmentIdAndRecordType(String equipmentId, Integer recordType);
     
     /**
      * 根据设备ID查找最新的台账记录

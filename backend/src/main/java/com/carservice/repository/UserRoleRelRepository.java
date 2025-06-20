@@ -20,9 +20,9 @@ public interface UserRoleRelRepository extends JpaRepository<UserRoleRel, Long> 
     List<UserRoleRel> findByUserId(String userId);
     
     /**
-     * 根据角色ID查找用户角色关联
-     * @param roleId 角色ID
+     * 根据角色代码查找用户角色关联
+     * @param roleCode 角色代码
      * @return 用户角色关联列表
      */
-    List<UserRoleRel> findByRoleId(String roleId);
+    List<UserRoleRel> findByRoleCode(String roleCode);
 }

@@ -24,10 +24,10 @@ public interface EquipmentRequestRepository extends JpaRepository<EquipmentReque
     
     /**
      * 根据申请人查找申请记录列表
-     * @param requesterId 申请人ID
+     * @param applicantId 申请人ID
      * @return 申请记录列表
      */
-    List<EquipmentRequest> findByRequesterId(String requesterId);
+    List<EquipmentRequest> findByApplicantId(String applicantId);
     
     /**
      * 根据审批人查找申请记录列表
@@ -48,7 +48,7 @@ public interface EquipmentRequestRepository extends JpaRepository<EquipmentReque
      * @param requestType 申请类型
      * @return 申请记录列表
      */
-    List<EquipmentRequest> findByRequestType(String requestType);
+    List<EquipmentRequest> findByRequestType(Integer requestType);
     
     /**
      * 根据申请时间范围查找申请记录
@@ -56,7 +56,7 @@ public interface EquipmentRequestRepository extends JpaRepository<EquipmentReque
      * @param endTime 结束时间
      * @return 申请记录列表
      */
-    List<EquipmentRequest> findByRequestTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+    List<EquipmentRequest> findByCreatedTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
     
     /**
      * 根据审批时间范围查找申请记录
@@ -64,29 +64,29 @@ public interface EquipmentRequestRepository extends JpaRepository<EquipmentReque
      * @param endTime 结束时间
      * @return 申请记录列表
      */
-    List<EquipmentRequest> findByApprovalTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+    List<EquipmentRequest> findByApproveTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
     
     /**
      * 根据申请人和状态查找申请记录
-     * @param requesterId 申请人ID
+     * @param applicantId 申请人ID
      * @param status 申请状态
      * @return 申请记录列表
      */
-    List<EquipmentRequest> findByRequesterIdAndStatus(String requesterId, Integer status);
+    List<EquipmentRequest> findByApplicantIdAndStatus(String applicantId, Integer status);
     
     /**
      * 查找待审批的申请记录
      * @return 待审批申请记录列表
      */
-    @Query("SELECT er FROM EquipmentRequest er WHERE er.status = 0 ORDER BY er.requestTime ASC")
+    @Query("SELECT er FROM EquipmentRequest er WHERE er.status = 0 ORDER BY er.createdTime ASC")
     List<EquipmentRequest> findPendingRequests();
-    
+
     /**
      * 根据审批人查找待审批的申请记录
      * @param approverId 审批人ID
      * @return 待审批申请记录列表
      */
-    @Query("SELECT er FROM EquipmentRequest er WHERE er.approverId = :approverId AND er.status = 0 ORDER BY er.requestTime ASC")
+    @Query("SELECT er FROM EquipmentRequest er WHERE er.approverId = :approverId AND er.status = 0 ORDER BY er.createdTime ASC")
     List<EquipmentRequest> findPendingRequestsByApproverId(@Param("approverId") String approverId);
     
     /**

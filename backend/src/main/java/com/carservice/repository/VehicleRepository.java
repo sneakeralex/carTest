@@ -15,11 +15,11 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     
     /**
      * 根据车主ID查询车辆列表
-     * 
+     *
      * @param ownerId 车主ID
      * @return 车辆列表
      */
-    List<Vehicle> findByOwnerId(Long ownerId);
+    List<Vehicle> findByOwnerId(String ownerId);
     
     /**
      * 根据车牌号查询车辆
@@ -54,9 +54,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     Vehicle findByVehicleId(String vehicleId);
 
     /**
-     *
+     * 根据车牌号删除车辆
      */
-    Vehicle deleteByVehicleNo(String vehicleNo);
-
-    Vehicle addVehicle(VehicleDto vehicleDto);
+    void deleteByVehicleNo(String vehicleNo);
 }

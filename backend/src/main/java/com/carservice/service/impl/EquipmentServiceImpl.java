@@ -1,8 +1,14 @@
 package com.carservice.service.impl;
 
-import com.carservice.dto.equipment.*;
-import com.carservice.entity.*;
-import com.carservice.repository.*;
+import com.carservice.dto.equipment.EquipmentDTO;
+import com.carservice.dto.equipment.EquipmentRequestDTO;
+import com.carservice.dto.equipment.EquipmentMaintenanceDTO;
+import com.carservice.entity.Equipment;
+import com.carservice.entity.EquipmentRequest;
+import com.carservice.entity.EquipmentMaintenance;
+import com.carservice.repository.EquipmentRepository;
+import com.carservice.repository.EquipmentRequestRepository;
+import com.carservice.repository.EquipmentMaintenanceRepository;
 import com.carservice.service.EquipmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

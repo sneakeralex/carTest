@@ -27,7 +27,7 @@ public interface EquipmentMaintenanceRepository extends JpaRepository<EquipmentM
      * @param maintenanceType 维护类型
      * @return 维护记录列表
      */
-    List<EquipmentMaintenance> findByMaintenanceType(String maintenanceType);
+    List<EquipmentMaintenance> findByMaintenanceType(Integer maintenanceType);
     
     /**
      * 根据维护状态查找维护记录列表
@@ -49,7 +49,7 @@ public interface EquipmentMaintenanceRepository extends JpaRepository<EquipmentM
      * @param endTime 结束时间
      * @return 维护记录列表
      */
-    List<EquipmentMaintenance> findByPlannedTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+    List<EquipmentMaintenance> findByPlannedStartTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
     
     /**
      * 根据实际维护时间范围查找维护记录
@@ -57,7 +57,7 @@ public interface EquipmentMaintenanceRepository extends JpaRepository<EquipmentM
      * @param endTime 结束时间
      * @return 维护记录列表
      */
-    List<EquipmentMaintenance> findByActualTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+    List<EquipmentMaintenance> findByActualStartTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
     
     /**
      * 根据设备ID和维护类型查找维护记录
@@ -65,13 +65,13 @@ public interface EquipmentMaintenanceRepository extends JpaRepository<EquipmentM
      * @param maintenanceType 维护类型
      * @return 维护记录列表
      */
-    List<EquipmentMaintenance> findByEquipmentIdAndMaintenanceType(String equipmentId, String maintenanceType);
+    List<EquipmentMaintenance> findByEquipmentIdAndMaintenanceType(String equipmentId, Integer maintenanceType);
     
     /**
      * 查找待维护的记录
      * @return 待维护记录列表
      */
-    @Query("SELECT em FROM EquipmentMaintenance em WHERE em.status = 0 ORDER BY em.plannedTime ASC")
+    @Query("SELECT em FROM EquipmentMaintenance em WHERE em.status = 0 ORDER BY em.plannedStartTime ASC")
     List<EquipmentMaintenance> findPendingMaintenance();
     
     /**
@@ -79,7 +79,7 @@ public interface EquipmentMaintenanceRepository extends JpaRepository<EquipmentM
      * @param currentTime 当前时间
      * @return 超期维护记录列表
      */
-    @Query("SELECT em FROM EquipmentMaintenance em WHERE em.plannedTime < :currentTime AND em.status = 0 ORDER BY em.plannedTime ASC")
+    @Query("SELECT em FROM EquipmentMaintenance em WHERE em.plannedEndTime < :currentTime AND em.status = 0 ORDER BY em.plannedEndTime ASC")
     List<EquipmentMaintenance> findOverdueMaintenance(@Param("currentTime") LocalDateTime currentTime);
     
     /**
@@ -87,7 +87,7 @@ public interface EquipmentMaintenanceRepository extends JpaRepository<EquipmentM
      * @param equipmentId 设备ID
      * @return 最新维护记录
      */
-    @Query("SELECT em FROM EquipmentMaintenance em WHERE em.equipmentId = :equipmentId ORDER BY em.actualTime DESC, em.plannedTime DESC LIMIT 1")
+    @Query("SELECT em FROM EquipmentMaintenance em WHERE em.equipmentId = :equipmentId ORDER BY em.actualEndTime DESC, em.plannedEndTime DESC LIMIT 1")
     EquipmentMaintenance findLatestByEquipmentId(@Param("equipmentId") String equipmentId);
     
     /**

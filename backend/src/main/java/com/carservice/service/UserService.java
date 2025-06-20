@@ -1,10 +1,6 @@
 package com.carservice.service;
 
 import com.carservice.entity.User;
-import com.carservice.dto.RegisterRequest;
-import com.carservice.dto.LoginRequest;
-import com.carservice.dto.LoginResponse;
-import com.carservice.dto.UpdateUserRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -77,10 +73,4 @@ public interface UserService {
      * @return 修改结果
      */
     boolean changePassword(Long userId, String oldPassword, String newPassword);
-
-    User getCurrentUser(String username);
-    User registerUser(RegisterRequest registerRequest);
-    LoginResponse loginUser(LoginRequest loginRequest);
-    User updateUser(String username, UpdateUserRequest updateUserRequest);
-    void changePassword(String username, String oldPassword, String newPassword);
 }

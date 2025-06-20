@@ -71,7 +71,7 @@ public class WorkOrderServiceImpl implements WorkOrderService {
 
     @Override
     public List<WorkOrder> getWorkOrdersByTechnicianId(String technicianId) {
-        return workOrderRepository.findByTechnicianIdOrderByCreateTimeDesc(technicianId);
+        return workOrderRepository.findByTechnicianIdOrderByCreatedTimeDesc(technicianId);
     }
 
     @Override

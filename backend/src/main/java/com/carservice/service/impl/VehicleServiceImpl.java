@@ -69,7 +69,7 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     public List<Vehicle> getVehiclesByUserId(Long userId) {
-        return vehicleRepository.findByOwnerId(userId);
+        return vehicleRepository.findByOwnerId(String.valueOf(userId));
     }
 
     @Override
@@ -172,7 +172,7 @@ public class VehicleServiceImpl implements VehicleService {
         User user = userRepository.findByUsername(username);
         if (user == null)
             return List.of();
-        return vehicleRepository.findByOwnerId(user.getId());
+        return vehicleRepository.findByOwnerId(String.valueOf(user.getId()));
     }
 
     @Override

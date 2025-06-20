@@ -155,10 +155,12 @@ public class UserServiceImpl implements UserService {
         return true;
     }
 
+    @Override
     public User getCurrentUser(String username) {
         return userRepository.findByUsername(username);
     }
 
+    @Override
     public User registerUser(com.carservice.dto.RegisterRequest registerRequest) {
         User user = new User();
         user.setUsername(registerRequest.getUsername());
@@ -169,6 +171,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    @Override
     public com.carservice.dto.LoginResponse loginUser(com.carservice.dto.LoginRequest loginRequest) {
         User user = userRepository.findByUsername(loginRequest.getUsername());
         if (user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
@@ -186,6 +189,7 @@ public class UserServiceImpl implements UserService {
         return resp;
     }
 
+    @Override
     public User updateUser(String username, com.carservice.dto.UpdateUserRequest updateUserRequest) {
         User user = userRepository.findByUsername(username);
         if (user == null) throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "用户不存在");
@@ -197,6 +201,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    @Override
     public void changePassword(String username, String oldPassword, String newPassword) {
         User user = userRepository.findByUsername(username);
         if (user == null) throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "用户不存在");

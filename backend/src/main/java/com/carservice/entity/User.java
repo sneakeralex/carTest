@@ -6,7 +6,6 @@ import org.hibernate.annotations.GenericGenerator;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import jakarta.persistence.*;
 
@@ -81,10 +80,9 @@ public class User extends BaseEntity implements Serializable {
     private Boolean isPublished = true;
 
     /**
-     * 附件列表
+     * 附件列表 - 通过 UserAttachment.userId 关联，不需要在这里定义
      */
-    @Column(columnDefinition = "json")
-    private List<UserAttachment> attachments;
+    // private List<UserAttachment> attachments;
 
     /**
      * 最后登录时间
