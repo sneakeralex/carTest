@@ -93,20 +93,34 @@
       />
     </van-popup>
     
-    <!-- 日期时间选择器 -->
+    <!-- 日期选择器 -->
     <van-popup
       v-model:show="showDatetimePicker"
       position="bottom"
       round
     >
-      <van-datetime-picker
-        v-model="selectedDateTime"
-        type="datetime"
-        title="选择预约时间"
+      <van-date-picker
+        v-model="selectedDate"
+        title="选择预约日期"
         :min-date="minDate"
-        :filter="filterTime"
-        @confirm="onDateTimeConfirm"
+        @confirm="onDateConfirm"
         @cancel="showDatetimePicker = false"
+      />
+    </van-popup>
+
+    <!-- 时间选择器 -->
+    <van-popup
+      v-model:show="showTimePicker"
+      position="bottom"
+      round
+    >
+      <van-time-picker
+        v-model="selectedTime"
+        title="选择预约时间"
+        :min-hour="9"
+        :max-hour="17"
+        @confirm="onTimeConfirm"
+        @cancel="showTimePicker = false"
       />
     </van-popup>
     
@@ -146,6 +160,7 @@ const submitting = ref(false);
 // 弹窗控制
 const showServiceTypePopup = ref(false);
 const showDatetimePicker = ref(false);
+const showTimePicker = ref(false);
 const showVehiclePopup = ref(false);
 
 // 表单数据
@@ -158,7 +173,8 @@ const form = ref({
 });
 
 // 日期时间选择器
-const selectedDateTime = ref(new Date());
+const selectedDate = ref(['2024', '01', '01']);
+const selectedTime = ref(['09', '00']);
 const minDate = new Date();
 
 // 服务类型选项
@@ -247,16 +263,32 @@ const onServiceTypeConfirm = (value) => {
   showServiceTypePopup.value = false;
 };
 
-// 日期时间确认
-const onDateTimeConfirm = (value) => {
-  selectedDateTime.value = value;
-  form.value.appointmentTime = formatDateTime(value);
+// 日期确认
+const onDateConfirm = (value) => {
+  selectedDate.value = value;
   showDatetimePicker.value = false;
-  
+  showTimePicker.value = true; // 选择完日期后显示时间选择器
+
   // 获取选择日期的可用时间段
-  const selectedDate = new Date(value);
-  selectedDate.setHours(0, 0, 0, 0);
-  fetchAvailableTimeSlots(selectedDate);
+  const dateObj = new Date(parseInt(value[0]), parseInt(value[1]) - 1, parseInt(value[2]));
+  fetchAvailableTimeSlots(dateObj);
+};
+
+// 时间确认
+const onTimeConfirm = (value) => {
+  selectedTime.value = value;
+  showTimePicker.value = false;
+
+  // 组合日期和时间
+  const dateObj = new Date(
+    parseInt(selectedDate.value[0]),
+    parseInt(selectedDate.value[1]) - 1,
+    parseInt(selectedDate.value[2]),
+    parseInt(value[0]),
+    parseInt(value[1])
+  );
+
+  form.value.appointmentTime = formatDateTime(dateObj);
 };
 
 // 车辆确认
@@ -267,7 +299,16 @@ const onVehicleConfirm = (value) => {
 
 // 选择时间段
 const selectTimeSlot = (slot) => {
-  selectedDateTime.value = new Date(slot);
+  const slotDate = new Date(slot);
+  selectedDate.value = [
+    slotDate.getFullYear().toString(),
+    (slotDate.getMonth() + 1).toString().padStart(2, '0'),
+    slotDate.getDate().toString().padStart(2, '0')
+  ];
+  selectedTime.value = [
+    slotDate.getHours().toString().padStart(2, '0'),
+    slotDate.getMinutes().toString().padStart(2, '0')
+  ];
   form.value.appointmentTime = formatDateTime(slot);
 };
 
@@ -276,9 +317,18 @@ const onSubmit = async () => {
   try {
     submitting.value = true;
     
+    // 组合日期和时间创建完整的日期时间对象
+    const appointmentDateTime = new Date(
+      parseInt(selectedDate.value[0]),
+      parseInt(selectedDate.value[1]) - 1,
+      parseInt(selectedDate.value[2]),
+      parseInt(selectedTime.value[0]),
+      parseInt(selectedTime.value[1])
+    );
+
     const newAppointment = {
       serviceType: form.value.serviceType,
-      appointmentTime: selectedDateTime.value.toISOString(),
+      appointmentTime: appointmentDateTime.toISOString(),
       vehicleId: form.value.vehicleId,
       description: form.value.description,
       notes: form.value.notes,

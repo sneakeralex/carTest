@@ -26,7 +26,8 @@ import {
   Tag,
   Popup,
   Picker,
-  DatetimePicker,
+  DatePicker,
+  TimePicker,
   Switch,
   Uploader,
   ActionSheet,
@@ -73,7 +74,8 @@ app.use(SwipeItem);
 app.use(Tag);
 app.use(Popup);
 app.use(Picker);
-app.use(DatetimePicker);
+app.use(DatePicker);
+app.use(TimePicker);
 app.use(Switch);
 app.use(Uploader);
 app.use(ActionSheet);
