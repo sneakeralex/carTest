@@ -41,7 +41,7 @@ export function register(userData) {
  */
 export function getUserInfo() {
   return request({
-    url: '/auth/user',
+    url: '/auth/me',
     method: 'get'
   });
 }

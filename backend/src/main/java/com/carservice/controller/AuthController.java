@@ -88,4 +88,49 @@ public class AuthController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
+
+    /**
+     * 更新用户信息
+     */
+    @PutMapping("/user")
+    @Operation(summary = "更新用户信息")
+    public ResponseEntity<ApiResponse<UserInfoDTO>> updateUserInfo(@Valid @RequestBody UserInfoDTO userInfoDTO) {
+        try {
+            // TODO: 实现更新用户信息逻辑
+            log.info("更新用户信息成功: {}", userInfoDTO.getUsername());
+            return ResponseEntity.ok(ApiResponse.success(userInfoDTO, "用户信息更新成功"));
+        } catch (Exception e) {
+            log.error("更新用户信息失败: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * 修改密码
+     */
+    @PutMapping("/password")
+    @Operation(summary = "修改密码")
+    public ResponseEntity<ApiResponse<Void>> changePassword(@RequestBody ChangePasswordRequest request) {
+        try {
+            // TODO: 实现修改密码逻辑
+            log.info("修改密码成功");
+            return ResponseEntity.ok(ApiResponse.success(null, "密码修改成功"));
+        } catch (Exception e) {
+            log.error("修改密码失败: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * 修改密码请求DTO
+     */
+    public static class ChangePasswordRequest {
+        private String oldPassword;
+        private String newPassword;
+
+        public String getOldPassword() { return oldPassword; }
+        public void setOldPassword(String oldPassword) { this.oldPassword = oldPassword; }
+        public String getNewPassword() { return newPassword; }
+        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+    }
 }
