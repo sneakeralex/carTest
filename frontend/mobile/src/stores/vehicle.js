@@ -31,7 +31,7 @@ export const useMobileVehicleStore = defineStore('mobileVehicle', () => {
 
     try {
       const response = await getMobileVehicles(params);
-      vehicles.value = response.data;
+      vehicles.value = response.data.content;
       return response.data;
     } catch (err) {
       error.value = err.response?.data?.message || '获取车辆列表失败';

@@ -13,7 +13,7 @@ import request from './request';
  */
 export function getMobileVehicles(params = {}) {
   return request({
-    url: '/api/v1/mobile/vehicles',
+    url: '/vehicles',
     method: 'get',
     params
   });
@@ -26,7 +26,7 @@ export function getMobileVehicles(params = {}) {
  */
 export function getMobileVehicleById(vehicleId) {
   return request({
-    url: `/api/v1/mobile/vehicles/${vehicleId}`,
+    url: `/vehicles/${vehicleId}`,
     method: 'get'
   });
 }
@@ -38,7 +38,7 @@ export function getMobileVehicleById(vehicleId) {
  */
 export function getUserVehicles(userId) {
   return request({
-    url: `/api/v1/mobile/vehicles/user/${userId}`,
+    url: `/vehicles/user/${userId}`,
     method: 'get'
   });
 }
@@ -59,7 +59,7 @@ export function getUserVehicles(userId) {
  */
 export function addUserVehicle(userId, vehicleData) {
   return request({
-    url: `/api/v1/mobile/vehicles/user/${userId}`,
+    url: `/vehicles/user/${userId}`,
     method: 'post',
     data: vehicleData
   });
@@ -73,7 +73,7 @@ export function addUserVehicle(userId, vehicleData) {
  */
 export function updateMobileVehicle(vehicleId, vehicleData) {
   return request({
-    url: `/api/v1/mobile/vehicles/${vehicleId}`,
+    url: `/vehicles/${vehicleId}`,
     method: 'put',
     data: vehicleData
   });
@@ -86,7 +86,7 @@ export function updateMobileVehicle(vehicleId, vehicleData) {
  */
 export function deleteMobileVehicle(vehicleId) {
   return request({
-    url: `/api/v1/mobile/vehicles/${vehicleId}`,
+    url: `/vehicles/${vehicleId}`,
     method: 'delete'
   });
 }
@@ -99,7 +99,7 @@ export function deleteMobileVehicle(vehicleId) {
  */
 export function uploadVehicleImages(vehicleId, formData) {
   return request({
-    url: `/api/v1/mobile/vehicles/${vehicleId}/images`,
+    url: `/vehicles/${vehicleId}/images`,
     method: 'post',
     data: formData,
     headers: {
@@ -115,7 +115,7 @@ export function uploadVehicleImages(vehicleId, formData) {
  */
 export function getVehicleImages(vehicleId) {
   return request({
-    url: `/api/v1/mobile/vehicles/${vehicleId}/images`,
+    url: `/vehicles/${vehicleId}/images`,
     method: 'get'
   });
 }
@@ -126,7 +126,7 @@ export function getVehicleImages(vehicleId) {
  */
 export function getVehicleBrands() {
   return request({
-    url: '/api/v1/mobile/vehicles/brands',
+    url: '/vehicles/brands',
     method: 'get'
   });
 }
@@ -139,7 +139,7 @@ export function getVehicleBrands() {
 export function getVehicleModels(brandId = null) {
   const params = brandId ? { brandId } : {};
   return request({
-    url: '/api/v1/mobile/vehicles/models',
+    url: '/vehicles/models',
     method: 'get',
     params
   });

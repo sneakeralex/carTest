@@ -4,7 +4,7 @@ import router from '../router';
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: '/api', // API的基础URL
+  baseURL: 'http://localhost:8899/api/v1', // API的基础URL，指向后端端口
   timeout: 15000 // 请求超时时间
 });
 
@@ -13,6 +13,7 @@ service.interceptors.request.use(
   config => {
     // 从localStorage获取token
     const token = localStorage.getItem('token');
+    console.log('token:', token); 
     
     // 如果有token，添加到请求头
     if (token) {

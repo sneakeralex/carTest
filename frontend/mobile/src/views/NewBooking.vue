@@ -147,6 +147,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { showToast, showSuccessToast } from 'vant';
+import 'vant/es/datetime-picker/style';
 
 const router = useRouter();
 

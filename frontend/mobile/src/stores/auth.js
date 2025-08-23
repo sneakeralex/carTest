@@ -20,20 +20,33 @@ export const useAuthStore = defineStore('auth', () => {
     
     try {
       const response = await loginApi(username, password);
+      console.log(response);
+
+      if (!response.data.success) {
+        throw new Error()
+      }
+
+      // 验证返回结果
+      if (!response || !response.data || !response.data.code || !response.data.data.phone) {
+        throw new Error('登录接口返回数据格式不正确');
+      }
       
       // 保存token和用户信息
-      token.value = response.data.token;
-      user.value = response.data.user;
+      // TODO add token
+      // token.value = response.data.token;
+      user.value = response.data.data;
+      token.value = response.data.data.phone;
       
       // 存储到localStorage
       localStorage.setItem('token', token.value);
       localStorage.setItem('user', JSON.stringify(user.value));
       
       // 登录成功后跳转到首页
-      router.push('/');
+      await router.push('/');
       
       return response;
     } catch (err) {
+      console.log(err);
       error.value = err.response?.data?.message || '登录失败，请检查用户名和密码';
       throw error.value;
     } finally {

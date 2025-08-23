@@ -193,7 +193,10 @@ const testTaskStore = useTestTaskStore();
 const dashboardStore = useMobileDashboardStore();
 
 // 用户信息
-const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+// const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+const userStr = localStorage.getItem('user');
+const userInfo = userStr != 'undefined' ? JSON.parse(userStr) : {};
+
 const userName = computed(() => userInfo.name || '用户');
 const userAvatar = ref('https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg'); // 默认头像
 

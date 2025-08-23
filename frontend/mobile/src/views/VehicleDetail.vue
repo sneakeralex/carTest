@@ -252,7 +252,7 @@ const fetchVehicleDetail = async () => {
 const fetchVehicleTypes = async () => {
   try {
     // 这里假设API中有获取车辆类型的方法
-    const response = await fetch('/api/vehicle-types');
+    const response = await fetch('/vehicle-types');
     const data = await response.json();
     vehicleTypes.value = data || [];
   } catch (error) {

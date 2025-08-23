@@ -65,7 +65,6 @@ const onSubmit = async () => {
   try {
     await authStore.login(username.value, password.value);
     showNotify({ type: 'success', message: '登录成功' });
-    router.push('/');
   } catch (error) {
     showNotify({ type: 'danger', message: error || '登录失败，请检查用户名和密码' });
   } finally {

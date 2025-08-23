@@ -108,7 +108,7 @@ app.use(pinia);
 // 全局错误处理
 app.config.errorHandler = (err, vm, info) => {
   console.error('全局错误:', err);
-  Toast.fail('操作失败，请稍后重试');
+  Toast.show({ type: 'fail', message: '操作失败，请稍后重试' });
 };
 
 // 挂载应用

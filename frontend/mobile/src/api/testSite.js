@@ -9,7 +9,7 @@ import request from './request';
  */
 export function getTestSites(params = {}) {
   return request({
-    url: '/api/v1/bookings/test-sites',
+    url: '/bookings/test-sites',
     method: 'get',
     params
   });
@@ -22,7 +22,7 @@ export function getTestSites(params = {}) {
  */
 export function getTestSiteById(siteId) {
   return request({
-    url: `/api/v1/bookings/test-sites/${siteId}`,
+    url: `/bookings/test-sites/${siteId}`,
     method: 'get'
   });
 }
@@ -36,7 +36,7 @@ export function getTestSiteById(siteId) {
  */
 export function getAvailableTimeSlots(params) {
   return request({
-    url: '/api/v1/bookings/time-slots',
+    url: '/bookings/time-slots',
     method: 'get',
     params
   });
@@ -55,7 +55,7 @@ export function getAvailableTimeSlots(params) {
  */
 export function createBooking(bookingData) {
   return request({
-    url: '/api/v1/bookings',
+    url: '/bookings',
     method: 'post',
     data: bookingData
   });
@@ -71,7 +71,7 @@ export function createBooking(bookingData) {
  */
 export function getBookings(params = {}) {
   return request({
-    url: '/api/v1/bookings',
+    url: '/bookings',
     method: 'get',
     params
   });
@@ -84,7 +84,7 @@ export function getBookings(params = {}) {
  */
 export function getBookingById(bookingId) {
   return request({
-    url: `/api/v1/bookings/${bookingId}`,
+    url: `/bookings/${bookingId}`,
     method: 'get'
   });
 }
@@ -97,7 +97,7 @@ export function getBookingById(bookingId) {
  */
 export function updateBooking(bookingId, bookingData) {
   return request({
-    url: `/api/v1/bookings/${bookingId}`,
+    url: `/bookings/${bookingId}`,
     method: 'put',
     data: bookingData
   });
@@ -112,7 +112,7 @@ export function updateBooking(bookingId, bookingData) {
  */
 export function cancelBooking(bookingId, data) {
   return request({
-    url: `/api/v1/bookings/${bookingId}/cancel`,
+    url: `/bookings/${bookingId}/cancel`,
     method: 'put',
     data
   });
@@ -125,7 +125,7 @@ export function cancelBooking(bookingId, data) {
  */
 export function getUserBookings(userId) {
   return request({
-    url: `/api/v1/bookings/user/${userId}`,
+    url: `/bookings/user/${userId}`,
     method: 'get'
   });
 }
@@ -136,7 +136,7 @@ export function getUserBookings(userId) {
  */
 export function getBookingStats() {
   return request({
-    url: '/api/v1/bookings/stats',
+    url: '/bookings/stats',
     method: 'get'
   });
 }

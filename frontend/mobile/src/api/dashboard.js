@@ -4,9 +4,9 @@ import request from './request';
  * 获取移动端仪表板统计信息
  * @returns {Promise} - 返回Promise对象
  */
-export function getMobileDashboardStats() {
+export function getMobileDashboardStats(userid) {
   return request({
-    url: '/api/v1/mobile/dashboard/stats',
+    url: '/dashboard/user/'+ userid + '/stats',
     method: 'get'
   });
 }
@@ -16,9 +16,9 @@ export function getMobileDashboardStats() {
  * @param {number} limit - 限制数量，默认5条
  * @returns {Promise} - 返回Promise对象
  */
-export function getRecentBookings(limit = 5) {
+export function getRecentBookings(userid, limit = 5) {
   return request({
-    url: '/api/v1/mobile/dashboard/recent-bookings',
+    url: '/dashboard/recent-bookings' + userid,
     method: 'get',
     params: { limit }
   });
@@ -31,7 +31,7 @@ export function getRecentBookings(limit = 5) {
  */
 export function getNotifications(limit = 10) {
   return request({
-    url: '/api/v1/mobile/dashboard/notifications',
+    url: '/dashboard/notifications',
     method: 'get',
     params: { limit }
   });
@@ -41,9 +41,9 @@ export function getNotifications(limit = 10) {
  * 获取快捷操作列表
  * @returns {Promise} - 返回Promise对象
  */
-export function getQuickActions() {
+export function getQuickActions(userid) {
   return request({
-    url: '/api/v1/mobile/dashboard/quick-actions',
+    url: '/dashboard/' + userid + '/quick-actions',
     method: 'get'
   });
 }
@@ -56,7 +56,7 @@ export function getQuickActions() {
 export function getWeatherInfo(city = null) {
   const params = city ? { city } : {};
   return request({
-    url: '/api/v1/mobile/dashboard/weather',
+    url: '/dashboard/weather',
     method: 'get',
     params
   });
@@ -67,13 +67,13 @@ export function getWeatherInfo(city = null) {
  * @param {number} limit - 限制数量，默认5条
  * @returns {Promise} - 返回Promise对象
  */
-export function getAnnouncements(limit = 5) {
-  return request({
-    url: '/api/v1/mobile/dashboard/announcements',
-    method: 'get',
-    params: { limit }
-  });
-}
+// export function getAnnouncements(limit = 5) {
+//   return request({
+//     url: '/dashboard/announcements',
+//     method: 'get',
+//     params: { limit }
+//   });
+// }
 
 /**
  * 获取用户资料摘要
@@ -81,7 +81,7 @@ export function getAnnouncements(limit = 5) {
  */
 export function getUserProfileSummary() {
   return request({
-    url: '/api/v1/mobile/dashboard/user-profile',
+    url: '/dashboard/user-profile',
     method: 'get'
   });
 }
@@ -93,7 +93,7 @@ export function getUserProfileSummary() {
  */
 export function markNotificationAsRead(notificationId) {
   return request({
-    url: `/api/v1/mobile/dashboard/notifications/${notificationId}/read`,
+    url: `/dashboard/notifications/${notificationId}/read`,
     method: 'put'
   });
 }
@@ -105,7 +105,7 @@ export function markNotificationAsRead(notificationId) {
  */
 export function markNotificationsAsRead(notificationIds) {
   return request({
-    url: '/api/v1/mobile/dashboard/notifications/batch-read',
+    url: '/dashboard/notifications/batch-read',
     method: 'put',
     data: { notificationIds }
   });
@@ -117,7 +117,7 @@ export function markNotificationsAsRead(notificationIds) {
  */
 export function getUnreadNotificationCount() {
   return request({
-    url: '/api/v1/mobile/dashboard/notifications/unread-count',
+    url: '/dashboard/notifications/unread-count',
     method: 'get'
   });
 }

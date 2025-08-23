@@ -6,7 +6,7 @@ import {
   getNotifications, 
   getQuickActions, 
   getWeatherInfo, 
-  getAnnouncements, 
+  // getAnnouncements, 
   getUserProfileSummary,
   markNotificationAsRead,
   markNotificationsAsRead,
@@ -30,9 +30,11 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
   const fetchDashboardStats = async () => {
     loading.value = true;
     error.value = null;
+
+    const userid = localStorage.getItem('user');
     
     try {
-      const response = await getMobileDashboardStats();
+      const response = await getMobileDashboardStats(userid);
       dashboardStats.value = response.data;
       return response.data;
     } catch (err) {
@@ -48,7 +50,7 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
     error.value = null;
     
     try {
-      const response = await getRecentBookings(limit);
+      const response = await getRecentBookings(userid, limit);
       recentBookings.value = response.data;
       return response.data;
     } catch (err) {
@@ -80,7 +82,7 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
     error.value = null;
     
     try {
-      const response = await getQuickActions();
+      const response = await getQuickActions(userid);
       quickActions.value = response.data;
       return response.data;
     } catch (err) {
@@ -107,21 +109,21 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
     }
   };
 
-  const fetchAnnouncements = async (limit = 5) => {
-    loading.value = true;
-    error.value = null;
+  // const fetchAnnouncements = async (limit = 5) => {
+  //   loading.value = true;
+  //   error.value = null;
     
-    try {
-      const response = await getAnnouncements(limit);
-      announcements.value = response.data;
-      return response.data;
-    } catch (err) {
-      error.value = err.response?.data?.message || '获取公告列表失败';
-      throw error.value;
-    } finally {
-      loading.value = false;
-    }
-  };
+  //   try {
+  //     const response = await getAnnouncements(limit);
+  //     announcements.value = response.data;
+  //     return response.data;
+  //   } catch (err) {
+  //     error.value = err.response?.data?.message || '获取公告列表失败';
+  //     throw error.value;
+  //   } finally {
+  //     loading.value = false;
+  //   }
+  // };
 
   const fetchUserProfile = async () => {
     loading.value = true;
@@ -204,7 +206,7 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
         fetchNotifications(10),
         fetchQuickActions(),
         fetchWeatherInfo(),
-        fetchAnnouncements(5),
+        // fetchAnnouncements(5),
         fetchUserProfile(),
         fetchUnreadCount()
       ]);
@@ -230,7 +232,7 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
     fetchNotifications,
     fetchQuickActions,
     fetchWeatherInfo,
-    fetchAnnouncements,
+    // fetchAnnouncements,
     fetchUserProfile,
     markAsRead,
     markAllAsRead,

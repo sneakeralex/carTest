@@ -11,7 +11,7 @@ import request from './request';
  */
 export function getTestTasks(params = {}) {
   return request({
-    url: '/api/v1/test-registration/tasks',
+    url: '/test-registration/tasks',
     method: 'get',
     params
   });
@@ -24,7 +24,7 @@ export function getTestTasks(params = {}) {
  */
 export function getTestTaskById(taskId) {
   return request({
-    url: `/api/v1/test-registration/tasks/${taskId}`,
+    url: `/test-registration/tasks/${taskId}`,
     method: 'get'
   });
 }
@@ -39,7 +39,7 @@ export function getTestTaskById(taskId) {
  */
 export function getTestRegistrations(params = {}) {
   return request({
-    url: '/api/v1/test-registration/registrations',
+    url: '/test-registration/registrations',
     method: 'get',
     params
   });
@@ -52,7 +52,7 @@ export function getTestRegistrations(params = {}) {
  */
 export function getTestRegistrationById(registrationId) {
   return request({
-    url: `/api/v1/test-registration/registrations/${registrationId}`,
+    url: `/test-registration/registrations/${registrationId}`,
     method: 'get'
   });
 }
@@ -67,7 +67,7 @@ export function getTestRegistrationById(registrationId) {
  */
 export function createTestRegistration(registrationData) {
   return request({
-    url: '/api/v1/test-registration/registrations',
+    url: '/test-registration/registrations',
     method: 'post',
     data: registrationData
   });
@@ -81,7 +81,7 @@ export function createTestRegistration(registrationData) {
  */
 export function updateTestRegistration(registrationId, registrationData) {
   return request({
-    url: `/api/v1/test-registration/registrations/${registrationId}`,
+    url: `/test-registration/registrations/${registrationId}`,
     method: 'put',
     data: registrationData
   });
@@ -94,7 +94,7 @@ export function updateTestRegistration(registrationId, registrationData) {
  */
 export function cancelTestRegistration(registrationId) {
   return request({
-    url: `/api/v1/test-registration/registrations/${registrationId}`,
+    url: `/test-registration/registrations/${registrationId}`,
     method: 'delete'
   });
 }
@@ -108,7 +108,7 @@ export function cancelTestRegistration(registrationId) {
  */
 export function scheduleTest(registrationId, scheduleData) {
   return request({
-    url: `/api/v1/test-registration/registrations/${registrationId}/schedule`,
+    url: `/test-registration/registrations/${registrationId}/schedule`,
     method: 'put',
     data: scheduleData
   });
@@ -125,7 +125,7 @@ export function scheduleTest(registrationId, scheduleData) {
  */
 export function completeTest(registrationId, resultData) {
   return request({
-    url: `/api/v1/test-registration/registrations/${registrationId}/complete`,
+    url: `/test-registration/registrations/${registrationId}/complete`,
     method: 'put',
     data: resultData
   });
@@ -138,7 +138,7 @@ export function completeTest(registrationId, resultData) {
  */
 export function getUserTestRegistrations(userId) {
   return request({
-    url: `/api/v1/test-registration/user/${userId}/registrations`,
+    url: `/test-registration/user/${userId}/registrations`,
     method: 'get'
   });
 }
@@ -150,7 +150,7 @@ export function getUserTestRegistrations(userId) {
  */
 export function getTaskRegistrations(taskId) {
   return request({
-    url: `/api/v1/test-registration/task/${taskId}/registrations`,
+    url: `/test-registration/task/${taskId}/registrations`,
     method: 'get'
   });
 }
@@ -161,7 +161,7 @@ export function getTaskRegistrations(taskId) {
  */
 export function getTestStats() {
   return request({
-    url: '/api/v1/test-registration/stats',
+    url: '/test-registration/stats',
     method: 'get'
   });
 }
