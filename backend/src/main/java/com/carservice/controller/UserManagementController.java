@@ -1,10 +1,13 @@
 package com.carservice.controller;
 
 import com.carservice.common.api.ApiResponse;
+import com.carservice.common.api.Result;
+import com.carservice.dto.RegisterRequest;
 import com.carservice.dto.user.*;
 import com.carservice.service.UserManagementService;
+import com.carservice.service.UserService;
+
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
@@ -19,43 +23,50 @@ import jakarta.validation.Valid;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/user-management")
+@RequestMapping("/user-management")
 @RequiredArgsConstructor
 @Tag(name = "用户管理", description = "用户登录、个人信息、面部认证等功能")
 public class UserManagementController {
     
     private final UserManagementService userManagementService;
+    @Resource UserService userService;
     
-    /**
-     * 用户登录
-     */
-    @PostMapping("/login")
-    @Operation(summary = "用户登录", description = "支持用户名、手机号、工号、身份证号登录")
-    public ResponseEntity<ApiResponse<UserInfoDTO>> login(@Valid @RequestBody UserLoginDTO loginDTO) {
-        try {
-            UserInfoDTO userInfo = userManagementService.login(loginDTO);
-            log.info("用户登录成功: {}", loginDTO.getUsername());
-            return ResponseEntity.ok(ApiResponse.success(userInfo, "登录成功"));
-        } catch (Exception e) {
-            log.error("用户登录失败: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
-        }
-    }
+    // /**
+    //  * 用户登录
+    //  */
+    // @PostMapping("/login")
+    // @Operation(summary = "用户登录", description = "支持用户名、手机号、工号、身份证号登录")
+    // public ResponseEntity<ApiResponse<UserInfoDTO>> login(@Valid @RequestBody UserLoginDTO loginDTO) {
+    //     try {
+    //         UserInfoDTO userInfo = userManagementService.login(loginDTO);
+    //         log.info("用户登录成功: {}", loginDTO.getUsername());
+    //         return ResponseEntity.ok(ApiResponse.success(userInfo, "登录成功"));
+    //     } catch (Exception e) {
+    //         log.error("用户登录失败: {}", e.getMessage());
+    //         return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+    //     }
+    // }
     
-    /**
-     * 用户登出
-     */
-    @PostMapping("/logout")
-    @Operation(summary = "用户登出")
-    public ResponseEntity<ApiResponse<Void>> logout(@Parameter(description = "用户ID") @RequestParam String userId) {
-        try {
-            userManagementService.logout(userId);
-            log.info("用户登出成功: {}", userId);
-            return ResponseEntity.ok(ApiResponse.success(null, "登出成功"));
-        } catch (Exception e) {
-            log.error("用户登出失败: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
-        }
+    // /**
+    //  * 用户登出
+    //  */
+    // @PostMapping("/logout")
+    // @Operation(summary = "用户登出")
+    // public ResponseEntity<ApiResponse<Void>> logout(@Parameter(description = "用户ID") @RequestParam String userId) {
+    //     try {
+    //         userManagementService.logout(userId);
+    //         log.info("用户登出成功: {}", userId);
+    //         return ResponseEntity.ok(ApiResponse.success(null, "登出成功"));
+    //     } catch (Exception e) {
+    //         log.error("用户登出失败: {}", e.getMessage());
+    //         return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+    //     }
+    // }
+
+    @PostMapping("/register")
+    @Operation(summary = "用户注册")
+    public ResponseEntity<Result<?>> registerUser(@RequestBody RegisterRequest registerRequest) {
+        return ResponseEntity.status(201).body(Result.success(userService.register(registerRequest)));
     }
     
     /**

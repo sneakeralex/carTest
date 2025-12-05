@@ -1,9 +1,12 @@
 package com.carservice.service;
 
+import com.carservice.dto.RegisterRequest;
 import com.carservice.entity.User;
+import com.carservice.entity.Role;
 
 import java.util.List;
 import java.util.Optional;
+
 
 /**
  * 用户服务接口
@@ -46,9 +49,9 @@ public interface UserService {
     /**
      * 用户注册
      * @param user 用户信息
-     * @return 注册结果
+     * @return 注册结果w
      */
-    boolean register(User user);
+    boolean register(RegisterRequest request);
     
     /**
      * 用户登录
@@ -73,4 +76,17 @@ public interface UserService {
      * @return 修改结果
      */
     boolean changePassword(Long userId, String oldPassword, String newPassword);
+
+    /**
+     * 根据unionid查找用户
+     * @param unionid 微信unionid
+     * @return 用户对象
+     */
+    User findByUnionid(String unionid);
+
+    /**
+     * 获取默认角色
+     * @return 默认角色
+     */
+    Role getDefaultRole();
 }

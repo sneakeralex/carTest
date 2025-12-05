@@ -2,7 +2,7 @@ package com.carservice.entity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.GenericGenerator;
+import com.carservice.entity.generator.PrefixedIdGenerator;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -20,20 +20,26 @@ public class User extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @GeneratedValue(generator = "user-id")
-    @GenericGenerator(name = "user-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
-                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "USR"))
     @Column(name = "user_id", unique = true)
     private String userId;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.userId == null) {
+            this.userId = PrefixedIdGenerator.generateId("USR");
+        }
+    }
 
     /**
      * 用户名
      */
+    @Column(nullable = false, unique = true)
     private String username;
 
     /**
      * 密码（加密存储）
      */
+    @Column(nullable = false)
     private String password;
 
     /**
@@ -41,9 +47,16 @@ public class User extends BaseEntity implements Serializable {
      */
     private String realName;
 
+    @Column(unique = true)
+    private String unionid;
+
+    @Column(unique = true)
+    private String openid;
+
     /**
      * 手机号
      */
+    @Column(nullable = false)
     private String phone;
 
     /**
@@ -64,20 +77,42 @@ public class User extends BaseEntity implements Serializable {
     /**
      * 状态：0禁用，1启用
      */
-    private Integer status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserStatusEnum status;
 
     /**
      * 人员类型
      */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PersonType personType;
+    private PersonTypeEnum personType;
 
     /**
-     * 发布状态
+     * 用户角色
      */
-    @Column(nullable = false)
-    private Boolean isPublished = true;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id")
+    private Role role;
+
+    /**
+     * 获取角色编码
+     */
+    @Transient
+    public String getRoleCode() {
+        return role != null ? role.getRoleCode() : null;
+    }
+
+
+    // /**
+    //  * 发布状态
+    //  */
+    // @Column(nullable = false)
+    // private Boolean isPublished = true;
+
+    public boolean isCompleted() {
+        return phone != null && !phone.isEmpty();
+    }
 
     /**
      * 附件列表 - 通过 UserAttachment.userId 关联，不需要在这里定义
@@ -89,14 +124,45 @@ public class User extends BaseEntity implements Serializable {
      */
     private LocalDateTime lastLoginTime;
 
+    public enum UserStatusEnum {
+        ACTIVE("正常"),
+        FREEZE("锁定");
+
+        private final String label;
+
+        UserStatusEnum(String label) {
+            this.label = label;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+    }
+
     /**
      * 人员类型枚举
      */
-    public enum PersonType {
-        EMPLOYEE, // 员工
-        CUSTOMER, // 客户
-        SUPPLIER, // 供应商
-        PARTNER, // 合作伙伴
-        VISITOR // 访客
+    public enum PersonTypeEnum {
+        EMPLOYEE("employee", 0), // 员工
+        CUSTOMER("customer", 1), // 客户
+        SUPPLIER("supplier", 2), // 供应商
+        PARTNER("partner", 3), // 合作伙伴
+        VISITOR("visitor", 4); // 访客
+
+        private final String name;
+        private final int id;
+
+        PersonTypeEnum(String name, int id) {
+            this.name = name;
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getId() {
+            return id;
+        }
     }
 }

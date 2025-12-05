@@ -2,7 +2,6 @@ package com.carservice.entity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,8 +22,6 @@ import java.time.LocalDateTime;
 public class TestTask extends BaseEntity {
 
     @GeneratedValue(generator = "test-task-id")
-    @GenericGenerator(name = "test-task-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
-                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "TT"))
     @Column(name = "task_id", unique = true)
     private String taskId;
 
@@ -38,7 +35,7 @@ public class TestTask extends BaseEntity {
     private String authorizerId;  // 授权人
 
     @Column(nullable = false)
-    private LocalDateTime authorizationDate;  // 授权日期
+    private LocalDateTime authorizationTime;  // 授权时间
 
     @Column(columnDefinition = "json")
     private String projects;  // 试验项目列表(JSON格式)
@@ -57,13 +54,13 @@ public class TestTask extends BaseEntity {
     private TestTaskStatus status;  // 任务状态
 
     @Column(nullable = false)
-    private LocalDateTime plannedStartDate;  // 计划开始日期
+    private LocalDateTime plannedStartTime;  // 计划开始时间
 
     @Column(nullable = false)
-    private LocalDateTime plannedEndDate;  // 计划结束日期
+    private LocalDateTime plannedEndTime;  // 计划结束时间
 
-    private LocalDateTime actualStartDate;  // 实际开始日期
-    private LocalDateTime actualEndDate;  // 实际结束日期
+    private LocalDateTime actualStartTime;  // 实际开始时间
+    private LocalDateTime actualEndTime;  // 实际结束时间
 
     public enum TestTaskStatus {
         DRAFT,        // 草稿

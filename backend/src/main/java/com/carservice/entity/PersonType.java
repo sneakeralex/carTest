@@ -2,7 +2,6 @@ package com.carservice.entity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,8 +20,6 @@ import jakarta.persistence.Table;
 public class PersonType extends BaseEntity {
 
     @GeneratedValue(generator = "person-type-id")
-    @GenericGenerator(name = "person-type-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
-                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "PT"))
     @Column(name = "person_type_id")
     private String personTypeId;
 

@@ -14,7 +14,7 @@ import java.util.Map;
  * 测试控制器 - 用于验证数据库连接和基本功能
  */
 @RestController
-@RequestMapping("/api/test")
+@RequestMapping("/api/v1/test")
 @CrossOrigin(origins = "*")
 public class TestController {
 

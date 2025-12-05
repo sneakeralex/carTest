@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 
 /**
@@ -55,7 +57,8 @@ public class Appointment extends BaseEntity implements Serializable {
      * 状态：0待审核，1已审核，2已完成，3已取消
      */
     @Column(name = "status")
-    private Integer status;
+    @Enumerated(EnumType.STRING)
+    private AppointmentStatusEnum status;
 
     /**
      * 联系人姓名
@@ -85,5 +88,50 @@ public class Appointment extends BaseEntity implements Serializable {
     @Column(name = "feedback")
     private String feedback;
 
+    public enum AppointmentStatusEnum {
+        /**
+         * 待审核
+         */
+        PENDING(0, "待审核"),
+        
+        /**
+         * 已审核
+         */
+        APPROVED(1, "已审核"),
+        
+        /**
+         * 已完成
+         */
+        COMPLETED(2, "已完成"),
+        
+        /**
+         * 已取消
+         */
+        CANCELLED(3, "已取消");
 
+        private final int code;
+        private final String description;
+
+        AppointmentStatusEnum(int code, String description) {
+            this.code = code;
+            this.description = description;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public static AppointmentStatusEnum fromCode(int code) {
+            for (AppointmentStatusEnum status : AppointmentStatusEnum.values()) {
+                if (status.getCode() == code) {
+                    return status;
+                }
+            }
+            throw new IllegalArgumentException("Invalid status code: " + code);
+        }
+    }
 }

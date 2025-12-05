@@ -56,7 +56,7 @@ public interface BookingService {
     /**
      * 获取用户预约列表
      * @param userId 用户ID
-     * @param status 预约状态
+     * @param status 预约状态, and status could be set to null
      * @param pageable 分页信息
      * @return 预约列表
      */

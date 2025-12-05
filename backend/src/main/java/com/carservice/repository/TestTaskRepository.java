@@ -58,7 +58,7 @@ public interface TestTaskRepository extends JpaRepository<TestTask, Long> {
      * @param endDate 结束日期
      * @return 任务列表
      */
-    List<TestTask> findByPlannedStartDateBetween(LocalDateTime startDate, LocalDateTime endDate);
+    List<TestTask> findByPlannedStartTimeBetween(LocalDateTime startDateTime, LocalDateTime endDateTime);
     
     /**
      * 根据计划结束日期范围查找任务
@@ -66,13 +66,13 @@ public interface TestTaskRepository extends JpaRepository<TestTask, Long> {
      * @param endDate 结束日期
      * @return 任务列表
      */
-    List<TestTask> findByPlannedEndDateBetween(LocalDateTime startDate, LocalDateTime endDate);
+    List<TestTask> findByPlannedEndTimeBetween(LocalDateTime startDateTime, LocalDateTime endDateTime);
     
     /**
      * 查找进行中的任务
      * @return 进行中的任务列表
      */
-    @Query("SELECT tt FROM TestTask tt WHERE tt.status = 'IN_PROGRESS' ORDER BY tt.plannedEndDate ASC")
+    @Query("SELECT tt FROM TestTask tt WHERE tt.status = 'IN_PROGRESS' ORDER BY tt.plannedEndTime ASC")
     List<TestTask> findInProgressTasks();
     
     /**
@@ -80,7 +80,7 @@ public interface TestTaskRepository extends JpaRepository<TestTask, Long> {
      * @param date 指定日期
      * @return 任务列表
      */
-    List<TestTask> findByPlannedEndDateLessThanEqualAndStatus(LocalDateTime date, TestTask.TestTaskStatus status);
+    List<TestTask> findByPlannedEndTimeLessThanEqualAndStatus(LocalDateTime date, TestTask.TestTaskStatus status);
     
     /**
      * 根据授权人和状态查找任务
@@ -103,8 +103,8 @@ public interface TestTaskRepository extends JpaRepository<TestTask, Long> {
      * @param currentDate 当前日期
      * @return 超期任务列表
      */
-    @Query("SELECT tt FROM TestTask tt WHERE tt.plannedEndDate < :currentDate AND tt.status NOT IN ('COMPLETED', 'CANCELLED')")
-    List<TestTask> findOverdueTasks(@Param("currentDate") LocalDateTime currentDate);
+    @Query("SELECT tt FROM TestTask tt WHERE tt.plannedEndTime < :currentDateTime AND tt.status NOT IN ('COMPLETED', 'CANCELLED')")
+    List<TestTask> findOverdueTasks(@Param("currentDate") LocalDateTime currentDateTime);
 
     // Pageable methods for service layer
     /**

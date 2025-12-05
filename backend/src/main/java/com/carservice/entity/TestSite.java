@@ -2,7 +2,6 @@ package com.carservice.entity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,8 +22,6 @@ import java.math.BigDecimal;
 public class TestSite extends BaseEntity {
 
     @GeneratedValue(generator = "test-site-id")
-    @GenericGenerator(name = "test-site-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
-                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "TS"))
     @Column(name = "site_id", unique = true)
     private String siteId;
 

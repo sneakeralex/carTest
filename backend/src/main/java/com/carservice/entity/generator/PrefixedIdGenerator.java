@@ -40,6 +40,26 @@ public class PrefixedIdGenerator implements IdentifierGenerator {
     private static final AtomicLong counter = new AtomicLong(1);
     
     private String prefix;
+
+    public PrefixedIdGenerator() {
+    }
+
+    public PrefixedIdGenerator(String prefix) {
+        this.prefix = prefix;
+    }
+
+    /**
+     * 静态方法生成ID
+     */
+    public static String generateId(String prefix) {
+        String date = LocalDateTime.now().format(DATE_FORMATTER);
+        long sequence = counter.getAndIncrement();
+        if (sequence > 999999) {
+            counter.set(1);
+            sequence = 1;
+        }
+        return String.format("%s%s%06d", prefix, date, sequence);
+    }
     
     @Override
     public void configure(Type type, Properties parameters, ServiceRegistry serviceRegistry) {
@@ -49,16 +69,6 @@ public class PrefixedIdGenerator implements IdentifierGenerator {
     @Override
     public Serializable generate(SharedSessionContractImplementor session, Object object) 
             throws HibernateException {
-        
-        String dateStr = LocalDateTime.now().format(DATE_FORMATTER);
-        long sequence = counter.getAndIncrement();
-        
-        // 重置计数器（每天重置）
-        if (sequence > 999999) {
-            counter.set(1);
-            sequence = 1;
-        }
-        
-        return String.format("%s%s%06d", prefix, dateStr, sequence);
+        return generateId(prefix);
     }
 }

@@ -5,6 +5,7 @@ import com.carservice.dto.AppointmentDto;
 import com.carservice.common.api.ResultCode;
 import com.carservice.entity.Appointment;
 import com.carservice.entity.Vehicle;
+import com.carservice.entity.Appointment.AppointmentStatusEnum;
 import com.carservice.repository.AppointmentRepository;
 import com.carservice.service.AppointmentService;
 import com.carservice.service.VehicleService;
@@ -61,11 +62,19 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    public Page<Appointment> getAppointmentsByUserId(String userId, Pageable pageable) {
+        return appointmentRepository.findByUserId(userId, pageable);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public Appointment createAppointment(AppointmentDto appointmentDto) {
+        
         // 检查车辆是否存在
         if (appointmentDto.getVehicleId() != null) {
-            Optional<Vehicle> vehicleOpt = vehicleService.getByVehicleNo(appointmentDto.getVehicleId());
+            System.out.println("appointment vehicle id -> " + appointmentDto.getVehicleId());
+
+            Optional<Vehicle> vehicleOpt = vehicleService.getByVehicleId(appointmentDto.getVehicleId());
             if (!vehicleOpt.isPresent()) {
                 throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "车辆不存在");
             }
@@ -75,7 +84,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointmentDto.setAppointmentNo("A" + System.currentTimeMillis());
 
         // 设置默认值
-        appointmentDto.setStatus(0); // 默认待审核状态
+        appointmentDto.setStatus(AppointmentStatusEnum.PENDING); // 默认待审核状态
 
         // Convert DTO to entity
         Appointment appointment = new Appointment();
@@ -101,12 +110,12 @@ public class AppointmentServiceImpl implements AppointmentService {
         Appointment appointment = appointmentOpt.get();
 
         // 检查状态是否允许完成
-        if (appointment.getStatus() != 1) {
+        if (appointment.getStatus() != AppointmentStatusEnum.APPROVED) {
             throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "只有已审核状态的预约才能完成");
         }
 
         // 更新状态和反馈
-        appointment.setStatus(2); // 已完成
+        appointment.setStatus(AppointmentStatusEnum.COMPLETED); // 已完成
 
         appointmentRepository.save(appointment);
         return true;
@@ -124,12 +133,12 @@ public class AppointmentServiceImpl implements AppointmentService {
         Appointment appointment = appointmentOpt.get();
 
         // 检查状态是否允许取消
-        if (appointment.getStatus() == 2 || appointment.getStatus() == 3) {
+        if (appointment.getStatus() == AppointmentStatusEnum.COMPLETED || appointment.getStatus() == AppointmentStatusEnum.CANCELLED) {
             throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "已完成或已取消的预约不能取消");
         }
 
         // 更新状态为已取消
-        appointment.setStatus(3); // 已取消
+        appointment.setStatus(AppointmentStatusEnum.CANCELLED); // 已取消
 
         appointmentRepository.save(appointment);
         return true;

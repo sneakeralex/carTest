@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -40,9 +41,9 @@ public class TestRegistrationServiceImpl implements TestRegistrationService {
         testTask.setTaskNo(testTaskDTO.getTaskNo());
         testTask.setContractNo(testTaskDTO.getContractNo());
         testTask.setAuthorizerId(testTaskDTO.getAuthorizerId());
-        testTask.setAuthorizationDate(testTaskDTO.getAuthorizationDate());
-        testTask.setPlannedStartDate(testTaskDTO.getPlannedStartDate());
-        testTask.setPlannedEndDate(testTaskDTO.getPlannedEndDate());
+        testTask.setAuthorizationTime(testTaskDTO.getAuthorizationTime());
+        testTask.setPlannedStartTime(testTaskDTO.getPlannedStartTime());
+        testTask.setPlannedEndTime(testTaskDTO.getPlannedEndTime());
         testTask.setStatus(TestTask.TestTaskStatus.DRAFT);
         testTask.setDescription(testTaskDTO.getDescription());
         testTask.setRequirements(testTaskDTO.getRequirements());
@@ -109,9 +110,9 @@ public class TestRegistrationServiceImpl implements TestRegistrationService {
         
         // 更新字段
         testTask.setAuthorizerId(testTaskDTO.getAuthorizerId());
-        testTask.setAuthorizationDate(testTaskDTO.getAuthorizationDate());
-        testTask.setPlannedStartDate(testTaskDTO.getPlannedStartDate());
-        testTask.setPlannedEndDate(testTaskDTO.getPlannedEndDate());
+        testTask.setAuthorizationTime(testTaskDTO.getAuthorizationTime());
+        testTask.setPlannedStartTime(testTaskDTO.getPlannedStartTime());
+        testTask.setPlannedEndTime(testTaskDTO.getPlannedEndTime());
         testTask.setDescription(testTaskDTO.getDescription());
         testTask.setRequirements(testTaskDTO.getRequirements());
         testTask.setNotes(testTaskDTO.getNotes());
@@ -343,11 +344,11 @@ public class TestRegistrationServiceImpl implements TestRegistrationService {
         dto.setTaskNo(testTask.getTaskNo());
         dto.setContractNo(testTask.getContractNo());
         dto.setAuthorizerId(testTask.getAuthorizerId());
-        dto.setAuthorizationDate(testTask.getAuthorizationDate());
-        dto.setPlannedStartDate(testTask.getPlannedStartDate());
-        dto.setPlannedEndDate(testTask.getPlannedEndDate());
-        dto.setActualStartDate(testTask.getActualStartDate());
-        dto.setActualEndDate(testTask.getActualEndDate());
+        dto.setAuthorizationTime(testTask.getAuthorizationTime());
+        dto.setPlannedStartTime(testTask.getPlannedStartTime());
+        dto.setPlannedEndTime(testTask.getPlannedEndTime());
+        dto.setActualStartTime(testTask.getActualStartTime());
+        dto.setActualEndTime(testTask.getActualEndTime());
         dto.setStatus(testTask.getStatus().name());
         dto.setStatusName(getTestTaskStatusName(testTask.getStatus()));
         dto.setDescription(testTask.getDescription());
@@ -387,9 +388,9 @@ public class TestRegistrationServiceImpl implements TestRegistrationService {
         
         // 加载车辆信息
         if (taskVehicle.getVehicleId() != null) {
-            Vehicle vehicle = vehicleRepository.findByVehicleId(taskVehicle.getVehicleId());
-            if (vehicle != null) {
-                dto.setVehicleInfo(convertToVehicleDTO(vehicle));
+            Optional<Vehicle> vehicleOpt = vehicleRepository.findByVehicleId(taskVehicle.getVehicleId());
+            if (vehicleOpt.isPresent()) {
+                dto.setVehicleInfo(convertToVehicleDTO(vehicleOpt.get()));
             }
         }
         
@@ -432,7 +433,7 @@ public class TestRegistrationServiceImpl implements TestRegistrationService {
         dto.setOwnerName(vehicle.getOwnerName());
         dto.setOwnerPhone(vehicle.getOwnerPhone());
         dto.setOwnerIdCard(vehicle.getOwnerIdCard());
-        dto.setRegistrationDate(vehicle.getRegistrationDate());
+        // dto.setRegistrationDate(vehicle.getRegistrationDateTime());
         dto.setInsuranceInfo(vehicle.getInsuranceInfo());
         dto.setTechnicalSpecs(vehicle.getTechnicalSpecs());
         dto.setNotes(vehicle.getNotes());

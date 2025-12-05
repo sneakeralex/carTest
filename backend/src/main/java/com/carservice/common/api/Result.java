@@ -166,4 +166,30 @@ public class Result<T> implements Serializable {
     public static <T> Result<T> forbidden() {
         return failed(ResultCode.FORBIDDEN);
     }
+
+    /**
+     * 错误返回结果
+     *
+     * @param code    错误码
+     * @param message 错误消息
+     * @param <T>     数据类型
+     * @return 结果
+     */
+    public static <T> Result<T> error(int code, String message) {
+        Result<T> result = new Result<>();
+        result.setCode(code);
+        result.setMessage(message);
+        return result;
+    }
+
+    /**
+     * 错误返回结果
+     *
+     * @param message 错误消息
+     * @param <T>     数据类型
+     * @return 结果
+     */
+    public static <T> Result<T> error(String message) {
+        return error(500, message);
+    }
 }

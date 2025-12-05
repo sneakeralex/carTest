@@ -6,6 +6,7 @@ public class VehicleMapper {
     public static VehicleDto toDto(Vehicle entity) {
         if (entity == null) return null;
         VehicleDto dto = new VehicleDto();
+        dto.setVehicleId(entity.getVehicleId());
         dto.setVehicleNo(entity.getVehicleNo());
         dto.setVin(entity.getVin());
         dto.setTypeId(entity.getTypeId());

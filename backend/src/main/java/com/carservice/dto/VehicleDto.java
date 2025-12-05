@@ -3,8 +3,11 @@ package com.carservice.dto;
 import lombok.Data;
 import java.math.BigDecimal;
 
+import com.carservice.entity.Vehicle.VehicleStatusEnum;
+
 @Data
 public class VehicleDto {
+    private String vehicleId;
     private String vehicleNo;
     private String vehicleName;
     private String vehicleType;
@@ -19,7 +22,7 @@ public class VehicleDto {
     private String engineNo;
     private java.time.LocalDateTime purchaseDate;
     private BigDecimal mileage;
-    private Integer status;
+    private VehicleStatusEnum status;
     private String ownerId;
     // 可根据实际业务补充其他字段
 }

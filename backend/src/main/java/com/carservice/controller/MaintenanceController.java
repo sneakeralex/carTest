@@ -17,7 +17,7 @@ import java.util.List;
 import com.carservice.common.api.Result;
 
 @RestController
-@RequestMapping("/api/maintenances")
+@RequestMapping("/api/v1/maintenances")
 @RequiredArgsConstructor
 @Tag(name = "维修保养管理")
 public class MaintenanceController {

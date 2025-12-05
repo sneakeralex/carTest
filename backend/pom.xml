@@ -1,29 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.1.0</version>
-        <relativePath/>
+        <relativePath />
     </parent>
-    
+
     <groupId>com.carservice</groupId>
     <artifactId>car-management-system</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>car-management-system</name>
     <description>Car Service Management System Backend</description>
-    
+
     <properties>
         <java.version>17</java.version>
-        <jjwt.version>0.9.1</jjwt.version>
+        <javajwt.version>4.4.0</javajwt.version>
         <druid.version>1.2.16</druid.version>
         <knife4j.version>3.0.3</knife4j.version>
         <hutool.version>5.8.18</hutool.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
+        <lombok.version>1.18.28</lombok.version>
     </properties>
-    
+
     <repositories>
         <repository>
             <id>central</id>
@@ -45,7 +47,7 @@
             </releases>
         </repository>
     </repositories>
-    
+
     <pluginRepositories>
         <pluginRepository>
             <id>spring-releases</id>
@@ -56,7 +58,7 @@
             </releases>
         </pluginRepository>
     </pluginRepositories>
-    
+
     <dependencies>
         <!-- OpenAPI 3 Documentation -->
         <dependency>
@@ -81,7 +83,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
-        
+
         <!-- Database Related -->
         <dependency>
             <groupId>com.mysql</groupId>
@@ -97,14 +99,14 @@
             <artifactId>druid-spring-boot-starter</artifactId>
             <version>${druid.version}</version>
         </dependency>
-        
-        <!-- JWT Related -->
+
+        <!-- JWT -->
         <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
-            <version>${jjwt.version}</version>
+            <groupId>com.auth0</groupId>
+            <artifactId>java-jwt</artifactId>
+            <version>${javajwt.version}</version>
         </dependency>
-        
+
         <!-- Utilities -->
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -119,6 +121,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
             <optional>true</optional>
         </dependency>
 
@@ -134,7 +137,15 @@
             <version>1.5.5.Final</version>
             <scope>provided</scope>
         </dependency>
-        
+
+        <!-- Spring Boot DevTools -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -147,7 +158,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    
+
     <build>
         <plugins>
             <plugin>

@@ -15,11 +15,11 @@ public class TestTaskDTO {
     private String contractNo;
     private String authorizerId;
     private String authorizerName;
-    private LocalDateTime authorizationDate;
-    private LocalDateTime plannedStartDate;
-    private LocalDateTime plannedEndDate;
-    private LocalDateTime actualStartDate;
-    private LocalDateTime actualEndDate;
+    private LocalDateTime authorizationTime;
+    private LocalDateTime plannedStartTime;
+    private LocalDateTime plannedEndTime;
+    private LocalDateTime actualStartTime;
+    private LocalDateTime actualEndTime;
     private String status;
     private String statusName;
     private String description;

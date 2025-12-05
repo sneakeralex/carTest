@@ -2,7 +2,6 @@ package com.carservice.entity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.GenericGenerator;
 
 import com.carservice.entity.Message.MessageType;
 
@@ -24,8 +23,6 @@ import jakarta.persistence.Table;
 public class MessageTemplate extends BaseEntity {
 
     @GeneratedValue(generator = "message-template-id")
-    @GenericGenerator(name = "message-template-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
-                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "MT"))
     @Column(name = "template_id", unique = true)
     private String templateId;
 

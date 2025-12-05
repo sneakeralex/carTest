@@ -1,24 +1,23 @@
 package com.carservice.common.util;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import com.carservice.entity.User;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
-/**
- * JWT工具类
- */
 @Component
 public class JwtTokenUtil {
-
-    private static final String CLAIM_KEY_USERNAME = "sub";
-    private static final String CLAIM_KEY_CREATED = "created";
+    private static final String CLAIM_KEY_UNIONID = "unionid";
+    private static final String CLAIM_KEY_OPENID = "openid";
+    private static final String CLAIM_KEY_USER_ID = "userId";
+    private static final String CLAIM_KEY_ROLE = "role";
 
     @Value("${jwt.secret}")
     private String secret;
@@ -26,104 +25,59 @@ public class JwtTokenUtil {
     @Value("${jwt.expiration}")
     private Long expiration;
 
-    /**
-     * 根据用户信息生成token
-     */
-    public String generateToken(UserDetails userDetails) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put(CLAIM_KEY_USERNAME, userDetails.getUsername());
-        claims.put(CLAIM_KEY_CREATED, new Date());
-        return generateToken(claims);
+    private Algorithm getAlgorithm() {
+        return Algorithm.HMAC512(secret);
     }
 
-    /**
-     * 从token中获取登录用户名
-     */
-    public String getUsernameFromToken(String token) {
-        String username;
+    public String generateToken(User user) {
+        return generateToken(user.getUnionid(), user.getOpenid(), user.getUserId(), user.getRoleCode());
+    }
+
+    public String generateToken(String unionid, String openid, String userId, String role) {
+        return JWT.create()
+                .withClaim(CLAIM_KEY_UNIONID, unionid)
+                .withClaim(CLAIM_KEY_OPENID, openid)
+                .withClaim(CLAIM_KEY_USER_ID, userId)
+                .withClaim(CLAIM_KEY_ROLE, role)
+                .withIssuedAt(new Date())
+                .withExpiresAt(Date.from(LocalDateTime.now()
+                        .plusMinutes(expiration)
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant()))
+                .sign(getAlgorithm());
+    }
+
+    public DecodedJWT verifyToken(String token) {
         try {
-            Claims claims = getClaimsFromToken(token);
-            username = claims.getSubject();
+            JWTVerifier verifier = JWT.require(getAlgorithm()).build();
+            return verifier.verify(token);
         } catch (Exception e) {
-            username = null;
+            return null;
         }
-        return username;
     }
 
-    /**
-     * 验证token是否有效
-     *
-     * @param token       客户端传入的token
-     * @param userDetails 从数据库中查询出来的用户信息
-     */
-    public boolean validateToken(String token, UserDetails userDetails) {
-        String username = getUsernameFromToken(token);
-        return username != null && username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    public boolean validateToken(String token) {
+        DecodedJWT jwt = verifyToken(token);
+        return jwt != null;
     }
 
-    /**
-     * 判断token是否可以被刷新
-     */
-    public boolean canRefresh(String token) {
-        return !isTokenExpired(token);
+    public String getUnionidFromToken(String token) {
+        DecodedJWT jwt = verifyToken(token);
+        return jwt != null ? jwt.getClaim(CLAIM_KEY_UNIONID).asString() : null;
     }
 
-    /**
-     * 刷新token
-     */
-    public String refreshToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        claims.put(CLAIM_KEY_CREATED, new Date());
-        return generateToken(claims);
+    public String getOpenidFromToken(String token) {
+        DecodedJWT jwt = verifyToken(token);
+        return jwt != null ? jwt.getClaim(CLAIM_KEY_OPENID).asString() : null;
     }
 
-    /**
-     * 根据负载生成JWT token
-     */
-    private String generateToken(Map<String, Object> claims) {
-        return Jwts.builder()
-                .setClaims(claims)
-                .setExpiration(generateExpirationDate())
-                .signWith(SignatureAlgorithm.HS512, secret)
-                .compact();
+    public String getUserIdFromToken(String token) {
+        DecodedJWT jwt = verifyToken(token);
+        return jwt != null ? jwt.getClaim(CLAIM_KEY_USER_ID).asString() : null;
     }
 
-    /**
-     * 从token中获取JWT中的负载
-     */
-    private Claims getClaimsFromToken(String token) {
-        Claims claims = null;
-        try {
-            claims = Jwts.parser()
-                    .setSigningKey(secret)
-                    .parseClaimsJws(token)
-                    .getBody();
-        } catch (Exception e) {
-            // 解析失败
-        }
-        return claims;
-    }
-
-    /**
-     * 生成token的过期时间
-     */
-    private Date generateExpirationDate() {
-        return new Date(System.currentTimeMillis() + expiration);
-    }
-
-    /**
-     * 判断token是否已经失效
-     */
-    private boolean isTokenExpired(String token) {
-        Date expiredDate = getExpiredDateFromToken(token);
-        return expiredDate != null && expiredDate.before(new Date());
-    }
-
-    /**
-     * 从token中获取过期时间
-     */
-    private Date getExpiredDateFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims != null ? claims.getExpiration() : null;
+    public String getRoleFromToken(String token) {
+        DecodedJWT jwt = verifyToken(token);
+        return jwt.getClaim(CLAIM_KEY_ROLE).asString();
     }
 }

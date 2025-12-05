@@ -1,11 +1,11 @@
 package com.carservice.repository;
 
-import com.carservice.dto.VehicleDto;
 import com.carservice.entity.Vehicle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 车辆Repository接口
@@ -27,7 +27,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
      * @param vehicleNo 车牌号
      * @return 车辆信息
      */
-    Vehicle findByVehicleNo(String vehicleNo);
+    Optional<Vehicle> findByVehicleNo(String vehicleNo);
     
     /**
      * 根据车架号查询车辆
@@ -35,7 +35,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
      * @param vin 车架号
      * @return 车辆信息
      */
-    Vehicle findByVin(String vin);
+    Optional<Vehicle> findByVin(String vin);
     
     /**
      * 根据状态查询车辆列表
@@ -51,7 +51,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
      * @param vehicleId 车辆ID
      * @return 车辆对象
      */
-    Vehicle findByVehicleId(String vehicleId);
+    Optional<Vehicle> findByVehicleId(String vehicleId);
 
     /**
      * 根据车牌号删除车辆

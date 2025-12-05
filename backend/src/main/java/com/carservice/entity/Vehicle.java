@@ -1,16 +1,9 @@
 package com.carservice.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.hibernate.annotations.GenericGenerator;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -18,157 +11,101 @@ import java.time.LocalDateTime;
  * 车辆实体
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "vehicle")
-public class Vehicle extends BaseEntity implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+@EqualsAndHashCode(callSuper = true)
+public class Vehicle extends BaseEntity {
 
     @GeneratedValue(generator = "vehicle-id")
-    @GenericGenerator(name = "vehicle-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
-                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "VEH"))
     @Column(name = "vehicle_id", unique = true)
     private String vehicleId;
-    /**
-     * 车牌号
-     */
-    private String vehicleNo;
-    
-    /**
-     * 车牌号（前端使用的字段名）
-     */
-    @JsonProperty("licensePlate")
-    public String getLicensePlate() {
-        return this.vehicleNo;
-    }
-    
-    @JsonProperty("licensePlate")
-    public void setLicensePlate(String licensePlate) {
-        this.vehicleNo = licensePlate;
-    }
 
-    /**
-     * 车架号
-     */
+    @Column(name = "vehicle_no", nullable = false, unique = true)
+    private String vehicleNo;
+
+    @Column(name = "vehicle_name")
+    private String vehicleName;
+
+    @Column(name = "vehicle_type")
+    private String vehicleType;
+
+    @Column(name = "color")
+    private String color;
+
+    @Column(name = "manufacturer")
+    private String manufacturer;
+
+    @Column(name = "price", precision = 10, scale = 2)
+    private BigDecimal price;
+
+    @Column(name = "description", length = 500)
+    private String description;
+
+    @Column(name = "vin")
     private String vin;
 
-    /**
-     * 车辆类型
-     */
     @Column(name = "type_id")
     private String typeId;
 
-    /**
-     * 品牌
-     */
+    @Column(name = "brand")
     private String brand;
 
-    /**
-     * 型号
-     */
+    @Column(name = "model")
     private String model;
 
-    /**
-     * 颜色
-     */
-    private String color;
-
-    /**
-     * 发动机号
-     */
+    @Column(name = "engine_no")
     private String engineNo;
 
-    /**
-     * 购买日期
-     */
+    @Column(name = "purchase_date")
     private LocalDateTime purchaseDate;
 
-    /**
-     * 行驶里程(km)
-     */
+    @Column(name = "mileage", precision = 10, scale = 2)
     private BigDecimal mileage;
 
-    /**
-     * 状态：0停用，1正常，2维修中，3报废
-     */
-    private Integer status;
-
-    /**
-     * 车主ID（关联用户表）
-     */
+    @Column(name = "owner_id")
     private String ownerId;
 
-    /**
-     * 车辆描述
-     */
-    private String description;
+    @Column(name = "plate_no")
+    private String plateNo;
 
-    /**
-     * 车牌号（用于DTO映射）
-     */
-    public String getPlateNo() {
-        return this.vehicleNo;
-    }
-
-    /**
-     * 车架号（用于DTO映射）
-     */
-    public String getVinNo() {
-        return this.vin;
-    }
-
-    /**
-     * 车辆类型（用于DTO映射）
-     */
-    public String getVehicleType() {
-        return this.typeId;
-    }
-
-    /**
-     * 燃料类型
-     */
+    @Column(name = "fuel_type")
     private String fuelType;
 
-    /**
-     * 制造年份
-     */
+    @Column(name = "vin_no")
+    private String vinNo;
+
+    @Column(name = "manufacture_year")
     private Integer manufactureYear;
 
-    /**
-     * 车主姓名
-     */
+    @Column(name = "owner_name")
     private String ownerName;
 
-    /**
-     * 车主电话
-     */
+    @Column(name = "owner_phone")
     private String ownerPhone;
 
-    /**
-     * 车主身份证号
-     */
+    @Column(name = "owner_id_card")
     private String ownerIdCard;
 
-    /**
-     * 注册日期
-     */
-    private String registrationDate;
-
-    /**
-     * 保险信息
-     */
+    @Column(name = "insurance_info", length = 1000)
     private String insuranceInfo;
 
-    /**
-     * 技术规格
-     */
+    @Column(name = "technical_specs", length = 1000)
     private String technicalSpecs;
 
     /**
      * 备注
      */
+    @Column(name = "notes", length = 500)
     private String notes;
 
+    /**
+     * 车辆状态
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private VehicleStatusEnum status;
 
+    public enum VehicleStatusEnum {
+        ACTIVE, INACTIVE, MAINTENANCE
+    }
 }

@@ -2,10 +2,12 @@ package com.carservice.service.impl;
 
 import com.carservice.dto.user.UserInfoDTO;
 import com.carservice.dto.user.UserLoginDTO;
+import com.carservice.common.util.JwtTokenUtil;
 import com.carservice.dto.user.EmployeeInfoDTO;
 import com.carservice.dto.user.PersonInfoDTO;
 import com.carservice.dto.user.FaceAuthDTO;
 import com.carservice.entity.User;
+import com.carservice.entity.User.UserStatusEnum;
 import com.carservice.entity.EmployeeInfo;
 import com.carservice.entity.PersonInfo;
 import com.carservice.entity.FaceAuth;
@@ -15,6 +17,7 @@ import com.carservice.repository.EmployeeInfoRepository;
 import com.carservice.repository.PersonInfoRepository;
 import com.carservice.repository.FaceAuthRepository;
 import com.carservice.service.UserManagementService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,6 +42,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     private final FaceAuthRepository faceAuthRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenUtil jwtTokenUtil;
     
     @Override
     public UserInfoDTO login(UserLoginDTO loginDTO) {
@@ -53,16 +57,19 @@ public class UserManagementServiceImpl implements UserManagementService {
             throw new RuntimeException("密码错误");
         }
         
-        if (user.getStatus() != 1) {
+        if (user.getStatus()!=UserStatusEnum.ACTIVE) {
             throw new RuntimeException("用户状态异常");
         }
         
         // 更新最后登录时间
         user.setLastLoginTime(LocalDateTime.now());
         userRepository.save(user);
-        
+        System.out.println("unionid -> " + user.getUnionid());
+        System.out.println("userId -> " + user.getUserId());
+        String token = jwtTokenUtil.generateToken(user.getUnionid(), user.getOpenid(), user.getUserId(), user.getRoleCode());
         // 构建用户信息
         UserInfoDTO userInfo = userMapper.toUserInfoDTO(user);
+        userInfo.setToken(token);
         
         // 加载关联信息
         loadUserRelatedInfo(userInfo);

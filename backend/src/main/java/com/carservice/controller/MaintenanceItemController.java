@@ -17,7 +17,7 @@ import java.util.List;
  */
 @Tag(name = "维修项目管理")
 @RestController
-@RequestMapping("/api/maintenanceItem")
+@RequestMapping("/api/v1/maintenanceItem")
 public class MaintenanceItemController {
 
     @Autowired

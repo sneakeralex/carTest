@@ -1,6 +1,9 @@
 package com.carservice.repository;
 
 import com.carservice.entity.Role;
+
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,7 +18,7 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
      * @param roleCode 角色编码
      * @return 角色对象
      */
-    Role findByRoleCode(String roleCode);
+    Optional<Role> findByRoleCode(String roleCode);
     
     /**
      * 根据角色名称查询角色

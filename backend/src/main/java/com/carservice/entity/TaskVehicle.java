@@ -2,7 +2,6 @@ package com.carservice.entity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,8 +20,6 @@ import jakarta.persistence.Table;
 public class TaskVehicle extends BaseEntity {
 
     @GeneratedValue(generator = "task-vehicle-id")
-    @GenericGenerator(name = "task-vehicle-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
-                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "TV"))
     @Column(name = "task_vehicle_id", unique = true)
     private String taskVehicleId;
 

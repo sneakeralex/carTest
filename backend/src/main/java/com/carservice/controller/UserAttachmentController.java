@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import com.carservice.config.FileStorageProperties;
 @RestController
-@RequestMapping("/api/user-attachments")
+@RequestMapping("/api/v1/user-attachments")
 @RequiredArgsConstructor
 public class UserAttachmentController {
 

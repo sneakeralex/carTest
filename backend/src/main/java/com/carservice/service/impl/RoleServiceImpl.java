@@ -42,7 +42,10 @@ public class RoleServiceImpl implements RoleService {
                 .collect(Collectors.toList());
 
         // 查询角色信息
-        return roleCodes.stream().map(code -> roleRepository.findByRoleCode(code)).toList();
+        return roleCodes.stream()
+                .map(code -> roleRepository.findByRoleCode(code).orElse(null))
+                .filter(role -> role != null)
+                .collect(Collectors.toList());
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -95,12 +98,12 @@ public class RoleServiceImpl implements RoleService {
     }
 
     public Role getRoleByCode(String roleCode) {
-        return roleRepository.findByRoleCode(roleCode);
+        return roleRepository.findByRoleCode(roleCode).orElse(null);
     }
 
     @Transactional(rollbackFor = Exception.class)
     public Role updateRoleByCode(String roleCode, Role role) {
-        Role existing = roleRepository.findByRoleCode(roleCode);
+        Role existing = roleRepository.findByRoleCode(roleCode).orElse(null);
         if (existing == null) throw new RuntimeException("角色不存在: " + roleCode);
         existing.setRoleName(role.getRoleName());
         existing.setDescription(role.getDescription());
@@ -110,7 +113,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Transactional(rollbackFor = Exception.class)
     public void deleteRoleByCode(String roleCode) {
-        Role existing = roleRepository.findByRoleCode(roleCode);
+        Role existing = roleRepository.findByRoleCode(roleCode).orElse(null);
         if (existing != null) {
             roleRepository.delete(existing);
         }

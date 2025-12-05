@@ -8,6 +8,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 /**
  * 预约Repository接口
  */
@@ -29,6 +32,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
      * @return 预约列表
      */
     List<Appointment> findByUserId(String userId);
+
+    /**
+     * 根据用户ID分页查找预约
+     * 
+     * @param userId 用户ID
+     * @param pageable 分页信息
+     * @return 分页预约
+     */
+    Page<Appointment> findByUserId(String userId, Pageable pageable);
 
     /**
      * 根据车辆ID查找预约

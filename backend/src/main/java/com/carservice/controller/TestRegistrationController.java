@@ -2,6 +2,7 @@ package com.carservice.controller;
 
 import com.carservice.common.api.ApiResponse;
 import com.carservice.dto.test.*;
+import com.carservice.entity.TestTask;
 import com.carservice.service.TestRegistrationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -22,7 +23,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/test-registration")
+@RequestMapping("/test-registration")
 @RequiredArgsConstructor
 @Tag(name = "汽车测试任务登记", description = "汽车测试任务、项目、车辆、内容管理")
 public class TestRegistrationController {
@@ -56,6 +57,21 @@ public class TestRegistrationController {
             @Parameter(description = "页码") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") int size) {
         try {
+            // 验证状态值
+            if (status != null) {
+                try {
+                    status = status.trim().toUpperCase();
+                    TestTask.TestTaskStatus.valueOf(status);
+                } catch (IllegalArgumentException e) {
+                    String validStatuses = String.join(", ", 
+                        java.util.Arrays.stream(TestTask.TestTaskStatus.values())
+                        .map(Enum::name)
+                        .toList());
+                    return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("无效的任务状态值。有效值为: " + validStatuses));
+                }
+            }
+            
             Pageable pageable = PageRequest.of(page, size);
             Page<TestTaskDTO> tasks = testRegistrationService.getTestTasks(authorizerId, status, pageable);
             log.info("获取试验任务列表成功: 授权人={}, 状态={}", authorizerId, status);

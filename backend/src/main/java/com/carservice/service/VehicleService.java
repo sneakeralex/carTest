@@ -48,13 +48,6 @@ public interface VehicleService {
     Page<Vehicle> pageList(Pageable pageable, Vehicle vehicle);
     
     /**
-     * 根据车牌号获取车辆
-     * @param vehicleNo 车牌号
-     * @return 车辆对象
-     */
-    Optional<Vehicle> getByVehicleNo(String vehicleNo);
-    
-    /**
      * 获取用户的车辆列表
      * @param userId 用户ID
      * @return 车辆列表
@@ -62,18 +55,11 @@ public interface VehicleService {
     List<Vehicle> getVehiclesByUserId(Long userId);
     
     /**
-     * 添加车辆
-     * @param vehicle 车辆信息
-     * @return 添加结果
-     */
-    Vehicle addVehicle(Vehicle vehicle);
-    
-    /**
      * 更新车辆信息
      * @param vehicle 车辆信息
      * @return 更新结果
      */
-    Optional<Vehicle> updateVehicle(Vehicle vehicle);
+    Optional<Vehicle> updateVehicle(String vehicleId, VehicleDto vehicleDto);
 
     /**
      * 获取所有车辆（带分页）
@@ -81,13 +67,6 @@ public interface VehicleService {
      * @return 车辆分页信息
      */
     Page<Vehicle> getAllVehicles(Pageable pageable);
-
-    /**
-     * 根据车牌号获取车辆
-     * @param vehicleNo 车牌号
-     * @return 车辆对象
-     */
-    Optional<Vehicle> getVehicleByNo(String vehicleNo);
 
     /**
      * 获取当前用户的车辆列表
@@ -103,20 +82,4 @@ public interface VehicleService {
      * @return 添加后的车辆
      */
     Vehicle addVehicle(VehicleDto vehicleDto, String username);
-
-    /**
-     * 根据车牌号更新车辆信息
-     * @param vehicleNo 车牌号
-     * @param vehicleDto 车辆信息
-     * @param username 用户名
-     * @return 更新后的车辆
-     */
-    Optional<Vehicle> updateVehicleByNo(String vehicleNo, VehicleDto vehicleDto, String username);
-
-    /**
-     * 根据车牌号删除车辆
-     * @param vehicleNo 车牌号
-     * @param username 用户名
-     */
-    void deleteVehicleByNo(String vehicleNo, String username);
 }

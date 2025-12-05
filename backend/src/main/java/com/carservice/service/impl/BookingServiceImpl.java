@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -233,9 +234,9 @@ public class BookingServiceImpl implements BookingService {
         
         // 加载车辆信息
         if (bookingDTO.getVehicleId() != null) {
-            Vehicle vehicle = vehicleRepository.findByVehicleId(bookingDTO.getVehicleId());
-            if (vehicle != null) {
-                bookingDTO.setVehiclePlateNo(vehicle.getPlateNo());
+            Optional<Vehicle> vehicleOpt = vehicleRepository.findByVehicleId(bookingDTO.getVehicleId());
+            if (vehicleOpt != null) {
+                bookingDTO.setVehiclePlateNo(vehicleOpt.get().getPlateNo());
             }
         }
         

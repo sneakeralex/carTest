@@ -4,6 +4,7 @@ import com.carservice.common.exception.BusinessException;
 import com.carservice.dto.VehicleDto;
 import com.carservice.common.api.ResultCode;
 import com.carservice.entity.Vehicle;
+import com.carservice.entity.Vehicle.VehicleStatusEnum;
 import com.carservice.entity.VehicleType;
 import com.carservice.repository.VehicleRepository;
 import com.carservice.service.VehicleService;
@@ -63,39 +64,18 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
-    public Optional<Vehicle> getByVehicleNo(String vehicleNo) {
-        return Optional.ofNullable(vehicleRepository.findByVehicleNo(vehicleNo));
-    }
-
-    @Override
     public List<Vehicle> getVehiclesByUserId(Long userId) {
         return vehicleRepository.findByOwnerId(String.valueOf(userId));
     }
 
-    @Override
-    public Vehicle addVehicle(Vehicle vehicle) {
-        // 检查车牌号是否已存在
-        getByVehicleNo(vehicle.getVehicleNo())
-                .orElseThrow(() -> new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "车牌号已存在"));
-
-        // 检查车辆类型是否存在
-        if (vehicle.getTypeId() != null) {
-            Optional<VehicleType> vehicleTypeOpt = vehicleTypeService.getByTypeId(vehicle.getTypeId());
-            if (vehicleTypeOpt.isPresent()) {
-                throw new IllegalArgumentException("vehicle type already exist");
-            }
-        }
-
-        // 设置默认值
-        vehicle.setStatus(1); // 默认正常状态
-
-        return vehicleRepository.save(vehicle);
+    public Optional<Vehicle> getByVehicleNo(String vehicleNo) {
+        return vehicleRepository.findByVehicleNo(vehicleNo);
     }
 
     @Override
-    public Optional<Vehicle> updateVehicle(Vehicle vehicle) {
+    public Optional<Vehicle> updateVehicle(String vehicleId, VehicleDto vehicleDto) {
         // 检查车辆是否存在
-        Optional<Vehicle> existVehicleOpt = vehicleRepository.findById(vehicle.getId());
+        Optional<Vehicle> existVehicleOpt = vehicleRepository.findByVehicleId(vehicleDto.getVehicleId());
         if (!existVehicleOpt.isPresent()) {
             throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "车辆不存在");
         }
@@ -103,41 +83,41 @@ public class VehicleServiceImpl implements VehicleService {
         Vehicle existVehicle = existVehicleOpt.get();
 
         // 如果修改了车牌号，检查新车牌号是否已存在
-        if (StringUtils.hasText(vehicle.getVehicleNo())
-                && !vehicle.getVehicleNo().equals(existVehicle.getVehicleNo())) {
-            getByVehicleNo(vehicle.getVehicleNo())
+        if (StringUtils.hasText(vehicleDto.getVehicleNo())
+                && !vehicleDto.getVehicleNo().equals(existVehicle.getVehicleNo())) {
+            getByVehicleNo(vehicleDto.getVehicleNo())
                     .orElseThrow(() -> new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "车牌号已存在"));
         }
 
         // 检查车辆类型是否存在
-        if (vehicle.getTypeId() != null && !vehicle.getTypeId().equals(existVehicle.getTypeId())) {
-            Optional<VehicleType> vehicleTypeOpt = vehicleTypeService.getByTypeId(vehicle.getTypeId());
+        if (vehicleDto.getTypeId() != null && !vehicleDto.getTypeId().equals(existVehicle.getTypeId())) {
+            Optional<VehicleType> vehicleTypeOpt = vehicleTypeService.getByTypeId(vehicleDto.getTypeId());
             if (vehicleTypeOpt.isPresent()) {
                 throw new EntityExistsException();
             }
         }
 
         // 更新车辆信息
-        if (vehicle.getVehicleNo() != null)
-            existVehicle.setVehicleNo(vehicle.getVehicleNo());
-        if (vehicle.getVin() != null)
-            existVehicle.setVin(vehicle.getVin());
-        if (vehicle.getTypeId() != null)
-            existVehicle.setTypeId(vehicle.getTypeId());
-        if (vehicle.getBrand() != null)
-            existVehicle.setBrand(vehicle.getBrand());
-        if (vehicle.getModel() != null)
-            existVehicle.setModel(vehicle.getModel());
-        if (vehicle.getColor() != null)
-            existVehicle.setColor(vehicle.getColor());
-        if (vehicle.getEngineNo() != null)
-            existVehicle.setEngineNo(vehicle.getEngineNo());
-        if (vehicle.getPurchaseDate() != null)
-            existVehicle.setPurchaseDate(vehicle.getPurchaseDate());
-        if (vehicle.getMileage() != null)
-            existVehicle.setMileage(vehicle.getMileage());
-        if (vehicle.getStatus() != null)
-            existVehicle.setStatus(vehicle.getStatus());
+        if (vehicleDto.getVehicleNo() != null)
+            existVehicle.setVehicleNo(vehicleDto.getVehicleNo());
+        if (vehicleDto.getVin() != null)
+            existVehicle.setVin(vehicleDto.getVin());
+        if (vehicleDto.getTypeId() != null)
+            existVehicle.setTypeId(vehicleDto.getTypeId());
+        if (vehicleDto.getBrand() != null)
+            existVehicle.setBrand(vehicleDto.getBrand());
+        if (vehicleDto.getModel() != null)
+            existVehicle.setModel(vehicleDto.getModel());
+        if (vehicleDto.getColor() != null)
+            existVehicle.setColor(vehicleDto.getColor());
+        if (vehicleDto.getEngineNo() != null)
+            existVehicle.setEngineNo(vehicleDto.getEngineNo());
+        if (vehicleDto.getPurchaseDate() != null)
+            existVehicle.setPurchaseDate(vehicleDto.getPurchaseDate());
+        if (vehicleDto.getMileage() != null)
+            existVehicle.setMileage(vehicleDto.getMileage());
+        if (vehicleDto.getStatus() != null)
+            existVehicle.setStatus(vehicleDto.getStatus());
 
         return Optional.of(vehicleRepository.save(existVehicle));
 
@@ -146,12 +126,12 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     public Optional<Vehicle> getByVehicleId(String vehicleId) {
         // 假设 vehicleId 实际为 String 类型主键（如 vehicleNo），否则需转换
-        return Optional.ofNullable(vehicleRepository.findByVehicleNo(vehicleId));
+        return Optional.ofNullable(vehicleRepository.findByVehicleId(vehicleId).get());
     }
 
     @Override
     public void deleteByVehicleId(String vehicleId) {
-        Vehicle vehicle = vehicleRepository.findByVehicleNo(vehicleId);
+        Vehicle vehicle = vehicleRepository.findByVehicleId(vehicleId).orElseThrow(()-> new BusinessException(vehicleId));
         if (vehicle != null) {
             vehicleRepository.delete(vehicle);
         }
@@ -160,11 +140,6 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     public Page<Vehicle> getAllVehicles(Pageable pageable) {
         return vehicleRepository.findAll(pageable);
-    }
-
-    @Override
-    public Optional<Vehicle> getVehicleByNo(String vehicleNo) {
-        return Optional.ofNullable(vehicleRepository.findByVehicleNo(vehicleNo));
     }
 
     @Override
@@ -177,8 +152,8 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     public Vehicle addVehicle(VehicleDto vehicleDto, String username) {
-        Vehicle existVehicle = vehicleRepository.findByVehicleNo(vehicleDto.getVehicleNo());
-        if (existVehicle != null) {
+        Optional<Vehicle> existVehicleOpt = vehicleRepository.findByVehicleId(vehicleDto.getVehicleId());
+        if (existVehicleOpt.isPresent()) {
             throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "车牌号已存在");
         }
         if (vehicleDto.getTypeId() != null) {
@@ -191,6 +166,7 @@ public class VehicleServiceImpl implements VehicleService {
         if (user == null)
             throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "用户不存在");
         Vehicle vehicle = new Vehicle();
+        vehicle.setVehicleId(vehicleDto.getVehicleId());
         vehicle.setVehicleNo(vehicleDto.getVehicleNo());
         vehicle.setVin(vehicleDto.getVin());
         vehicle.setTypeId(vehicleDto.getTypeId());
@@ -200,48 +176,48 @@ public class VehicleServiceImpl implements VehicleService {
         vehicle.setEngineNo(vehicleDto.getEngineNo());
         vehicle.setPurchaseDate(vehicleDto.getPurchaseDate());
         vehicle.setMileage(vehicleDto.getMileage());
-        vehicle.setStatus(1); // 默认正常
+        vehicle.setStatus(VehicleStatusEnum.ACTIVE); // 默认正常
         vehicle.setOwnerId(user.getUserId());
         return vehicleRepository.save(vehicle);
     }
 
-    @Override
-    public Optional<Vehicle> updateVehicleByNo(String vehicleNo, VehicleDto vehicleDto, String username) {
-        Vehicle vehicle = vehicleRepository.findByVehicleNo(vehicleNo);
-        if (vehicle == null)
-            throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "车辆不存在");
-        User user = userRepository.findByUsername(username);
-        if (user == null || !user.getUserId().equals(vehicle.getOwnerId()))
-            throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "无权限");
-        if (vehicleDto.getVin() != null)
-            vehicle.setVin(vehicleDto.getVin());
-        if (vehicleDto.getTypeId() != null)
-            vehicle.setTypeId(vehicleDto.getTypeId());
-        if (vehicleDto.getBrand() != null)
-            vehicle.setBrand(vehicleDto.getBrand());
-        if (vehicleDto.getModel() != null)
-            vehicle.setModel(vehicleDto.getModel());
-        if (vehicleDto.getColor() != null)
-            vehicle.setColor(vehicleDto.getColor());
-        if (vehicleDto.getEngineNo() != null)
-            vehicle.setEngineNo(vehicleDto.getEngineNo());
-        if (vehicleDto.getPurchaseDate() != null)
-            vehicle.setPurchaseDate(vehicleDto.getPurchaseDate());
-        if (vehicleDto.getMileage() != null)
-            vehicle.setMileage(vehicleDto.getMileage());
-        if (vehicleDto.getStatus() != null)
-            vehicle.setStatus(vehicleDto.getStatus());
-        return Optional.of(vehicleRepository.save(vehicle));
-    }
+    // @Override
+    // public Optional<Vehicle> updateVehicleByNo(String vehicleNo, VehicleDto vehicleDto, String username) {
+    //     Vehicle vehicle = vehicleRepository.findByVehicleNo(vehicleNo);
+    //     if (vehicle == null)
+    //         throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "车辆不存在");
+    //     User user = userRepository.findByUsername(username);
+    //     if (user == null || !user.getUserId().equals(vehicle.getOwnerId()))
+    //         throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "无权限");
+    //     if (vehicleDto.getVin() != null)
+    //         vehicle.setVin(vehicleDto.getVin());
+    //     if (vehicleDto.getTypeId() != null)
+    //         vehicle.setTypeId(vehicleDto.getTypeId());
+    //     if (vehicleDto.getBrand() != null)
+    //         vehicle.setBrand(vehicleDto.getBrand());
+    //     if (vehicleDto.getModel() != null)
+    //         vehicle.setModel(vehicleDto.getModel());
+    //     if (vehicleDto.getColor() != null)
+    //         vehicle.setColor(vehicleDto.getColor());
+    //     if (vehicleDto.getEngineNo() != null)
+    //         vehicle.setEngineNo(vehicleDto.getEngineNo());
+    //     if (vehicleDto.getPurchaseDate() != null)
+    //         vehicle.setPurchaseDate(vehicleDto.getPurchaseDate());
+    //     if (vehicleDto.getMileage() != null)
+    //         vehicle.setMileage(vehicleDto.getMileage());
+    //     if (vehicleDto.getStatus() != null)
+    //         vehicle.setStatus(vehicleDto.getStatus());
+    //     return Optional.of(vehicleRepository.save(vehicle));
+    // }
 
-    @Override
-    public void deleteVehicleByNo(String vehicleNo, String username) {
-        Vehicle vehicle = vehicleRepository.findByVehicleNo(vehicleNo);
-        if (vehicle == null)
-            throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "车辆不存在");
-        User user = userRepository.findByUsername(username);
-        if (user == null || !user.getUserId().equals(vehicle.getOwnerId()))
-            throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "无权限");
-        vehicleRepository.delete(vehicle);
-    }
+    // @Override
+    // public void deleteVehicleByNo(String vehicleNo, String username) {
+    //     Vehicle vehicle = vehicleRepository.findByVehicleNo(vehicleNo);
+    //     if (vehicle == null)
+    //         throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "车辆不存在");
+    //     User user = userRepository.findByUsername(username);
+    //     if (user == null || !user.getUserId().equals(vehicle.getOwnerId()))
+    //         throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "无权限");
+    //     vehicleRepository.delete(vehicle);
+    // }
 }

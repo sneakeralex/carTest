@@ -2,7 +2,6 @@ package com.carservice.entity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,8 +22,6 @@ import java.time.LocalDate;
 public class EmployeeInfo extends BasePersonEntity {
 
     @GeneratedValue(generator = "employee-id")
-    @GenericGenerator(name = "employee-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
-                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "EMP"))
     @Column(name = "employee_id", unique = true)
     private String employeeId;
 

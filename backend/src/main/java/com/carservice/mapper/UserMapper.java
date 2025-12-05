@@ -18,7 +18,9 @@ public interface UserMapper {
     /**
      * User实体转UserInfoDTO
      */
-    @Mapping(target = "statusName", expression = "java(getStatusName(user.getStatus()))")
+    @Mapping(target = "statusName", expression = "java(user.getStatus().getLabel())")
+    @Mapping(target = "personTypeId", expression = "java(user.getPersonType() != null ? user.getPersonType().getId() : null)")
+    @Mapping(target = "personTypeName", expression = "java(user.getPersonType() != null ? user.getPersonType().getName() : null)")
     @Mapping(target = "employeeInfo", ignore = true)
     @Mapping(target = "personInfo", ignore = true)
     @Mapping(target = "faceAuth", ignore = true)
@@ -99,15 +101,15 @@ public interface UserMapper {
     void updatePersonInfo(@MappingTarget PersonInfo personInfo, PersonInfoDTO personInfoDTO);
     
     // 辅助方法
-    default String getStatusName(Integer status) {
-        if (status == null) return null;
-        switch (status) {
-            case 0: return "禁用";
-            case 1: return "正常";
-            case 2: return "锁定";
-            default: return "未知";
-        }
-    }
+    // default String getStatusName(Integer status) {
+    //     if (status == null) return null;
+    //     switch (status) {
+    //         case 0: return "禁用";
+    //         case 1: return "正常";
+    //         case 2: return "锁定";
+    //         default: return "未知";
+    //     }
+    // }
     
     default String getEmployeeStatusName(EmployeeInfo.EmployeeStatus status) {
         if (status == null) return null;

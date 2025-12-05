@@ -1,0 +1,229 @@
+package com.carservice.mapper;
+
+import com.carservice.dto.booking.SiteBookingDTO;
+import com.carservice.dto.booking.SiteScheduleDTO;
+import com.carservice.dto.booking.TestSiteDTO;
+import com.carservice.dto.booking.WeatherRecordDTO;
+import com.carservice.entity.SiteBooking;
+import com.carservice.entity.SiteSchedule;
+import com.carservice.entity.TestSite;
+import com.carservice.entity.WeatherRecord;
+import javax.annotation.processing.Generated;
+import org.springframework.stereotype.Component;
+
+@Generated(
+    value = "org.mapstruct.ap.MappingProcessor",
+    date = "2025-07-29T15:44:57+0800",
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.12 (Oracle Corporation)"
+)
+@Component
+public class BookingMapperImpl implements BookingMapper {
+
+    @Override
+    public SiteBookingDTO toSiteBookingDTO(SiteBooking siteBooking) {
+        if ( siteBooking == null ) {
+            return null;
+        }
+
+        SiteBookingDTO siteBookingDTO = new SiteBookingDTO();
+
+        siteBookingDTO.setBookingId( siteBooking.getBookingId() );
+        siteBookingDTO.setSiteId( siteBooking.getSiteId() );
+        siteBookingDTO.setUserId( siteBooking.getUserId() );
+        siteBookingDTO.setVehicleId( siteBooking.getVehicleId() );
+        siteBookingDTO.setTestContentId( siteBooking.getTestContentId() );
+        siteBookingDTO.setScheduleId( siteBooking.getScheduleId() );
+        siteBookingDTO.setStartTime( siteBooking.getStartTime() );
+        siteBookingDTO.setEndTime( siteBooking.getEndTime() );
+        siteBookingDTO.setStatus( getBookingStatusName( siteBooking.getStatus() ) );
+        siteBookingDTO.setPurpose( siteBooking.getPurpose() );
+        siteBookingDTO.setRequirements( siteBooking.getRequirements() );
+        siteBookingDTO.setContactPerson( siteBooking.getContactPerson() );
+        siteBookingDTO.setContactPhone( siteBooking.getContactPhone() );
+        siteBookingDTO.setNotes( siteBooking.getNotes() );
+        siteBookingDTO.setCreatedTime( siteBooking.getCreatedTime() );
+        siteBookingDTO.setUpdatedTime( siteBooking.getUpdatedTime() );
+
+        siteBookingDTO.setStatusName( getBookingStatusName(siteBooking.getStatus()) );
+
+        return siteBookingDTO;
+    }
+
+    @Override
+    public TestSiteDTO toTestSiteDTO(TestSite testSite) {
+        if ( testSite == null ) {
+            return null;
+        }
+
+        TestSiteDTO testSiteDTO = new TestSiteDTO();
+
+        testSiteDTO.setSiteId( testSite.getSiteId() );
+        testSiteDTO.setSiteName( testSite.getSiteName() );
+        testSiteDTO.setSiteCode( testSite.getSiteCode() );
+        testSiteDTO.setSiteType( getSiteTypeName( testSite.getSiteType() ) );
+        testSiteDTO.setStatus( getSiteStatusName( testSite.getStatus() ) );
+        testSiteDTO.setArea( testSite.getArea() );
+        testSiteDTO.setLocation( testSite.getLocation() );
+        testSiteDTO.setDescription( testSite.getDescription() );
+        testSiteDTO.setFacilities( testSite.getFacilities() );
+        testSiteDTO.setMaxVehicles( testSite.getMaxVehicles() );
+        testSiteDTO.setCreatedTime( testSite.getCreatedTime() );
+        testSiteDTO.setUpdatedTime( testSite.getUpdatedTime() );
+
+        testSiteDTO.setSiteTypeName( getSiteTypeName(testSite.getSiteType()) );
+        testSiteDTO.setStatusName( getSiteStatusName(testSite.getStatus()) );
+
+        return testSiteDTO;
+    }
+
+    @Override
+    public SiteScheduleDTO toSiteScheduleDTO(SiteSchedule siteSchedule) {
+        if ( siteSchedule == null ) {
+            return null;
+        }
+
+        SiteScheduleDTO siteScheduleDTO = new SiteScheduleDTO();
+
+        siteScheduleDTO.setScheduleId( siteSchedule.getScheduleId() );
+        siteScheduleDTO.setSiteId( siteSchedule.getSiteId() );
+        siteScheduleDTO.setStartTime( siteSchedule.getStartTime() );
+        siteScheduleDTO.setEndTime( siteSchedule.getEndTime() );
+        siteScheduleDTO.setScheduleType( getScheduleTypeName( siteSchedule.getScheduleType() ) );
+        siteScheduleDTO.setIsAvailable( siteSchedule.getIsAvailable() );
+        siteScheduleDTO.setNotes( siteSchedule.getNotes() );
+        siteScheduleDTO.setCreatedTime( siteSchedule.getCreatedTime() );
+        siteScheduleDTO.setUpdatedTime( siteSchedule.getUpdatedTime() );
+
+        siteScheduleDTO.setScheduleTypeName( getScheduleTypeName(siteSchedule.getScheduleType()) );
+
+        return siteScheduleDTO;
+    }
+
+    @Override
+    public WeatherRecordDTO toWeatherRecordDTO(WeatherRecord weatherRecord) {
+        if ( weatherRecord == null ) {
+            return null;
+        }
+
+        WeatherRecordDTO weatherRecordDTO = new WeatherRecordDTO();
+
+        weatherRecordDTO.setWeatherId( weatherRecord.getWeatherId() );
+        weatherRecordDTO.setSiteId( weatherRecord.getSiteId() );
+        weatherRecordDTO.setRecordTime( weatherRecord.getRecordTime() );
+        weatherRecordDTO.setWeatherType( getWeatherTypeName( weatherRecord.getWeatherType() ) );
+        weatherRecordDTO.setTemperature( weatherRecord.getTemperature() );
+        weatherRecordDTO.setHumidity( weatherRecord.getHumidity() );
+        weatherRecordDTO.setWindSpeed( weatherRecord.getWindSpeed() );
+        weatherRecordDTO.setWindDirection( weatherRecord.getWindDirection() );
+        weatherRecordDTO.setVisibility( weatherRecord.getVisibility() );
+        weatherRecordDTO.setDescription( weatherRecord.getDescription() );
+        weatherRecordDTO.setIsSuitable( weatherRecord.getIsSuitable() );
+        weatherRecordDTO.setCreatedTime( weatherRecord.getCreatedTime() );
+        weatherRecordDTO.setUpdatedTime( weatherRecord.getUpdatedTime() );
+
+        weatherRecordDTO.setWeatherTypeName( getWeatherTypeName(weatherRecord.getWeatherType()) );
+
+        return weatherRecordDTO;
+    }
+
+    @Override
+    public SiteBooking toSiteBooking(SiteBookingDTO siteBookingDTO) {
+        if ( siteBookingDTO == null ) {
+            return null;
+        }
+
+        SiteBooking siteBooking = new SiteBooking();
+
+        siteBooking.setBookingId( siteBookingDTO.getBookingId() );
+        siteBooking.setTestContentId( siteBookingDTO.getTestContentId() );
+        siteBooking.setSiteId( siteBookingDTO.getSiteId() );
+        siteBooking.setScheduleId( siteBookingDTO.getScheduleId() );
+        siteBooking.setStartTime( siteBookingDTO.getStartTime() );
+        siteBooking.setEndTime( siteBookingDTO.getEndTime() );
+        siteBooking.setVehicleId( siteBookingDTO.getVehicleId() );
+        siteBooking.setUserId( siteBookingDTO.getUserId() );
+        if ( siteBookingDTO.getStatus() != null ) {
+            siteBooking.setStatus( Enum.valueOf( SiteBooking.BookingStatus.class, siteBookingDTO.getStatus() ) );
+        }
+        siteBooking.setPurpose( siteBookingDTO.getPurpose() );
+        siteBooking.setRequirements( siteBookingDTO.getRequirements() );
+        siteBooking.setContactPerson( siteBookingDTO.getContactPerson() );
+        siteBooking.setContactPhone( siteBookingDTO.getContactPhone() );
+        siteBooking.setNotes( siteBookingDTO.getNotes() );
+
+        return siteBooking;
+    }
+
+    @Override
+    public TestSite toTestSite(TestSiteDTO testSiteDTO) {
+        if ( testSiteDTO == null ) {
+            return null;
+        }
+
+        TestSite testSite = new TestSite();
+
+        testSite.setSiteId( testSiteDTO.getSiteId() );
+        testSite.setSiteName( testSiteDTO.getSiteName() );
+        testSite.setSiteCode( testSiteDTO.getSiteCode() );
+        testSite.setDescription( testSiteDTO.getDescription() );
+        testSite.setArea( testSiteDTO.getArea() );
+        testSite.setMaxVehicles( testSiteDTO.getMaxVehicles() );
+        if ( testSiteDTO.getSiteType() != null ) {
+            testSite.setSiteType( Enum.valueOf( TestSite.SiteType.class, testSiteDTO.getSiteType() ) );
+        }
+        if ( testSiteDTO.getStatus() != null ) {
+            testSite.setStatus( Enum.valueOf( TestSite.SiteStatus.class, testSiteDTO.getStatus() ) );
+        }
+        testSite.setFacilities( testSiteDTO.getFacilities() );
+        testSite.setLocation( testSiteDTO.getLocation() );
+
+        return testSite;
+    }
+
+    @Override
+    public SiteSchedule toSiteSchedule(SiteScheduleDTO siteScheduleDTO) {
+        if ( siteScheduleDTO == null ) {
+            return null;
+        }
+
+        SiteSchedule siteSchedule = new SiteSchedule();
+
+        siteSchedule.setScheduleId( siteScheduleDTO.getScheduleId() );
+        siteSchedule.setSiteId( siteScheduleDTO.getSiteId() );
+        siteSchedule.setStartTime( siteScheduleDTO.getStartTime() );
+        siteSchedule.setEndTime( siteScheduleDTO.getEndTime() );
+        if ( siteScheduleDTO.getScheduleType() != null ) {
+            siteSchedule.setScheduleType( Enum.valueOf( SiteSchedule.ScheduleType.class, siteScheduleDTO.getScheduleType() ) );
+        }
+        siteSchedule.setIsAvailable( siteScheduleDTO.getIsAvailable() );
+        siteSchedule.setNotes( siteScheduleDTO.getNotes() );
+
+        return siteSchedule;
+    }
+
+    @Override
+    public void updateSiteBooking(SiteBooking siteBooking, SiteBookingDTO siteBookingDTO) {
+        if ( siteBookingDTO == null ) {
+            return;
+        }
+
+        siteBooking.setTestContentId( siteBookingDTO.getTestContentId() );
+        siteBooking.setSiteId( siteBookingDTO.getSiteId() );
+        siteBooking.setScheduleId( siteBookingDTO.getScheduleId() );
+        siteBooking.setStartTime( siteBookingDTO.getStartTime() );
+        siteBooking.setEndTime( siteBookingDTO.getEndTime() );
+        siteBooking.setVehicleId( siteBookingDTO.getVehicleId() );
+        siteBooking.setUserId( siteBookingDTO.getUserId() );
+        if ( siteBookingDTO.getStatus() != null ) {
+            siteBooking.setStatus( Enum.valueOf( SiteBooking.BookingStatus.class, siteBookingDTO.getStatus() ) );
+        }
+        else {
+            siteBooking.setStatus( null );
+        }
+        siteBooking.setPurpose( siteBookingDTO.getPurpose() );
+        siteBooking.setRequirements( siteBookingDTO.getRequirements() );
+        siteBooking.setContactPerson( siteBookingDTO.getContactPerson() );
+        siteBooking.setContactPhone( siteBookingDTO.getContactPhone() );
+        siteBooking.setNotes( siteBookingDTO.getNotes() );
+    }
+}

@@ -3,14 +3,20 @@ package com.carservice.service.impl;
 import com.carservice.common.exception.BusinessException;
 import com.carservice.common.api.ResultCode;
 import com.carservice.common.util.JwtTokenUtil;
+import com.carservice.dto.RegisterRequest;
 import com.carservice.entity.User;
 import com.carservice.entity.UserRoleRel;
+import com.carservice.entity.User.PersonTypeEnum;
+import com.carservice.entity.User.UserStatusEnum;
 import com.carservice.repository.UserRepository;
 import com.carservice.repository.UserRoleRelRepository;
 import com.carservice.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.carservice.entity.Role;
+import com.carservice.repository.RoleRepository;
+
+import jakarta.annotation.Resource;
+
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,38 +30,41 @@ import java.util.Optional;
 @Service
 public class UserServiceImpl implements UserService {
 
-    @Autowired
+    @Resource
     private UserRepository userRepository;
-    
-    @Autowired
+
+    @Resource
     private UserRoleRelRepository userRoleRelRepository;
-    
-    @Autowired
+
+    @Resource
     private PasswordEncoder passwordEncoder;
-    
-    @Autowired
+
+    @Resource
     private JwtTokenUtil jwtTokenUtil;
+
+    @Resource
+    private RoleRepository roleRepository;
 
     @Override
     public User save(User user) {
         return userRepository.save(user);
     }
-    
+
     @Override
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
     }
-    
+
     @Override
     public List<User> findAll() {
         return userRepository.findAll();
     }
-    
+
     @Override
     public void deleteById(Long id) {
         userRepository.deleteById(id);
     }
-    
+
     @Override
     public User getByUsername(String username) {
         return userRepository.findByUsername(username);
@@ -63,20 +72,24 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean register(User user) {
+    public boolean register(RegisterRequest request) {
         // 检查用户名是否已存在
-        User existUser = getByUsername(user.getUsername());
+        User existUser = getByUsername(request.getUsername());
         if (existUser != null) {
             throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "用户名已存在");
         }
-        
+
+        User user = new User();
         // 设置默认值
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setStatus(1); // 默认启用
-        
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setStatus(UserStatusEnum.ACTIVE); // 默认启用
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+        user.setPersonType(PersonTypeEnum.EMPLOYEE);
         // 保存用户
-        User savedUser = userRepository.save(user);
-        
+        User savedUser = save(user);
+
         // 分配默认角色（普通用户角色，ID为2）
         UserRoleRel userRoleRel = new UserRoleRel();
         userRoleRel.setUserId(savedUser.getUserId());
@@ -92,26 +105,26 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             throw new BadCredentialsException("用户名或密码错误");
         }
-        
+
         // 检查用户状态
-        if (user.getStatus() == 0) {
+        if (user.getStatus() == UserStatusEnum.FREEZE) {
             throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "账号已被禁用");
         }
-        
+
         // 验证密码
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BadCredentialsException("用户名或密码错误");
         }
-        
+
         // 创建UserDetails对象
-        UserDetails userDetails = org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername())
-                .password(user.getPassword())
-                .authorities("ROLE_USER")
-                .build();
-        
+        // UserDetails userDetails = org.springframework.security.core.userdetails.User
+        //         .withUsername(user.getUsername())
+        //         .password(user.getPassword())
+        //         .authorities("ROLE_USER")
+        //         .build();
+
         // 生成JWT token
-        return jwtTokenUtil.generateToken(userDetails);
+        return jwtTokenUtil.generateToken(user);
     }
 
     @Override
@@ -120,16 +133,21 @@ public class UserServiceImpl implements UserService {
         if (!existUserOpt.isPresent()) {
             throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "用户不存在");
         }
-        
+
         User existUser = existUserOpt.get();
-        
+
         // 不允许修改用户名和密码
-        if (user.getRealName() != null) existUser.setRealName(user.getRealName());
-        if (user.getPhone() != null) existUser.setPhone(user.getPhone());
-        if (user.getEmail() != null) existUser.setEmail(user.getEmail());
-        if (user.getAvatar() != null) existUser.setAvatar(user.getAvatar());
-        if (user.getGender() != null) existUser.setGender(user.getGender());
-        
+        if (user.getRealName() != null)
+            existUser.setRealName(user.getRealName());
+        if (user.getPhone() != null)
+            existUser.setPhone(user.getPhone());
+        if (user.getEmail() != null)
+            existUser.setEmail(user.getEmail());
+        if (user.getAvatar() != null)
+            existUser.setAvatar(user.getAvatar());
+        if (user.getGender() != null)
+            existUser.setGender(user.getGender());
+
         userRepository.save(existUser);
         return true;
     }
@@ -140,17 +158,17 @@ public class UserServiceImpl implements UserService {
         if (!userOpt.isPresent()) {
             throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "用户不存在");
         }
-        
+
         User user = userOpt.get();
-        
+
         // 验证旧密码
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "原密码错误");
         }
-        
+
         // 更新密码
         user.setPassword(passwordEncoder.encode(newPassword));
-        
+
         userRepository.save(user);
         return true;
     }
@@ -177,18 +195,19 @@ public class UserServiceImpl implements UserService {
         com.carservice.dto.LoginResponse resp = new com.carservice.dto.LoginResponse();
         resp.setUsername(user.getUsername());
         // 这里需要UserDetails对象
-        org.springframework.security.core.userdetails.UserDetails userDetails =
-            org.springframework.security.core.userdetails.User.withUsername(user.getUsername())
-                .password(user.getPassword())
-                .authorities("USER") // 可根据实际角色调整
-                .build();
-        resp.setToken(jwtTokenUtil.generateToken(userDetails));
+        // org.springframework.security.core.userdetails.UserDetails userDetails = org.springframework.security.core.userdetails.User
+        //         .withUsername(user.getUsername())
+        //         .password(user.getPassword())
+        //         .authorities("USER") // 可根据实际角色调整
+        //         .build();
+        resp.setToken(jwtTokenUtil.generateToken(user));
         return resp;
     }
 
     public User updateUser(String username, com.carservice.dto.UpdateUserRequest updateUserRequest) {
         User user = userRepository.findByUsername(username);
-        if (user == null) throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "用户不存在");
+        if (user == null)
+            throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "用户不存在");
         user.setRealName(updateUserRequest.getRealName());
         user.setEmail(updateUserRequest.getEmail());
         user.setPhone(updateUserRequest.getPhone());
@@ -199,11 +218,25 @@ public class UserServiceImpl implements UserService {
 
     public void changePassword(String username, String oldPassword, String newPassword) {
         User user = userRepository.findByUsername(username);
-        if (user == null) throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "用户不存在");
+        if (user == null)
+            throw new BusinessException(ResultCode.VALIDATE_FAILED.getCode(), "用户不存在");
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new BadCredentialsException("原密码错误");
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+    }
+
+    @Override
+    public User findByUnionid(String unionid) {
+        return userRepository.findByUnionid(unionid)
+                .orElse(null);
+    }
+
+    @Override
+    public Role getDefaultRole() {
+        // 获取编码为 "ROLE_CUSTOMER" 的角色
+        return roleRepository.findByRoleCode("ROLE_CUSTOMER")
+                .orElseThrow(() -> new BusinessException("默认角色未配置"));
     }
 }

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/vehicle-types")
+@RequestMapping("/vehicle-types")
 @RequiredArgsConstructor
 @Tag(name = "车辆类型管理")
 public class VehicleTypeController {

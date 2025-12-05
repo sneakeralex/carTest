@@ -2,7 +2,6 @@ package com.carservice.entity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,8 +22,6 @@ import java.time.LocalDateTime;
 public class SiteSchedule extends BaseEntity {
 
     @GeneratedValue(generator = "site-schedule-id")
-    @GenericGenerator(name = "site-schedule-id", strategy = "com.carservice.entity.generator.PrefixedIdGenerator",
-                     parameters = @org.hibernate.annotations.Parameter(name = "prefix", value = "SS"))
     @Column(name = "schedule_id", unique = true)
     private String scheduleId;
 

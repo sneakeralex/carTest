@@ -11,13 +11,11 @@ public class UserInfoDTO {
     
     private String userId;
     private String username;
-    private String realName;
-    private String phone;
-    private String email;
+    private String token;
     private String avatar;
-    private String personTypeId;
+    private int personTypeId;
     private String personTypeName;
-    private Integer status;
+    private String status;
     private String statusName;
     private LocalDateTime lastLoginTime;
     private LocalDateTime createdTime;

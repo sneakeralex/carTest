@@ -48,6 +48,7 @@ public interface AppointmentService {
      */
     Page<Appointment> pageList(Pageable pageable);
     List<Appointment> getAppointmentsByUserId(String userId);
+    Page<Appointment> getAppointmentsByUserId(String userId, Pageable pageable);
     Appointment createAppointment(AppointmentDto appointmentDto);
     // Appointment approveAppointment(String appointmentNo);
     Appointment approveAppointmentByNo(String appointmentNo);

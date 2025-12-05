@@ -24,7 +24,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/bookings")
+@RequestMapping("/bookings")
 @RequiredArgsConstructor
 @Tag(name = "测试场预约管理", description = "测试场地预约、排期查询、天气信息等功能")
 public class BookingController {
