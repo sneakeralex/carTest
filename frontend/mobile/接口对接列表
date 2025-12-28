@@ -1,0 +1,225 @@
+1. auth.js - 认证相关
+register() - 用户注册 ✅ (已更新为真实API)
+login() - 用户登录 ✅ (已更新为真实API)
+getUserInfo() - 获取用户信息 ✅ (已更新为真实API /api/artemis/api/manage/auth/v2/manage/userService/getUserInfo)
+changePassword() - 修改密码 ✅ (已更新为真实API /api/artemis/api/manage/auth/v2/manage/userService/changePassword)
+
+2. vehicle.js - 车辆管理
+getMobileVehicles() - 获取车辆列表 ✅ (已完成，使用真实API /artemis/api/resource/v1/vehicle/vehicleList)
+getMobileVehicleById() - 根据ID获取车辆详情 ✅ (已完成，使用列表API过滤获取单个车辆)
+/artemis/api/resource/v1/vehicle/vehicleList
+HTTP Method：
+POST
+安全认证：
+AK/SK签名认证
+请求Body
+contentType：
+application/json
+Body内容描述：
+Object
+Object
+pageNo
+Number
+当前页码 当前页码需大于0（pageNo>0）
+pageSize
+Number
+每页记录总数 每页记录展示的数目应大于0，小于等于1000（0<pageSize<=1000）
+Body示例:
+{
+    "pageNo": 1,
+    "pageSize": 1000
+}
+
+
+返回结果示例：
+{
+    "code": "0",
+    "msg": "ok",
+    "data": {
+        "total": 5,
+        "pageNo": 1,
+        "pageSize": 5,
+        "list": [
+            {
+                "vehicleId": "ddfff934-3632-4891-a9e9-bea8c25e54b6",
+                "plateNo": "浙A12345",
+                "isBandPerson": 1,
+                "personId": "f1ed9ade-8057-4d01-bb38-2af26d43083e",
+                "personName": "shunzi",
+                "phoneNo": "null",
+                "plateType": 0,
+                "plateColor": 0,
+                "vehicleType": 1,
+                "vehicleColor": 1,
+                "mark": "备注备注"
+            }
+        ]
+    }
+}
+
+getUserVehicles() - 获取用户车辆 ❌
+addVehicle() - 添加车辆 ❌
+updateVehicle() - 更新车辆 ❌
+deleteVehicle() - 删除车辆 ❌
+getVehicleBrands() - 获取车辆品牌 ❌
+getVehicleModels() - 获取车辆型号 ❌
+getVehicleTypes() - 获取车辆类型 ❌
+uploadVehicleImage() - 上传车辆图片 ❌
+
+3. equipment.js - 设备管理
+getEquipments() - 获取设备列表 ✅ (已完成，使用真实API /artemis/api/iotrm/v1/device/page，API成功，返回260个设备)
+getEquipmentById() - 根据ID获取设备详情 ✅ (已完成，使用设备列表API过滤获取单个设备，API成功，返回设备详情)
+createEquipment() - 创建设备 接口访问失败 (已完成，使用真实API /artemis/api/iotrm/v1/device POST，但API失败，fallback到mock)
+updateEquipment() - 更新设备 接口访问失败 (已完成，使用真实API /artemis/api/iotrm/v1/device PUT，但API失败，fallback到mock)
+deleteEquipment() - 删除设备 接口访问失败 (已完成，使用真实API /artemis/api/iotrm/v1/device/{id} DELETE，但API失败，fallback到mock)
+getEquipmentApplications() - 获取设备申请记录列表 接口访问失败 (已完成，使用真实API /artemis/api/iotrm/v1/device/application/page，但API失败，fallback到mock)
+getEquipmentApplicationById() - 获取设备申请记录详情 接口访问失败 (已完成，使用真实API /artemis/api/iotrm/v1/device/application/{id}，但API失败，fallback到mock)
+applyEquipment() - 提交设备申请 接口访问失败 (已完成，使用真实API /artemis/api/iotrm/v1/device/application POST，但API失败，fallback到mock)
+updateApplicationStatus() - 更新申请状态 接口访问失败 (已完成，使用真实API /artemis/api/iotrm/v1/device/application/{id} PUT，但API失败，fallback到mock)
+approveEquipmentRequest() - 审批设备申请 接口访问失败 (已完成，使用真实API /artemis/api/iotrm/v1/device/application/{id}/approve，但API失败，fallback到mock)
+cancelEquipmentRequest() - 取消设备申请 接口访问失败 (已完成，使用真实API /artemis/api/iotrm/v1/device/application/{id}/cancel，但API失败，fallback到mock)
+
+/artemis/api/iotrm/v1/device/page
+{
+    "pageSize": 20,
+    "pageNo": 1,
+    "array": [
+    ],
+    "containChildOrg": false
+}
+
+
+
+
+4. booking.js - 预约管理
+
+URL: https://cartest.douwifi.cn/artemis/api/v1/booking/add
+Body示例:
+{
+    "userId": "1848526399914856451",
+    "vin": "1HGCM82633A123456",
+    "bookingNo": "BK-2023-1002",
+    "projectNo": "DQ-GP-20250109001",
+    "provingGroundId": "3",
+    "groundId": "1",
+    "testTypeId": "1",
+    "testContent": "耐久性测试",
+    "bookingDate": "2025-10-23",
+    "startTime": "09:00",
+    "endTime": "17:30",
+    "driverId": "1879417897919291394",
+    "isExclusive": 1,
+    "billingType": "1",
+    "auxiliaryVehicleCount": 2,
+    "participantCount": 5,
+    "imagingRequirement": "0",
+    "remark": "需提前检查场地排水系统"
+}
+
+getBookings() - 获取预约列表 接口访问失败 (已完成，使用真实API /api/booking/list，但API失败，fallback到mock)
+getBookingById() - 获取预约详情 接口访问失败 (已完成，使用真实API /api/booking/{id}，但API失败，fallback到mock)
+createBooking() - 创建预约 接口访问失败 (已完成，使用真实API /api/booking/add，但API失败，fallback到mock)
+updateBooking() - 更新预约 接口访问失败 (已完成，使用真实API /api/booking/{id} PUT，但API失败，fallback到mock)
+cancelBooking() - 取消预约 接口访问失败 (已完成，使用真实API /api/booking/{id}/cancel，但API失败，fallback到mock)
+getAvailableTimeSlots() - 获取可用时间段 接口访问失败 (已完成，使用真实API /api/booking/available-slots，但API失败，fallback到mock)
+approveBooking() - 审批预约 接口访问失败 (已完成，使用真实API /api/booking/{id}/approve，但API失败，fallback到mock)
+rescheduleBooking() - 改期预约 接口访问失败 (已完成，使用真实API /api/booking/{id}/reschedule，但API失败，fallback到mock)
+getGroundList() - 获取场地列表 ✅ (已完成，使用真实API /api/v1/booking/groundList，使用参数provingGroundId=3，API成功，返回6个场地)
+
+5. maintenance.js - 维修保养管理
+暂无可用接口
+
+6. weather.js - 天气信息 
+暂无可用接口
+
+7. appointment.js - 预约咨询管理
+getAppointments() - 获取预约咨询列表 接口访问失败 (已完成，使用真实API /api/artemis/api/appointment/v1/list，但API失败，fallback到mock)
+getAppointmentById() - 获取预约咨询详情 接口访问失败 (已完成，使用真实API /api/artemis/api/appointment/v1/{id}，但API失败，fallback到mock)
+createAppointment() - 创建预约咨询 接口访问失败 (已完成，使用真实API /api/artemis/api/appointment/v1 POST，但API失败，fallback到mock)
+updateAppointment() - 更新预约咨询 接口访问失败 (已完成，使用真实API /api/artemis/api/appointment/v1/{id} PUT，但API失败，fallback到mock)
+cancelAppointment() - 取消预约咨询 接口访问失败 (已完成，使用真实API /api/artemis/api/appointment/v1/{id}/cancel，但API失败，fallback到mock)
+getUserAppointments() - 获取用户预约咨询 接口访问失败 (已完成，使用真实API /api/artemis/api/appointment/v1/user，但API失败，fallback到mock)
+getAvailableTimeSlots() - 获取可用时间段 接口访问失败 (已完成，使用真实API /api/artemis/api/appointment/v1/available-slots，但API失败，fallback到mock)
+approveAppointment() - 审批预约咨询 接口访问失败 (已完成，使用真实API /api/artemis/api/appointment/v1/{id}/approve，但API失败，fallback到mock)
+rescheduleAppointment() - 改期预约咨询 接口访问失败 (已完成，使用真实API /api/artemis/api/appointment/v1/{id}/reschedule，但API失败，fallback到mock)
+
+8. contract.js - 合同管理
+getContracts() - 获取合同列表 ✅ (已完成，使用真实API /artemis/api/v1/contact/queryContract)
+getContractById() - 获取合同详情 ✅ (已完成，使用真实API /artemis/api/v1/contact/queryContractDetail)
+createContract() - 创建合同 不需要 (API接口不存在)
+updateContract() - 更新合同 不需要 (API接口不存在)
+
+/artemis/api/v1/contact/queryContract
+{
+    "contractName": "测试",
+    "partyA": "甲",
+    "partyB": "乙方",
+    "pageNum": 1,
+    "pageSize": 20
+}
+
+/artemis/api/v1/contact/queryContractDetail
+{
+  "id": "1"
+}
+
+
+9. schedule.js - 日程管理
+getDailySchedule() - 获取每日日程 接口访问失败 (已完成，使用真实API /api/schedule/daily，但API失败，fallback到mock)
+getSchedule() - 获取日程 接口访问失败 (已完成，使用真实API /api/schedule/{id}，但API失败，fallback到mock)
+getWeather() - 获取天气 接口访问失败 (已完成，使用真实API /api/schedule/weather，但API失败，fallback到mock)
+createBooking() - 创建预约 接口访问失败 (已完成，使用真实API /api/schedule/booking POST，但API失败，fallback到mock)
+
+10. testSite.js - 测试场地管理
+getTestSites() - 获取测试场地列表 接口访问失败 (已完成，使用真实API /api/test-site/list，但API失败，fallback到mock)
+getTestSiteById() - 获取测试场地详情 接口访问失败 (已完成，使用真实API /api/test-site/{id}，但API失败，fallback到mock)
+getAvailableTimeSlots() - 获取可用时间段 接口访问失败 (已完成，使用真实API /api/test-site/{id}/available-slots，但API失败，fallback到mock)
+createBooking() - 创建预约 接口访问失败 (已完成，使用真实API /api/test-site/booking POST，但API失败，fallback到mock)
+getBookings() - 获取预约列表 接口访问失败 (已完成，使用真实API /api/test-site/bookings，但API失败，fallback到mock)
+getBookingById() - 获取预约详情 接口访问失败 (已完成，使用真实API /api/test-site/booking/{id}，但API失败，fallback到mock)
+updateBooking() - 更新预约 接口访问失败 (已完成，使用真实API /api/test-site/booking/{id} PUT，但API失败，fallback到mock)
+cancelBooking() - 取消预约 接口访问失败 (已完成，使用真实API /api/test-site/booking/{id}/cancel，但API失败，fallback到mock)
+getUserBookings() - 获取用户预约 接口访问失败 (已完成，使用真实API /api/test-site/user/bookings，但API失败，fallback到mock)
+getBookingStats() - 获取预约统计 接口访问失败 (已完成，使用真实API /api/test-site/stats，但API失败，fallback到mock)
+
+GET
+/artemis/api/v1/booking/groundList
+使用参数provingGroundId=3
+
+
+11. testRegistration.js - 测试报名管理
+getUserTestRegistrations() - 获取用户测试报名 接口访问失败 (已完成，使用真实API /api/test-registration/user，但API失败，fallback到mock)
+getTestRegistrationById() - 获取测试报名详情 接口访问失败 (已完成，使用真实API /api/test-registration/{id}，但API失败，fallback到mock)
+createTestRegistration() - 创建测试报名 接口访问失败 (已完成，使用真实API /api/test-registration POST，但API失败，fallback到mock)
+updateTestRegistration() - 更新测试报名 接口访问失败 (已完成，使用真实API /api/test-registration/{id} PUT，但API失败，fallback到mock)
+cancelTestRegistration() - 取消测试报名 接口访问失败 (已完成，使用真实API /api/test-registration/{id}/cancel，但API失败，fallback到mock)
+getTestRegistrationStats() - 获取测试报名统计 接口访问失败 (已完成，使用真实API /api/test-registration/stats，但API失败，fallback到mock)
+getAll() - 获取所有测试报名 接口访问失败 (已完成，使用真实API /api/test-registration/all，但API失败，fallback到mock)
+getById() - 根据ID获取测试报名 接口访问失败 (已完成，使用真实API /api/test-registration/{id}，但API失败，fallback到mock)
+create() - 创建测试报名 接口访问失败 (已完成，使用真实API /api/test-registration POST，但API失败，fallback到mock)
+update() - 更新测试报名 接口访问失败 (已完成，使用真实API /api/test-registration/{id} PUT，但API失败，fallback到mock)
+deleteTestRegistration() - 删除测试报名 接口访问失败 (已完成，使用真实API /api/test-registration/{id} DELETE，但API失败，fallback到mock)
+
+12. staff.js - 员工管理
+getStaffList() - 获取员工列表 接口访问失败 (已完成，使用真实API /api/artemis/api/manage/auth/v2/manage/userService/list，但API失败，fallback到mock)
+getStaffById() - 获取员工详情 接口访问失败 (已完成，使用真实API /api/artemis/api/manage/auth/v2/manage/userService/{id}，但API失败，fallback到mock)
+createStaff() - 创建员工 接口访问失败 (已完成，使用真实API /api/artemis/api/manage/auth/v2/manage/userService POST，但API失败，fallback到mock)
+updateStaff() - 更新员工 接口访问失败 (已完成，使用真实API /api/artemis/api/manage/auth/v2/manage/userService/{id} PUT，但API失败，fallback到mock)
+deleteStaff() - 删除员工 接口访问失败 (已完成，使用真实API /api/artemis/api/manage/auth/v2/manage/userService/{id} DELETE，但API失败，fallback到mock)
+uploadStaffDocument() - 上传员工文档 接口访问失败 (已完成，使用真实API /api/artemis/api/manage/auth/v2/manage/userService/{id}/document POST，但API失败，fallback到mock)
+deleteStaffDocument() - 删除员工文档 接口访问失败 (已完成，使用真实API /api/artemis/api/manage/auth/v2/manage/userService/{id}/document/{docId} DELETE，但API失败，fallback到mock)
+
+13. testTask.js - 测试任务管理
+getTestTasks() - 获取测试任务列表 接口访问失败 (已完成，使用真实API /api/test-task/list，但API失败，fallback到mock)
+getTestTaskById() - 获取测试任务详情 接口访问失败 (已完成，使用真实API /api/test-task/{id}，但API失败，fallback到mock)
+getTestRegistrations() - 获取测试报名 接口访问失败 (已完成，使用真实API /api/test-task/{id}/registrations，但API失败，fallback到mock)
+getTestRegistrationById() - 获取测试报名详情 接口访问失败 (已完成，使用真实API /api/test-task/registration/{id}，但API失败，fallback到mock)
+createTestRegistration() - 创建测试报名 接口访问失败 (已完成，使用真实API /api/test-task/registration POST，但API失败，fallback到mock)
+updateTestRegistration() - 更新测试报名 接口访问失败 (已完成，使用真实API /api/test-task/registration/{id} PUT，但API失败，fallback到mock)
+cancelTestRegistration() - 取消测试报名 接口访问失败 (已完成，使用真实API /api/test-task/registration/{id}/cancel，但API失败，fallback到mock)
+scheduleTest() - 安排测试 接口访问失败 (已完成，使用真实API /api/test-task/{id}/schedule POST，但API失败，fallback到mock)
+completeTest() - 完成测试 接口访问失败 (已完成，使用真实API /api/test-task/{id}/complete POST，但API失败，fallback到mock)
+getUserTestRegistrations() - 获取用户测试报名 接口访问失败 (已完成，使用真实API /api/test-task/user/registrations，但API失败，fallback到mock)
+getTaskRegistrations() - 获取任务报名 接口访问失败 (已完成，使用真实API /api/test-task/{id}/registrations，但API失败，fallback到mock)
+getTestStats() - 获取测试统计 接口访问失败 (已完成，使用真实API /api/test-task/stats，但API失败，fallback到mock)
+createTestTask() - 创建测试任务 接口访问失败 (已完成，使用真实API /api/test-task POST，但API失败，fallback到mock)

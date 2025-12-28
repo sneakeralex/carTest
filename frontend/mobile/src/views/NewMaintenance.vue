@@ -246,7 +246,7 @@ const form = ref({
 });
 
 // 日期选择器
-const selectedDate = ref(new Date());
+const selectedDate = ref(['2025', '04', '01']); // 使用数组格式兼容 van-date-picker
 const minDate = new Date(2000, 0, 1);
 const maxDate = new Date();
 
@@ -281,10 +281,14 @@ const fetchVehicles = async () => {
 const fetchAppointments = async () => {
   try {
     const data = await appointmentStore.fetchAppointments();
+    console.log('[调试] fetchAppointments 返回:', data);
     // 只显示已完成但未关联维护记录的预约
-    appointments.value = (data || []).filter(appointment => 
+    let arr = (data && Array.isArray(data.content) ? data.content : []);
+    console.log('[调试] 过滤前预约数组:', arr);
+    appointments.value = arr.filter(appointment => 
       appointment.status === 'COMPLETED' && !appointment.maintenanceId
     );
+    console.log('[调试] 过滤后预约数组:', appointments.value);
   } catch (error) {
     console.error('获取预约列表失败:', error);
   }
@@ -345,9 +349,12 @@ const onMaintenanceTypeConfirm = (value) => {
 };
 
 // 日期确认
-const onDateConfirm = (value) => {
-  selectedDate.value = value;
-  form.value.maintenanceDate = formatDate(value);
+const onDateConfirm = ({ selectedValues }) => {
+  // v-model 会自动更新 selectedDate，不需要手动赋值避免递归更新
+  // selectedDate.value = selectedValues;
+  // selectedValues 是数组格式 ['2025', '04', '09']，转换为日期字符串
+  const dateStr = `${selectedValues[0]}-${selectedValues[1].padStart(2, '0')}-${selectedValues[2].padStart(2, '0')}`;
+  form.value.maintenanceDate = dateStr;
   showDatePicker.value = false;
 };
 

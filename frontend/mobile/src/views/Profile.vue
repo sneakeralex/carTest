@@ -18,12 +18,88 @@
       <div class="user-info">{{ user.email }}</div>
     </div>
     
-    <!-- 个人信息列表 -->
-    <van-cell-group inset title="个人信息">
+    <!-- 基本信息 -->
+    <van-cell-group inset title="基本信息">
+      <van-cell title="工号" :value="user.employeeId" />
       <van-cell title="姓名" :value="user.name || '未设置'" is-link @click="showNamePopup = true" />
       <van-cell title="手机号码" :value="formatPhone(user.phone) || '未设置'" is-link @click="showPhonePopup = true" />
       <van-cell title="邮箱" :value="user.email" />
-      <van-cell title="地址" :value="user.address || '未设置'" is-link @click="showAddressPopup = true" />
+      <van-cell title="身份证号" :value="formatIdCard(user.idCard)" />
+      <van-cell title="部门" :value="user.department" />
+      <van-cell title="职位" :value="user.position" />
+      <van-cell title="角色" :value="formatRole(user.role)" />
+      <van-cell title="入职日期" :value="formatDate(user.hireDate)" />
+    </van-cell-group>
+    
+    <!-- 人脸信息 -->
+    <van-cell-group inset title="人脸信息">
+      <van-cell center>
+        <template #title>
+          <div style="min-height: 100px; display: flex; align-items: center;">
+            <van-image
+              width="80"
+              height="80"
+              :src="user.faceInfo?.faceImageUrl"
+              fit="cover"
+              style="margin-right: 16px;"
+            />
+            <div class="face-info">
+              <div>注册时间：{{ formatDateTime(user.faceInfo?.registeredAt) }}</div>
+              <div>更新时间：{{ formatDateTime(user.faceInfo?.lastUpdatedAt) }}</div>
+              <div>置信度：{{ user.faceInfo?.confidenceScore ? `${(user.faceInfo.confidenceScore * 100).toFixed(1)}%` : '未知' }}</div>
+              <div class="face-status">
+                <van-tag type="success" v-if="user.faceInfo?.status === 'VERIFIED'">已验证</van-tag>
+                <van-tag type="warning" v-else>未验证</van-tag>
+              </div>
+            </div>
+          </div>
+        </template>
+        <template #right-icon>
+          <van-button type="primary" size="small" @click="updateFaceInfo">更新人脸</van-button>
+        </template>
+      </van-cell>
+    </van-cell-group>
+    
+    <!-- 个人详细信息 -->
+    <van-cell-group inset title="个人详细信息">
+      <van-cell title="性别" :value="user.personalInfo?.gender" />
+      <van-cell title="出生日期" :value="formatDate(user.personalInfo?.birthDate)" />
+      <van-cell title="血型" :value="user.personalInfo?.bloodType" />
+      <van-cell title="婚姻状况" :value="user.personalInfo?.maritalStatus" />
+      <van-cell title="学历" :value="user.personalInfo?.education" />
+      <van-cell title="专业" :value="user.personalInfo?.major" />
+      <van-cell title="毕业院校" :value="user.personalInfo?.graduatedFrom" />
+      <van-cell title="毕业年份" :value="user.personalInfo?.graduationYear" />
+      <van-cell title="地址" :value="user.personalInfo?.address" is-link @click="showAddressPopup = true" />
+    </van-cell-group>
+    
+    <!-- 紧急联系人 -->
+    <van-cell-group inset title="紧急联系人">
+      <van-cell title="姓名" :value="user.personalInfo?.emergency?.contactName" />
+      <van-cell title="电话" :value="formatPhone(user.personalInfo?.emergency?.contactPhone)" />
+      <van-cell title="关系" :value="user.personalInfo?.emergency?.relationship" />
+    </van-cell-group>
+    
+    <!-- 证书信息 -->
+    <van-cell-group inset title="证书信息">
+      <template v-for="cert in user.certifications" :key="cert.number">
+        <van-cell :title="cert.name" is-link @click="showCertDetail(cert)">
+          <template #label>
+            <div class="cert-info">
+              <van-tag type="primary" size="medium">{{ cert.level }}</van-tag>
+              <van-tag type="success" size="medium" v-if="cert.score">得分：{{ cert.score }}</van-tag>
+            </div>
+          </template>
+          <template #value>
+            <div style="font-size: 12px;">
+              <div>证书编号：{{ cert.number }}</div>
+              <div>发证机构：{{ cert.issuingAuthority }}</div>
+              <div>发证日期：{{ formatDate(cert.issueDate) }}</div>
+              <div>有效期至：{{ formatDate(cert.expiryDate) }}</div>
+            </div>
+          </template>
+        </van-cell>
+      </template>
     </van-cell-group>
     
     <!-- 账户安全 -->
@@ -282,6 +358,27 @@
         确定要退出登录吗？
       </div>
     </van-dialog>
+
+    <!-- 证书详情弹窗 -->
+    <van-popup
+      v-model:show="showCertDetailPopup"
+      round
+      position="bottom"
+      closeable
+    >
+      <div class="popup-title">证书详情</div>
+      <div class="cert-detail" v-if="selectedCert">
+        <van-cell-group inset>
+          <van-cell title="证书名称" :value="selectedCert.name" />
+          <van-cell title="证书编号" :value="selectedCert.number" />
+          <van-cell title="发证机构" :value="selectedCert.issuingAuthority" />
+          <van-cell title="发证日期" :value="formatDate(selectedCert.issueDate)" />
+          <van-cell title="有效期至" :value="formatDate(selectedCert.expiryDate)" />
+          <van-cell title="认证等级" :value="selectedCert.level" />
+          <van-cell title="认证分数" :value="selectedCert.score ? `${selectedCert.score}分` : '暂无'" />
+        </van-cell-group>
+      </div>
+    </van-popup>
   </div>
 </template>
 
@@ -334,6 +431,10 @@ const showLanguagePopup = ref(false);
 const showAboutPopup = ref(false);
 const showAvatarActionSheet = ref(false);
 const showLogoutConfirm = ref(false);
+const showCertDetailPopup = ref(false);
+
+// 选中的证书
+const selectedCert = ref(null);
 
 // 语言选项
 const languageOptions = [
@@ -370,7 +471,15 @@ const fetchUserInfo = async () => {
     }
   } catch (error) {
     console.error('获取用户信息失败:', error);
-    showNotify({ type: 'danger', message: '获取用户信息失败' });
+    if (error === '未登录') {
+      // 已经在 store 中处理了未登录的跳转
+      return;
+    }
+    showNotify({
+      type: 'danger',
+      message: error || '获取用户信息失败',
+      duration: 2000
+    });
   }
 };
 
@@ -407,6 +516,36 @@ const loadSettings = () => {
 const formatPhone = (phone) => {
   if (!phone) return '';
   return phone.replace(/^(\d{3})(\d{4})(\d{4})$/, '$1 $2 $3');
+};
+
+// 格式化角色
+const formatRole = (role) => {
+  const roleMap = {
+    'USER': '普通用户',
+    'SENIOR_ENGINEER': '高级工程师',
+    'ADMIN': '系统管理员'
+  };
+  return roleMap[role] || role;
+};
+
+// 格式化身份证号
+const formatIdCard = (idCard) => {
+  if (!idCard) return '';
+  return idCard.replace(/^(\d{6})(\d{8})(\d{4})$/, '$1********$3');
+};
+
+// 格式化日期
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+};
+
+// 格式化日期时间
+const formatDateTime = (dateTimeStr) => {
+  if (!dateTimeStr) return '';
+  const date = new Date(dateTimeStr);
+  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 };
 
 // 验证确认密码
@@ -539,6 +678,18 @@ const chooseFromAlbum = () => {
   showToast('相册选择功能暂未实现');
 };
 
+// 显示证书详情
+const showCertDetail = (cert) => {
+  selectedCert.value = cert;
+  showCertDetailPopup.value = true;
+};
+
+// 更新人脸信息
+const updateFaceInfo = () => {
+  // 模拟更新人脸信息
+  showToast('更新人脸信息功能暂未实现');
+};
+
 // 退出登录
 const logout = async () => {
   try {
@@ -653,6 +804,51 @@ const logout = async () => {
 .logout-confirm-content {
   padding: 20px 16px;
   text-align: center;
+}
+
+.cert-info {
+  margin: 8px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  
+  .van-tag {
+    border-radius: 4px;
+    
+    &--primary {
+      background-color: #1989fa;
+    }
+    
+    &--success {
+      background-color: #07c160;
+    }
+  }
+}
+
+.cert-detail {
+  padding: 16px;
+}
+
+.face-info {
+  font-size: 14px;
+  line-height: 1.6;
+  
+  .face-status {
+    margin-top: 4px;
+  }
+  
+  .van-tag {
+    border-radius: 4px;
+    padding: 0 8px;
+    
+    &--success {
+      background-color: #07c160;
+    }
+    
+    &--warning {
+      background-color: #ff976a;
+    }
+  }
 }
 
 // 深色模式样式

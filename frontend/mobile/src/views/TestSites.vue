@@ -90,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTestSiteStore } from '../stores/testSite';
 import { showToast } from 'vant';
@@ -179,7 +179,7 @@ const fetchTestSites = async (isRefresh = false) => {
 
 // 页面加载
 onMounted(() => {
-  fetchTestSites(true);
+  fetchTestSites(false);
 });
 
 // 下拉刷新
@@ -231,6 +231,11 @@ const bookTestSite = (testSite) => {
     query: { testSiteId: testSite.siteId }
   });
 };
+
+// 监听筛选条件变化
+watch([selectedCity, selectedDistrict, selectedTestType], () => {
+  fetchTestSites(true);
+});
 </script>
 
 <style lang="less" scoped>

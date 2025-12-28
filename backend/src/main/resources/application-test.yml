@@ -1,0 +1,17 @@
+# 测试环境配置
+spring:
+  profiles:
+    active: test
+
+internal:
+  api:
+    base-url: http://localhost:8081  # Mock 内网API端口
+
+api:
+  signing:
+    key: test-key
+    secret: test-secret
+
+logging:
+  level:
+    '[com.carservice]': debug

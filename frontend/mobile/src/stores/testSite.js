@@ -31,7 +31,8 @@ export const useTestSiteStore = defineStore('testSite', () => {
 
     try {
       const response = await getTestSites(params);
-      testSites.value = response.data;
+      // Handle paginated response - extract content array
+      testSites.value = response.data.content || response.data;
       return response.data;
     } catch (err) {
       error.value = err.response?.data?.message || '获取测试场列表失败';
@@ -52,6 +53,26 @@ export const useTestSiteStore = defineStore('testSite', () => {
     } catch (err) {
       error.value = err.response?.data?.message || '获取测试场详情失败';
       throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchTestSiteDetail = async (siteId) => {
+    return await fetchTestSiteById(siteId);
+  };
+
+  const fetchTestSiteTimeSlots = async (siteId, date) => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await getAvailableTimeSlots({ siteId, date });
+      return response.data || [];
+    } catch (err) {
+      error.value = err.response?.data?.message || '获取时间段失败';
+      console.error('获取时间段失败:', err);
+      return [];
     } finally {
       loading.value = false;
     }
@@ -96,7 +117,8 @@ export const useTestSiteStore = defineStore('testSite', () => {
 
     try {
       const response = await getBookings(params);
-      bookings.value = response.data;
+      // Handle paginated response - extract content array
+      bookings.value = response.data.content || response.data;
       return response.data;
     } catch (err) {
       error.value = err.response?.data?.message || '获取预约列表失败';
@@ -204,6 +226,8 @@ export const useTestSiteStore = defineStore('testSite', () => {
     error,
     fetchTestSites,
     fetchTestSiteById,
+    fetchTestSiteDetail,
+    fetchTestSiteTimeSlots,
     fetchAvailableTimeSlots,
     addBooking,
     fetchBookings,

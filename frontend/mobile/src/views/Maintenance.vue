@@ -3,7 +3,7 @@
     <!-- 顶部搜索栏 -->
     <van-search
       v-model="searchText"
-      placeholder="搜索维护记录"
+      placeholder="搜索设备名称、维护类型或维护人员"
       shape="round"
       background="#f7f8fa"
       @search="onSearch"
@@ -21,32 +21,39 @@
           <van-cell 
             v-for="record in filteredMaintenance" 
             :key="record.id"
-            :title="record.maintenanceType"
-            :label="formatDateTime(record.maintenanceDate)"
             is-link
             :to="`/maintenance/${record.id}`"
           >
-            <template #right-icon>
-              <van-tag :type="getStatusTagType(record.status)" plain>
-                {{ getStatusText(record.status) }}
-              </van-tag>
+            <template #title>
+              <div class="maintenance-title">
+                <span class="maintenance-type">{{ record.maintenanceType }}</span>
+                <van-tag :type="getStatusTagType(record.status)" plain size="mini" class="status-tag">
+                  {{ getStatusText(record.status) }}
+                </van-tag>
+              </div>
+            </template>
+            
+            <template #label>
+              <div class="maintenance-info">
+                <div class="equipment-info">
+                  <span class="equipment-name">{{ record.equipment?.equipmentName || '未知设备' }}</span>
+                  <span class="equipment-no">({{ record.equipment?.equipmentNo || 'N/A' }})</span>
+                </div>
+                <div class="maintenance-details">
+                  <span class="maintenance-date">{{ formatDateTime(record.maintenanceDate) }}</span>
+                  <span class="maintainer">{{ record.maintainer }}</span>
+                </div>
+                <div class="equipment-location" v-if="record.equipment?.location">
+                  <van-icon name="location-o" size="12" />
+                  <span>{{ record.equipment.location }}</span>
+                </div>
+              </div>
             </template>
           </van-cell>
         </van-cell-group>
         <van-empty v-else description="暂无维护记录" />
       </van-list>
     </van-pull-refresh>
-    
-    <!-- 添加维护记录按钮 -->
-    <van-button
-      type="primary"
-      icon="plus"
-      class="add-button"
-      round
-      @click="goToNewMaintenance"
-    >
-      新增维护记录
-    </van-button>
     
     <!-- 筛选器 -->
     <van-action-sheet
@@ -67,15 +74,15 @@
         </div>
         
         <div class="filter-item">
-          <div class="filter-title">车辆</div>
-          <van-radio-group v-model="filterVehicleId" direction="horizontal">
+          <div class="filter-title">设备</div>
+          <van-radio-group v-model="filterEquipmentId" direction="horizontal">
             <van-radio name="">全部</van-radio>
             <van-radio 
-              v-for="vehicle in vehicles" 
-              :key="vehicle.id" 
-              :name="vehicle.id"
+              v-for="equipment in availableEquipments" 
+              :key="equipment.id" 
+              :name="equipment.id"
             >
-              {{ vehicle.make }} {{ vehicle.model }} ({{ vehicle.licensePlate }})
+              {{ equipment.name }} ({{ equipment.no }})
             </van-radio>
           </van-radio-group>
         </div>
@@ -103,11 +110,9 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { showNotify } from 'vant';
 import { useMaintenanceStore } from '../stores/maintenance';
-import { useVehicleStore } from '../stores/vehicle';
 
 const router = useRouter();
 const maintenanceStore = useMaintenanceStore();
-const vehicleStore = useVehicleStore();
 
 // 搜索相关
 const searchText = ref('');
@@ -122,24 +127,44 @@ const refreshing = ref(false);
 
 // 维护记录数据
 const maintenanceRecords = ref([]);
-const vehicles = ref([]);
+
+// 从维护记录中提取唯一的设备列表
+const availableEquipments = computed(() => {
+  const equipmentMap = new Map();
+  
+  maintenanceRecords.value.forEach(record => {
+    if (record.equipment && record.equipment.equipmentId) {
+      equipmentMap.set(record.equipment.equipmentId, {
+        id: record.equipment.equipmentId,
+        name: record.equipment.equipmentName,
+        no: record.equipment.equipmentNo
+      });
+    }
+  });
+  
+  return Array.from(equipmentMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+});
 
 // 筛选相关
 const showFilter = ref(false);
 const filterStatus = ref('');
-const filterVehicleId = ref('');
+const filterEquipmentId = ref('');
 const filterTimeRange = ref('all');
 
 // 过滤后的维护记录列表
 const filteredMaintenance = computed(() => {
-  let result = maintenanceRecords.value;
+  // 确保 maintenanceRecords.value 是数组
+  let result = Array.isArray(maintenanceRecords.value) ? maintenanceRecords.value : [];
   
   // 根据搜索文本筛选
   if (searchText.value) {
     const keyword = searchText.value.toLowerCase();
     result = result.filter(record => {
-      return record.maintenanceType.toLowerCase().includes(keyword) ||
-             record.description?.toLowerCase().includes(keyword);
+      return record?.maintenanceType?.toLowerCase().includes(keyword) ||
+             record?.description?.toLowerCase().includes(keyword) ||
+             record?.equipment?.equipmentName?.toLowerCase().includes(keyword) ||
+             record?.equipment?.equipmentNo?.toLowerCase().includes(keyword) ||
+             record?.maintainer?.toLowerCase().includes(keyword);
     });
   }
   
@@ -148,9 +173,9 @@ const filteredMaintenance = computed(() => {
     result = result.filter(record => record.status === filterStatus.value);
   }
   
-  // 根据车辆筛选
-  if (filterVehicleId.value) {
-    result = result.filter(record => record.vehicleId === filterVehicleId.value);
+  // 根据设备筛选
+  if (filterEquipmentId.value) {
+    result = result.filter(record => record.equipmentId === filterEquipmentId.value);
   }
   
   // 根据时间范围筛选
@@ -181,7 +206,7 @@ const filteredMaintenance = computed(() => {
 // 获取数据
 onMounted(async () => {
   try {
-    await Promise.all([fetchMaintenanceRecords(), fetchVehicles()]);
+    await fetchMaintenanceRecords();
   } catch (error) {
     console.error('获取数据失败:', error);
     showNotify({ type: 'danger', message: '获取数据失败' });
@@ -191,22 +216,17 @@ onMounted(async () => {
 // 获取维护记录列表
 const fetchMaintenanceRecords = async () => {
   try {
+    console.log('🔄 维护页面：开始获取维护记录...');
     const data = await maintenanceStore.fetchMaintenanceRecords();
-    maintenanceRecords.value = data || [];
+    console.log('✅ 维护页面：从store获得的数据数量:', data?.length || 0);
+    
+    // 确保设置的是数组
+    maintenanceRecords.value = Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('获取维护记录失败:', error);
-    throw error;
-  }
-};
-
-// 获取车辆列表
-const fetchVehicles = async () => {
-  try {
-    const data = await vehicleStore.fetchVehicles();
-    vehicles.value = data || [];
-  } catch (error) {
-    console.error('获取车辆列表失败:', error);
-    throw error;
+    console.error('❌ 获取维护记录失败:', error);
+    showNotify({ type: 'danger', message: '获取维护记录失败' });
+    // 确保发生错误时设置为空数组
+    maintenanceRecords.value = [];
   }
 };
 
@@ -228,9 +248,9 @@ const onLoad = () => {
   loading.value = false;
 };
 
-// 跳转到新增维护记录页面
-const goToNewMaintenance = () => {
-  router.push('/maintenance/new');
+// 跳转到设备申请页面
+const goToNewEquipmentApply = () => {
+  router.push('/equipment/apply');
 };
 
 // 应用筛选
@@ -295,5 +315,66 @@ const getStatusText = (status) => {
 
 .filter-actions {
   margin-top: 24px;
+}
+
+.maintenance-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  
+  .maintenance-type {
+    font-weight: 600;
+    color: #323233;
+  }
+  
+  .status-tag {
+    margin-left: 8px;
+  }
+}
+
+.maintenance-info {
+  color: #969799;
+  font-size: 12px;
+  line-height: 1.4;
+  
+  .equipment-info {
+    margin-bottom: 4px;
+    
+    .equipment-name {
+      font-weight: 500;
+      color: #646566;
+    }
+    
+    .equipment-no {
+      margin-left: 4px;
+      color: #969799;
+    }
+  }
+  
+  .maintenance-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    
+    .maintenance-date {
+      color: #646566;
+    }
+    
+    .maintainer {
+      color: #969799;
+    }
+  }
+  
+  .equipment-location {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #969799;
+    
+    .van-icon {
+      color: #969799;
+    }
+  }
 }
 </style>

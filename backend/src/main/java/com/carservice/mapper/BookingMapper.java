@@ -16,6 +16,13 @@ public interface BookingMapper {
      * SiteBooking实体转SiteBookingDTO
      */
     @Mapping(target = "statusName", expression = "java(getBookingStatusName(siteBooking.getStatus()))")
+    @Mapping(target = "siteName", ignore = true)
+    @Mapping(target = "userName", ignore = true)
+    @Mapping(target = "vehiclePlateNo", ignore = true)
+    @Mapping(target = "testContentName", ignore = true)
+    @Mapping(target = "siteInfo", ignore = true)
+    @Mapping(target = "weatherInfo", ignore = true)
+    @Mapping(target = "scheduleInfo", ignore = true)
     SiteBookingDTO toSiteBookingDTO(SiteBooking siteBooking);
 
     /**
@@ -23,28 +30,51 @@ public interface BookingMapper {
      */
     @Mapping(target = "siteTypeName", expression = "java(getSiteTypeName(testSite.getSiteType()))")
     @Mapping(target = "statusName", expression = "java(getSiteStatusName(testSite.getStatus()))")
+    @Mapping(target = "safetyRequirements", ignore = true)
+    @Mapping(target = "operatingHours", ignore = true)
+    @Mapping(target = "contactInfo", ignore = true)
     TestSiteDTO toTestSiteDTO(TestSite testSite);
 
     /**
      * SiteSchedule实体转SiteScheduleDTO
      */
     @Mapping(target = "scheduleTypeName", expression = "java(getScheduleTypeName(siteSchedule.getScheduleType()))")
+    @Mapping(target = "siteName", expression = "java(siteSchedule.getSite() == null ? null : siteSchedule.getSite().getName())")
+    @Mapping(target = "totalSlots", expression = "java(siteSchedule.getSite() == null ? null : siteSchedule.getSite().getTotalSlots())")
+    @Mapping(target = "availableSlots", expression = "java(siteSchedule.getSite() == null ? null : siteSchedule.getSite().getAvailableSlots())")
+    @Mapping(target = "description", expression = "java(siteSchedule.getSite() == null ? null : siteSchedule.getSite().getDescription())")
     SiteScheduleDTO toSiteScheduleDTO(SiteSchedule siteSchedule);
 
     /**
      * WeatherRecord实体转WeatherRecordDTO
      */
     @Mapping(target = "weatherTypeName", expression = "java(getWeatherTypeName(weatherRecord.getWeatherType()))")
+    @Mapping(target = "siteName", expression = "java(weatherRecord.getSite() == null ? null : weatherRecord.getSite().getName())")
+    @Mapping(target = "suitabilityReason", ignore = true)
     WeatherRecordDTO toWeatherRecordDTO(WeatherRecord weatherRecord);
 
     /**
      * SiteBookingDTO转SiteBooking实体
      */
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "updatedBy", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "weatherId", ignore = true)
+    @Mapping(target = "cancellationReason", ignore = true)
     SiteBooking toSiteBooking(SiteBookingDTO siteBookingDTO);
 
     /**
      * 更新SiteBooking实体
      */
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "updatedBy", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "weatherId", ignore = true)
+    @Mapping(target = "cancellationReason", ignore = true)
     void updateSiteBooking(@MappingTarget SiteBooking siteBooking, SiteBookingDTO siteBookingDTO);
 
     // 辅助方法

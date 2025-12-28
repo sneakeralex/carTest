@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api', // 开发环境API地址
+  baseURL: '/api', // 使用相对路径，让 Vite 代理处理
   timeout: 10000, // 请求超时时间
 });
 
@@ -102,5 +102,21 @@ export default {
     createMaintenance: (data: any) => api.post('/maintenances', data),
     updateMaintenance: (id: number, data: any) => api.put(`/maintenances/${id}`, data),
     cancelMaintenance: (id: number) => api.put(`/maintenances/${id}/cancel`),
+  },
+
+  // 设备相关
+  equipment: {
+    getEquipments: (params?: any) => import('../api/equipment').then(m => m.getEquipments(params)),
+    getEquipmentById: (id: number) => import('../api/equipment').then(m => m.getEquipmentById(String(id))),
+    createEquipment: (data: any) => import('../api/equipment').then(m => m.createEquipment(data)),
+    updateEquipment: (id: number, data: any) => import('../api/equipment').then(m => m.updateEquipment(String(id), data)),
+    deleteEquipment: (id: number) => import('../api/equipment').then(m => m.deleteEquipment(String(id))),
+    
+    // 设备申请相关
+    getEquipmentApplications: (params?: any) => import('../api/equipment').then(m => m.getEquipmentApplications(params)),
+    getEquipmentApplicationById: (id: number) => import('../api/equipment').then(m => m.getEquipmentApplicationById(String(id))),
+    applyEquipment: (data: any) => import('../api/equipment').then(m => m.applyEquipment(data)),
+    updateEquipmentApplicationStatus: (id: number, data: { status: string; remarks?: string }) => 
+      import('../api/equipment').then(m => m.updateApplicationStatus(String(id), data))
   },
 };

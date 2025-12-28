@@ -1,6 +1,5 @@
 <template>
   <div class="test-task-detail">
-    <!-- 导航栏 -->
     <van-nav-bar
       title="测试任务详情"
       left-text="返回"
@@ -8,18 +7,17 @@
       @click-left="goBack"
     />
 
-    <!-- 加载状态 -->
     <van-loading v-if="loading" class="loading-container" vertical>
       加载中...
     </van-loading>
 
-    <!-- 测试任务详情内容 -->
     <div v-else-if="testTask" class="detail-content">
       <!-- 任务基本信息 -->
-      <van-cell-group inset title="任务信息">
+      <van-cell-group inset title="基本信息">
         <van-cell title="任务名称" :value="testTask.taskName" />
-        <van-cell title="任务描述" :value="testTask.description" />
-        <van-cell title="任务类型" :value="getTaskTypeText(testTask.taskType)" />
+        <van-cell title="任务单位" :value="testTask.department" />
+        <van-cell title="测试类型" :value="getTestTypeText(testTask.testType)" />
+        <van-cell title="试验类型" :value="getTestTypeText(testTask.experimentType)" />
         <van-cell title="难度等级">
           <template #value>
             <van-tag :type="getDifficultyType(testTask.difficulty)">
@@ -27,8 +25,47 @@
             </van-tag>
           </template>
         </van-cell>
+      </van-cell-group>
+
+      <!-- 时间和地点 -->
+      <van-cell-group inset title="时间和地点">
+        <van-cell title="开始时间" :value="formatDate(testTask.startDate)" />
+        <van-cell title="结束时间" :value="formatDate(testTask.endDate)" />
+        <van-cell title="测试地点" :value="testTask.testSite" />
         <van-cell title="预计时长" :value="testTask.estimatedDuration + '小时'" />
+      </van-cell-group>
+
+      <!-- 合同信息 -->
+      <van-cell-group inset title="合同信息" v-if="testTask.contractInfo">
+        <van-cell title="合同编号" :value="testTask.contractInfo.contractNumber" />
+        <van-cell title="委托方" :value="testTask.contractInfo.client" />
         <van-cell title="费用" :value="`¥${testTask.fee || 0}`" />
+      </van-cell-group>
+
+      <!-- 测试车辆信息 -->
+      <van-cell-group inset title="测试车辆" v-if="testTask.vehicles && testTask.vehicles.length">
+        <van-cell
+          v-for="(vehicle, index) in testTask.vehicles"
+          :key="vehicle.vehicleId"
+          :title="`车辆 ${index + 1}`"
+        >
+          <template #value>
+            <div class="vehicle-info">
+              <div>{{ vehicle.name }}</div>
+              <div class="vehicle-test-content">{{ vehicle.testContent }}</div>
+            </div>
+          </template>
+        </van-cell>
+      </van-cell-group>
+
+      <!-- 设备要求 -->
+      <van-cell-group inset title="设备要求" v-if="testTask.equipment">
+        <van-cell
+          v-for="(equipment, index) in testTask.equipment"
+          :key="index"
+          :title="`设备 ${index + 1}`"
+          :value="equipment"
+        />
       </van-cell-group>
 
       <!-- 任务要求 -->
@@ -36,27 +73,17 @@
         <van-cell
           v-for="(requirement, index) in testTask.requirements"
           :key="index"
-          :title="`要求${index + 1}`"
+          :title="`要求 ${index + 1}`"
           :value="requirement"
         />
       </van-cell-group>
 
-      <!-- 测试步骤 -->
-      <van-cell-group inset title="测试步骤" v-if="testTask.testSteps">
-        <van-steps direction="vertical" :active="testTask.testSteps.length">
-          <van-step v-for="(step, index) in testTask.testSteps" :key="index">
-            <h4>{{ step.title }}</h4>
-            <p>{{ step.description }}</p>
-          </van-step>
-        </van-steps>
-      </van-cell-group>
-
       <!-- 注意事项 -->
-      <van-cell-group inset title="注意事项" v-if="testTask.notes">
+      <van-cell-group inset title="备注" v-if="testTask.notes">
         <van-cell
           v-for="(note, index) in testTask.notes"
           :key="index"
-          :title="`注意事项${index + 1}`"
+          :title="`注意事项 ${index + 1}`"
           :value="note"
         />
       </van-cell-group>
@@ -85,7 +112,6 @@
       </div>
     </div>
 
-    <!-- 错误状态 -->
     <van-empty v-else description="测试任务不存在" />
   </div>
 </template>
@@ -95,6 +121,9 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTestTaskStore } from '../stores/testTask';
 import { showToast, showConfirmDialog } from 'vant';
+import { formatDate } from '../utils/dateFormatter';
+import { getTestTypeText, getDifficultyText, getDifficultyType } from '../utils/typeFormatter';
+import { getUserInfo } from '../utils/auth.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -107,7 +136,9 @@ const userRegistrations = ref([]);
 
 // 计算属性
 const isRegistered = computed(() => {
-  return userRegistrations.value.some(reg => reg.taskId === testTask.value?.taskId);
+  // 确保 userRegistrations.value 是数组
+  const registrations = Array.isArray(userRegistrations.value) ? userRegistrations.value : [];
+  return registrations.some(reg => reg.taskId === testTask.value?.taskId);
 });
 
 // 获取测试任务详情
@@ -115,14 +146,14 @@ const fetchTestTaskDetail = async () => {
   try {
     loading.value = true;
     const taskId = route.params.id;
-    const data = await testTaskStore.fetchTestTaskDetail(taskId);
+    const data = await testTaskStore.fetchTestTaskById(taskId);
     testTask.value = data;
     
     // 获取用户报名信息
-    const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+    const userInfo = getUserInfo();
     if (userInfo.userId) {
       const registrations = await testTaskStore.fetchUserTestRegistrations(userInfo.userId);
-      userRegistrations.value = registrations || [];
+      userRegistrations.value = Array.isArray(registrations) ? registrations : [];
     }
   } catch (error) {
     console.error('获取测试任务详情失败:', error);
@@ -137,36 +168,7 @@ const goBack = () => {
   router.back();
 };
 
-// 获取任务类型文本
-const getTaskTypeText = (type) => {
-  const typeMap = {
-    'PERFORMANCE': '性能测试',
-    'SAFETY': '安全测试',
-    'EMISSION': '排放测试',
-    'COMPREHENSIVE': '综合测试'
-  };
-  return typeMap[type] || type;
-};
 
-// 获取难度类型
-const getDifficultyType = (difficulty) => {
-  const difficultyMap = {
-    'EASY': 'success',
-    'MEDIUM': 'warning',
-    'HARD': 'danger'
-  };
-  return difficultyMap[difficulty] || 'default';
-};
-
-// 获取难度文本
-const getDifficultyText = (difficulty) => {
-  const difficultyMap = {
-    'EASY': '简单',
-    'MEDIUM': '中等',
-    'HARD': '困难'
-  };
-  return difficultyMap[difficulty] || difficulty;
-};
 
 // 报名测试任务
 const registerTask = async () => {
@@ -176,7 +178,7 @@ const registerTask = async () => {
       message: `确定要报名参加"${testTask.value.taskName}"测试任务吗？`,
     });
 
-    const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+    const userInfo = getUserInfo();
     await testTaskStore.registerTestTask({
       taskId: testTask.value.taskId,
       userId: userInfo.userId
@@ -185,7 +187,7 @@ const registerTask = async () => {
     showToast('报名成功');
     // 重新获取报名信息
     const registrations = await testTaskStore.fetchUserTestRegistrations(userInfo.userId);
-    userRegistrations.value = registrations || [];
+    userRegistrations.value = Array.isArray(registrations) ? registrations : [];
   } catch (error) {
     if (error !== 'cancel') {
       console.error('报名失败:', error);
@@ -200,21 +202,21 @@ onMounted(() => {
 });
 </script>
 
-<style lang="less" scoped>
+<style scoped>
 .test-task-detail {
-  min-height: 100vh;
-  background-color: #f7f8fa;
+  padding-bottom: 80px;
 }
 
 .loading-container {
+  padding: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 200px;
+  min-height: 200px;
 }
 
 .detail-content {
-  padding-bottom: 80px;
+  padding: 16px;
 }
 
 .action-buttons {
@@ -223,7 +225,21 @@ onMounted(() => {
   left: 0;
   right: 0;
   padding: 16px;
-  background-color: #fff;
-  border-top: 1px solid #ebedf0;
+  background: #fff;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.vehicle-info {
+  text-align: right;
+}
+
+.vehicle-test-content {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.van-cell-group {
+  margin-bottom: 12px;
 }
 </style>

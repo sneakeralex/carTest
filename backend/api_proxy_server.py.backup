@@ -1,0 +1,251 @@
+#!/usr/bin/env python3
+"""
+API Proxy Server
+
+This server acts as a proxy for internal API calls, automatically signing requests
+and forwarding them to the target server.
+
+Usage: python api_proxy_server.py
+"""
+
+import hashlib
+import hmac
+import base64
+import urllib.parse
+from datetime import datetime
+import uuid
+import requests
+import json
+from flask import Flask, request, Response
+from typing import Dict, List, Optional
+
+
+class ApiSigner:
+    @staticmethod
+    def md5_base64(data: str) -> str:
+        """Generate MD5 base64 hash of data."""
+        if not data:
+            return ""
+        md5 = hashlib.md5()
+        md5.update(data.encode('utf-8'))
+        return base64.b64encode(md5.digest()).decode('utf-8')
+
+    @staticmethod
+    def hmac_sha256_base64(data: str, secret: str) -> str:
+        """Generate HMAC SHA256 base64 signature."""
+        hmac_obj = hmac.new(secret.encode('utf-8'), data.encode('utf-8'), hashlib.sha256)
+        return base64.b64encode(hmac_obj.digest()).decode('utf-8')
+
+    @staticmethod
+    def canonicalize_url(full_url: str, content_type: str, body: str) -> str:
+        """Canonicalize URL for signing."""
+        try:
+            parsed = urllib.parse.urlparse(full_url)
+            path = parsed.path
+            params = {}
+
+            # Parse query parameters
+            if parsed.query:
+                for k, v in urllib.parse.parse_qs(parsed.query, keep_blank_values=True).items():
+                    params[k] = v
+
+            # If form data, include in canonicalization
+            if content_type and content_type.startswith('application/x-www-form-urlencoded') and body:
+                for k, v in urllib.parse.parse_qs(body, keep_blank_values=True).items():
+                    params[k] = v
+
+            if not params:
+                return path
+
+            # Sort keys and build query string
+            sorted_keys = sorted(params.keys())
+            query_parts = []
+            for key in sorted_keys:
+                for value in params[key]:
+                    if value:  # If value is not empty, include key=value
+                        query_parts.append(f"{key}={value}")
+                    else:  # If value is empty, include only key
+                        query_parts.append(key)
+
+            if not query_parts:
+                return path
+            else:
+                return f"{path}?{'&'.join(query_parts)}"
+        except Exception as e:
+            raise RuntimeError(f"canonicalize_url failed: {e}")
+
+    @staticmethod
+    def sign_request(method: str, url: str, body: str, original_headers: Dict[str, str],
+                    app_key: str, app_secret: str, headers_to_sign: Optional[List[str]] = None) -> Dict[str, str]:
+        """Generate signature headers for the request."""
+        accept = original_headers.get('Accept', '')
+        content_type = original_headers.get('Content-Type', '')
+
+        # Calculate MD5 only for non-form data
+        md5 = ""
+        if body and not content_type.startswith('application/x-www-form-urlencoded'):
+            md5 = ApiSigner.md5_base64(body)
+
+        timestamp = str(int(datetime.now().timestamp() * 1000))
+        nonce = str(uuid.uuid4())
+
+        canonical_url = ApiSigner.canonicalize_url(url, content_type, body)
+
+        # Build textToSign matching Postman JS: method\naccept\ncontent-type\nheaders\nurl
+        text_to_sign = f"{method}\n{accept}\n{content_type}"
+
+        # Collect headers to sign (matching JS: x-ca- headers)
+        headers_map = {}
+        for name, value in original_headers.items():
+            name_lower = name.lower()
+            if name_lower.startswith('x-ca-'):
+                if name_lower not in ['x-ca-signature', 'x-ca-signature-headers', 'x-ca-key', 'x-ca-nonce']:
+                    headers_map[name] = value
+        headers_map['x-ca-key'] = app_key
+        headers_map['x-ca-timestamp'] = timestamp
+
+        # Sort headers and add to textToSign
+        sorted_header_keys = sorted(headers_map.keys())
+        signature_headers_list = []
+        for header_name in sorted_header_keys:
+            header_value = headers_map[header_name]
+            text_to_sign += f"\n{header_name}:{header_value}"
+            signature_headers_list.append(header_name)
+
+        text_to_sign += f"\n{canonical_url}"
+
+        print(f"[DEBUG] Canonical URL: {canonical_url}")
+        print(f"[DEBUG] Text to sign: {text_to_sign.replace(chr(10), '#')}")
+
+        signature = ApiSigner.hmac_sha256_base64(text_to_sign, app_secret)
+
+        headers_to_add = {
+            'x-ca-key': app_key,
+            'x-ca-timestamp': timestamp,
+            'x-ca-nonce': nonce,
+            'x-ca-signature': signature,
+        }
+
+        if md5:
+            headers_to_add['Content-MD5'] = md5
+
+        if signature_headers_list:
+            headers_to_add['x-ca-signature-headers'] = ','.join(signature_headers_list)
+
+        return headers_to_add
+
+
+app = Flask(__name__)
+
+# Configuration
+TARGET_BASE_URL = "https://172.16.229.88:443/"
+APP_KEY = "21345372"
+APP_SECRET = "ZDiCR75CVHCpfravKC0o"
+
+
+@app.route('/', defaults={'path': ''}, methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'])
+@app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'])
+def proxy(path):
+    """Proxy all requests to the target server with signing."""
+    try:
+        print(f"[DEBUG] Received {request.method} {request.url}")
+        print(f"[DEBUG] Request headers: {dict(request.headers)}")
+
+        # Construct target URL
+        target_url = urllib.parse.urljoin(TARGET_BASE_URL, path)
+
+        # Add query parameters if any
+        if request.query_string:
+            target_url += '?' + request.query_string.decode('utf-8')
+
+        print(f"[DEBUG] Target URL: {target_url}")
+
+        # Get request body
+        body = request.get_data(as_text=True) if request.method in ['POST', 'PUT', 'PATCH'] else None
+        if body:
+            print(f"[DEBUG] Request body: {body[:500]}{'...' if len(body) > 500 else ''}")
+
+        # Prepare headers
+        headers = dict(request.headers)
+        # Remove host header
+        headers.pop('Host', None)
+        # Add appKey header
+        headers['appKey'] = APP_KEY
+
+        # Set content type if body present
+        if body and 'Content-Type' not in headers:
+            headers['Content-Type'] = 'application/json'
+
+        print(f"[DEBUG] Prepared headers: {headers}")
+
+        # Generate signature headers
+        signature_headers = ApiSigner.sign_request(
+            request.method,
+            target_url,
+            body or "",
+            headers,
+            APP_KEY,
+            APP_SECRET
+        )
+
+        print(f"[DEBUG] Signature headers: {signature_headers}")
+
+        # Merge headers
+        request_headers = {**headers, **signature_headers}
+
+        print(f"[DEBUG] Final request headers: {request_headers}")
+
+        # Forward request to target server
+        response = requests.request(
+            request.method,
+            target_url,
+            headers=request_headers,
+            data=body,
+            verify=False,  # Skip SSL verification for internal network with self-signed certificate
+            timeout=30
+        )
+
+        print(f"[DEBUG] Response status: {response.status_code}")
+        print(f"[DEBUG] Response headers: {dict(response.headers)}")
+        response_body = response.text
+        print(f"[DEBUG] Response body: {response_body[:500]}{'...' if len(response_body) > 500 else ''}")
+
+        # Create response
+        proxy_response = Response(
+            response.content,
+            status=response.status_code,
+            headers=dict(response.headers)
+        )
+
+        # Remove hop-by-hop headers
+        hop_by_hop_headers = [
+            'connection', 'keep-alive', 'proxy-authenticate',
+            'proxy-authorization', 'te', 'trailers', 'transfer-encoding', 'upgrade'
+        ]
+        for header in hop_by_hop_headers:
+            proxy_response.headers.pop(header, None)
+
+        return proxy_response
+
+    except Exception as e:
+        print(f"[ERROR] Proxy error: {e}")
+        import traceback
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
+        return Response(
+            json.dumps({"error": "Proxy error", "message": str(e)}),
+            status=500,
+            mimetype='application/json'
+        )
+
+
+if __name__ == '__main__':
+    print("Starting API Proxy Server on http://localhost:8888")
+    print(f"Proxying requests to: {TARGET_BASE_URL}")
+    print("Press Ctrl+C to stop")
+
+    app.run(
+        host='0.0.0.0',
+        port=8888,
+        debug=False,
+        threaded=True
+    )

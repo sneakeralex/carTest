@@ -75,6 +75,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTestTaskStore } from '../stores/testTask';
+import { testRegistrationApi } from '@/api/testRegistration';
 import { showToast } from 'vant';
 
 const router = useRouter();
@@ -86,54 +87,6 @@ const refreshing = ref(false);
 const loading = ref(false);
 const finished = ref(false);
 const registrations = ref([]);
-
-// 模拟数据
-const mockRegistrations = [
-  {
-    id: 1,
-    taskId: 'T001',
-    taskName: '车辆性能测试',
-    description: '全面的车辆性能评估测试',
-    taskType: 'PERFORMANCE',
-    difficulty: 'MEDIUM',
-    status: 'APPROVED',
-    registrationTime: '2024-01-10 14:30:00',
-    scheduledTime: '2024-01-20 09:00:00',
-    testLocation: '专业测试场地A区',
-    estimatedDuration: 4,
-    fee: 500
-  },
-  {
-    id: 2,
-    taskId: 'T002',
-    taskName: '安全性能测试',
-    description: '车辆安全系统全面检测',
-    taskType: 'SAFETY',
-    difficulty: 'HARD',
-    status: 'IN_PROGRESS',
-    registrationTime: '2024-01-08 10:15:00',
-    scheduledTime: '2024-01-18 14:00:00',
-    testLocation: '专业测试场地B区',
-    estimatedDuration: 6,
-    fee: 800
-  },
-  {
-    id: 3,
-    taskId: 'T003',
-    taskName: '排放测试',
-    description: '车辆尾气排放标准检测',
-    taskType: 'EMISSION',
-    difficulty: 'EASY',
-    status: 'COMPLETED',
-    registrationTime: '2024-01-05 16:20:00',
-    scheduledTime: '2024-01-15 11:00:00',
-    testLocation: '环保测试中心',
-    estimatedDuration: 2,
-    fee: 200,
-    completedTime: '2024-01-15 13:00:00',
-    testResult: 'PASSED'
-  }
-];
 
 // 计算属性
 const filteredRegistrations = computed(() => {
@@ -147,21 +100,37 @@ const filteredRegistrations = computed(() => {
 const fetchMyRegistrations = async () => {
   try {
     loading.value = true;
-    const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+    let userInfo;
+    try {
+      const userStr = localStorage.getItem('user');
+      userInfo = userStr && userStr !== 'undefined' ? JSON.parse(userStr) : {};
+    } catch (error) {
+      console.error('解析用户信息失败:', error);
+      userInfo = {};
+    }
     
-    if (userInfo.userId) {
-      // 使用store方法获取数据
-      const data = await testTaskStore.fetchUserTestRegistrations(userInfo.userId);
-      registrations.value = data || mockRegistrations; // 如果API没有数据，使用模拟数据
+    if (userInfo?.userId) {
+      // 使用新的testRegistrationApi获取数据
+      const data = await testRegistrationApi.getUserRegistrations(userInfo.userId);
+      registrations.value = data || [];
     } else {
-      registrations.value = mockRegistrations;
+      // 如果没有用户信息，使用API获取默认数据
+      const data = await testRegistrationApi.getAll();
+      registrations.value = data || [];
     }
     
     finished.value = true;
   } catch (error) {
     console.error('获取测试报名列表失败:', error);
-    // 如果API失败，使用模拟数据
-    registrations.value = mockRegistrations;
+    // 如果API失败，获取模拟数据作为fallback
+    try {
+      const data = await testRegistrationApi.getAll();
+      registrations.value = data || [];
+    } catch (fallbackError) {
+      console.error('获取模拟数据失败:', fallbackError);
+      registrations.value = [];
+      showToast('获取数据失败');
+    }
     finished.value = true;
   } finally {
     loading.value = false;

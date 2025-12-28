@@ -5,6 +5,18 @@ import { createPinia } from 'pinia';
 import 'vant/lib/index.css';
 import './assets/styles/global.less';
 
+// 在开发环境下引入Mock
+if (process.env.NODE_ENV === 'development') {
+  console.log('Loading mock data...');
+  Promise.all([
+    import('./mock/equipment.js'),
+    import('./mock/maintenance.js'),
+    // Add other mock files here
+  ]).then(() => {
+    console.log('Mock data loaded successfully');
+  });
+}
+
 // 按需导入Vant组件
 import {
   Button,
@@ -48,7 +60,11 @@ import {
   Stepper,
   Calendar,
   Tab,
-  Tabs
+  Tabs,
+  showFailToast,
+  Grid,
+  GridItem,
+  FloatingBubble
 } from 'vant';
 
 // 创建Vue应用实例
@@ -97,6 +113,9 @@ app.use(Stepper);
 app.use(Calendar);
 app.use(Tab);
 app.use(Tabs);
+app.use(Grid);
+app.use(GridItem);
+app.use(FloatingBubble);
 
 // 创建Pinia实例
 const pinia = createPinia();
@@ -104,12 +123,6 @@ const pinia = createPinia();
 // 使用插件
 app.use(router);
 app.use(pinia);
-
-// 全局错误处理
-app.config.errorHandler = (err, vm, info) => {
-  console.error('全局错误:', err);
-  Toast.show({ type: 'fail', message: '操作失败，请稍后重试' });
-};
 
 // 挂载应用
 app.mount('#app');

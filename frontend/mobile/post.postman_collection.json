@@ -1,0 +1,197 @@
+{
+	"info": {
+		"_postman_id": "19aeedb7-3104-42e8-944c-58901ca2d340",
+		"name": "feidu",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "https://10.33.40.56:443/artemis/api/video/v1/cameras/previewURLs",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var appKey = \"25795454\";\r",
+							"var appSecret = \"CmxKJ6ON0dVzZRdkUkdm\";\r",
+							"\r",
+							"var md5 = calcMd5();\r",
+							"var date = new Date().toString();\r",
+							"var nonce = createUuid();\r",
+							"var timestamp = new Date().getTime();\r",
+							"\r",
+							"var textToSign = \"\";\r",
+							"textToSign += request.method + \"\\n\";\r",
+							"textToSign += request.headers[\"accept\"] + \"\\n\";\r",
+							"textToSign += request.headers[\"content-type\"] + \"\\n\";\r",
+							"\r",
+							"var headers = headersToSign();\r",
+							"var signatureHeaders;\r",
+							"var sortedKeys = Array.from(headers.keys()).sort()\r",
+							"textToSign += \"/artemis/api/video/v1/cameras/previewURLs\";\r",
+							"console.log(\"textToSign\\n\" + textToSign.replace(/\\n/g, \"#\"));\r",
+							"var hash = CryptoJS.HmacSHA256(textToSign, appSecret)\r",
+							"console.log(\"hash:\" + hash)\r",
+							"var signature = hash.toString(CryptoJS.enc.Base64)\r",
+							"console.log(\"signature:\" + signature) \r",
+							"\r",
+							"pm.globals.set('AppKey', appKey);\r",
+							"pm.globals.set('Md5', md5);\r",
+							"pm.globals.set(\"Date\", date);\r",
+							"pm.globals.set(\"Signature\", signature);\r",
+							"pm.globals.set(\"SignatureHeaders\", signatureHeaders);\r",
+							"pm.globals.set(\"Nonce\", nonce);\r",
+							"pm.globals.set(\"Timestamp\", timestamp);\r",
+							"\r",
+							"function headersToSign() {\r",
+							"    var headers = new Map();\r",
+							"    for (var name in request.headers) {\r",
+							"        name = name.toLowerCase();\r",
+							"        if (!name.startsWith('x-ca-')) {\r",
+							"            continue;\r",
+							"        }\r",
+							"pm.variables.get(\"variable_key\"); \r",
+							"        if (name === \"x-ca-signature\" || name === \"x-ca-signature-headers\" || name == \"x-ca-key\" || name === 'x-ca-nonce') {\r",
+							"            continue;\r",
+							"        }\r",
+							"        var value = request.headers[name];\r",
+							"        headers.set(name, value);\r",
+							"    }\r",
+							"    headers.set('x-ca-key', appKey);\r",
+							"    headers.set('x-ca-timestamp', timestamp);\r",
+							"    console.log(\"headers: \" + headers.size);\r",
+							"    for(var key in headers){\r",
+							"        console.log(\"key:\" + key + \"value:\" + headers[key]);\r",
+							"    }\r",
+							"    return headers;\r",
+							"}\r",
+							"\r",
+							"function urlToSign() {\r",
+							"    var params = new Map();\r",
+							"    var contentType = request.headers[\"content-type\"];\r",
+							"    if (contentType && contentType.startsWith('application/x-www-form-urlencoded')) {\r",
+							"        const formParams = request.data.split(\"&\");\r",
+							"        formParams.forEach((p) => {\r",
+							"            const ss = p.split('=');\r",
+							"            params.set(ss[0], ss[1]);\r",
+							"        })\r",
+							"    }\r",
+							"    \r",
+							"    const ss = request.url.split('?');\r",
+							"    if (ss.length > 1 && ss[1]) {\r",
+							"        const queryParams = ss[1].split('&');\r",
+							"        queryParams.forEach((p) => {\r",
+							"            const ss = p.split('=');\r",
+							"            params.set(ss[0], ss[1]);\r",
+							"        })\r",
+							"    }\r",
+							"    \r",
+							"    var sortedKeys = Array.from(params.keys())\r",
+							"    sortedKeys.sort();\r",
+							"\r",
+							"    \r",
+							"    var l1 = ss[0].lastIndexOf('/');\r",
+							"    var url = ss[0].substring(23);\r",
+							"    var first = true;\r",
+							"    var qs\r",
+							"    for (var k of sortedKeys) {\r",
+							"        var s = k + \"=\" + params.get(k);\r",
+							"        qs = qs ? qs + \"&\" + s : s;\r",
+							"        console.log(\"key=\" + k + \" value=\" + params.get(k));\r",
+							"    }\r",
+							"    return qs ? url + \"?\" + qs : url;\r",
+							"}\r",
+							"\r",
+							"function calcMd5() {\r",
+							"    var contentType = request.headers[\"content-type\"];\r",
+							"    if (request.data && !contentType.startsWith('application/x-www-form-urlencoded')) {\r",
+							"        var data = request.data;\r",
+							"        var md5 = CryptoJS.MD5(data);\r",
+							"        var md5String = md5.toString(CryptoJS.enc.Base64);\r",
+							"        console.log(\"data:\" + data + \"\\nmd5:\" + md5String);\r",
+							"        return md5String;\r",
+							"    } else {\r",
+							"        return \"\";\r",
+							"    }\r",
+							"}\r",
+							"\r",
+							"function createUuid() {\r",
+							"    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {\r",
+							"        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);\r",
+							"        return v.toString(16);\r",
+							"    });\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "X-Ca-Key",
+						"value": "{{AppKey}}"
+					},
+					{
+						"key": "X-Ca-Signature",
+						"value": "{{Signature}}"
+					},
+					{
+						"key": "X-Ca-Signature-Headers",
+						"value": "{{SignatureHeaders}}"
+					},
+					{
+						"key": "X-Requested-With",
+						"value": "XMLHttpRequest"
+					},
+					{
+						"key": "X-Ca-Timestamp",
+						"value": "{{Timestamp}}"
+					},
+					{
+						"key": "X-Ca-Nonce",
+						"value": "{{Nonce}}"
+					},
+					{
+						"key": "Accept",
+						"value": "*/*"
+					},
+					{
+						"key": "",
+						"value": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"cameraIndexCode\": \"90ad77d8057c43dab140b77361606927\",\r\n    \"streamType\": 0,\r\n    \"protocol\": \"rtsp\",\r\n    \"transmode\": 0\r\n}"
+				},
+				"url": {
+					"raw": "https://10.33.40.56:443/artemis/api/video/v1/cameras/previewURLs",
+					"protocol": "https",
+					"host": [
+						"10",
+						"33",
+						"40",
+						"56"
+					],
+					"port": "443",
+					"path": [
+						"artemis",
+						"api",
+						"video",
+						"v1",
+						"cameras",
+						"previewURLs"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

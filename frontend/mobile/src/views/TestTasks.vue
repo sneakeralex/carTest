@@ -1,5 +1,12 @@
 <template>
   <div class="test-tasks-container">
+    <!-- 导航栏 -->
+    <van-nav-bar title="测试任务">
+      <template #right>
+        <van-icon name="plus" @click="$router.push('/test-tasks/new')" style="font-size: 20px;" />
+      </template>
+    </van-nav-bar>
+
     <!-- 搜索栏 -->
     <van-search
       v-model="searchKeyword"
@@ -117,6 +124,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { getUserInfo } from '../utils/auth.js';
 import { useTestTaskStore } from '../stores/testTask';
 import { showToast, showConfirmDialog } from 'vant';
 
@@ -153,8 +161,12 @@ const difficultyOptions = ref([
 
 const statusOptions = ref([
   { text: '全部状态', value: '' },
-  { text: '开放报名', value: 'ACTIVE' },
-  { text: '暂停报名', value: 'INACTIVE' }
+  { text: '草稿', value: 'DRAFT' },
+  { text: '待审核', value: 'PENDING' },
+  { text: '已审核', value: 'APPROVED' },
+  { text: '进行中', value: 'IN_PROGRESS' },
+  { text: '已完成', value: 'COMPLETED' },
+  { text: '已取消', value: 'CANCELLED' }
 ]);
 
 // 报名表单
@@ -287,7 +299,7 @@ const registerTask = (task) => {
 // 确认报名
 const confirmRegister = async () => {
   try {
-    const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+    const userInfo = getUserInfo();
     
     const registrationData = {
       taskId: registerForm.taskId,

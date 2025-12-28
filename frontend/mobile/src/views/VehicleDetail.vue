@@ -178,10 +178,10 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { showNotify, showDialog } from 'vant';
 import { useVehicleStore } from '../stores/vehicle';
+import { getMobileVehicleById, getVehicleTypes } from '../api/vehicle';
 
 const route = useRoute();
 const router = useRouter();
-const vehicleStore = useVehicleStore();
 
 // 车辆ID
 const vehicleId = computed(() => route.params.id);
@@ -221,13 +221,8 @@ const statusColumns = [
 // 获取数据
 onMounted(async () => {
   try {
-    // 获取车辆详情
     await fetchVehicleDetail();
-    
-    // 获取车辆类型列表
     await fetchVehicleTypes();
-    
-    // 获取维修保养历史记录
     await fetchMaintenanceHistory();
   } catch (error) {
     console.error('获取数据失败:', error);
@@ -240,21 +235,19 @@ onMounted(async () => {
 // 获取车辆详情
 const fetchVehicleDetail = async () => {
   try {
-    const data = await vehicleStore.fetchVehicleById(vehicleId.value);
-    vehicle.value = data;
+    const response = await getMobileVehicleById(vehicleId.value);
+    vehicle.value = response.data;
   } catch (error) {
     console.error('获取车辆详情失败:', error);
-    throw error;
+    showNotify({ type: 'warning', message: '使用本地车辆详情数据' });
   }
 };
 
 // 获取车辆类型列表
 const fetchVehicleTypes = async () => {
   try {
-    // 这里假设API中有获取车辆类型的方法
-    const response = await fetch('/vehicle-types');
-    const data = await response.json();
-    vehicleTypes.value = data || [];
+    const res = await getVehicleTypes();
+    vehicleTypes.value = res.data;
   } catch (error) {
     console.error('获取车辆类型失败:', error);
     vehicleTypes.value = [
@@ -269,13 +262,33 @@ const fetchVehicleTypes = async () => {
 // 获取维修保养历史记录
 const fetchMaintenanceHistory = async () => {
   try {
-    // 这里假设API中有获取车辆维修保养历史的方法
-    const response = await fetch(`/api/vehicles/${vehicleId.value}/maintenance-history`);
-    const data = await response.json();
-    maintenanceHistory.value = data || [];
+    // mock数据
+    maintenanceHistory.value = [
+      {
+        maintenanceNo: 'M20230923001',
+        vehicleId: 1,
+        description: '常规保养',
+        startTime: '2025-09-01',
+        endTime: '2025-09-01',
+        mileage: 12000,
+        type: 1,
+        cost: 800,
+        status: 2
+      },
+      {
+        maintenanceNo: 'M20230923002',
+        vehicleId: 1,
+        description: '更换刹车片',
+        startTime: '2025-08-15',
+        endTime: '2025-08-15',
+        mileage: 11500,
+        type: 2,
+        cost: 500,
+        status: 2
+      }
+    ];
   } catch (error) {
     console.error('获取维修保养历史失败:', error);
-    // 模拟数据
     maintenanceHistory.value = [];
   }
 };
@@ -305,15 +318,19 @@ const showEditPopup = () => {
 };
 
 // 车辆类型确认
-const onVehicleTypeConfirm = (value) => {
-  editForm.value.vehicleTypeId = value.value;
-  editForm.value.vehicleTypeName = value.text;
+const onVehicleTypeConfirm = ({ selectedOptions }) => {
+  if (selectedOptions && selectedOptions[0]) {
+    editForm.value.vehicleTypeId = selectedOptions[0].value;
+    editForm.value.vehicleTypeName = selectedOptions[0].text;
+  }
   showVehicleTypePicker.value = false;
 };
 
 // 车辆状态确认
-const onStatusConfirm = (value) => {
-  editForm.value.status = value.value;
+const onStatusConfirm = ({ selectedOptions }) => {
+  if (selectedOptions && selectedOptions[0]) {
+    editForm.value.status = selectedOptions[0].value;
+  }
   showStatusPicker.value = false;
 };
 

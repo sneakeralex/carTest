@@ -315,7 +315,7 @@ const editForm = ref({
 });
 
 // 日期选择器
-const selectedDate = ref(new Date());
+const selectedDate = ref(['2025', '04', '01']); // 使用数组格式兼容 van-date-picker
 const minDate = new Date(2000, 0, 1);
 const maxDate = new Date();
 
@@ -445,9 +445,12 @@ const onMaintenanceTypeConfirm = (value) => {
 };
 
 // 日期确认
-const onDateConfirm = (value) => {
-  selectedDate.value = value;
-  editForm.value.maintenanceDate = formatDate(value);
+const onDateConfirm = ({ selectedValues }) => {
+  // v-model 会自动更新 selectedDate，不需要手动赋值避免递归更新
+  // selectedDate.value = selectedValues;
+  // selectedValues 是数组格式 ['2025', '04', '09']，转换为日期字符串
+  const dateStr = `${selectedValues[0]}-${selectedValues[1].padStart(2, '0')}-${selectedValues[2].padStart(2, '0')}`;
+  editForm.value.maintenanceDate = dateStr;
   showDatePicker.value = false;
 };
 

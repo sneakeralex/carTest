@@ -21,7 +21,7 @@
           <van-cell 
             v-for="vehicle in filteredVehicles" 
             :key="vehicle.vehicleId"
-            :title="vehicle.brand + ' ' + vehicle.model"
+            :title="(vehicle.brand || '品牌未知') + ' ' + (vehicle.model || '类型未知')"
             :label="'车牌: ' + vehicle.licensePlate"
             is-link
             :to="`/vehicles/${vehicle.vehicleId}`"
@@ -142,6 +142,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { showNotify } from 'vant';
 import { useVehicleStore } from '../stores/vehicle';
+import { getMobileVehicles, getVehicleTypes } from '../api/vehicle';
 
 const vehicleStore = useVehicleStore();
 
@@ -211,11 +212,11 @@ onMounted(async () => {
 // 获取车辆列表
 const fetchVehicles = async () => {
   try {
-    const data = await vehicleStore.fetchVehicles();
-    console.log(data.data.content);
-    vehicles.value = data.data.content || [];
+    const response = await getMobileVehicles({ page: 1, size: 1000 });
+    vehicles.value = response.data.content;
   } catch (error) {
     console.error('获取车辆列表失败:', error);
+    showNotify({ type: 'danger', message: '获取车辆列表失败' });
     throw error;
   }
 };
@@ -223,12 +224,11 @@ const fetchVehicles = async () => {
 // 获取车辆类型列表
 const fetchVehicleTypes = async () => {
   try {
-    // 这里假设API中有获取车辆类型的方法
-    const response = await fetch('/vehicle-types');
-    const data = await response.json();
-    vehicleTypes.value = data || [];
+    const res = await getVehicleTypes();
+    vehicleTypes.value = res.data;
   } catch (error) {
     console.error('获取车辆类型失败:', error);
+    showNotify({ type: 'warning', message: '使用本地车辆类型数据' });
     vehicleTypes.value = [
       { id: 1, name: '轿车' },
       { id: 2, name: 'SUV' },
@@ -236,6 +236,58 @@ const fetchVehicleTypes = async () => {
       { id: 4, name: '面包车' }
     ];
   }
+};
+
+// 获取车辆详情
+const fetchVehicleById = async (id) => {
+  // mock数据
+  const mockVehicles = [
+    {
+      vehicleId: '1', // 修正为字符串类型
+      licensePlate: '粤A12345',
+      brand: '特斯拉',
+      model: 'Model 3',
+      year: 2024,
+      mileage: 12000,
+      vehicleTypeId: 1,
+      vehicleTypeName: '轿车',
+      status: 'NORMAL',
+      color: '红色',
+      vin: 'TESLA123456789',
+      engineNo: 'ENGTESLA001',
+      owner: '张三',
+      insurance: '太平洋保险',
+      description: '电动轿车，续航500km',
+      image: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-8.jpeg',
+      registrationDate: '2024-01-10',
+      lastServiceDate: '2025-09-01',
+      nextServiceDate: '2026-03-01'
+    },
+    {
+      vehicleId: '2',
+      licensePlate: '粤B67890',
+      brand: '比亚迪',
+      model: '汉',
+      year: 2023,
+      mileage: 8000,
+      vehicleTypeId: 2,
+      vehicleTypeName: 'SUV',
+      status: 'MAINTENANCE',
+      color: '黑色',
+      vin: 'BYD987654321',
+      engineNo: 'ENGBYD002',
+      owner: '李四',
+      insurance: '中国人保',
+      description: '混动SUV，空间大',
+      image: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-8.jpeg',
+      registrationDate: '2023-05-20',
+      lastServiceDate: '2025-08-15',
+      nextServiceDate: '2026-02-15'
+    }
+  ];
+  // 兼容字符串和数字类型的id
+  const found = mockVehicles.find(v => String(v.vehicleId) === String(id));
+  return found || mockVehicles[0];
 };
 
 // 下拉刷新
@@ -272,9 +324,11 @@ const showAddVehiclePopup = () => {
 };
 
 // 车辆类型确认
-const onVehicleTypeConfirm = (value) => {
-  vehicleForm.value.vehicleTypeId = value.value;
-  vehicleForm.value.vehicleTypeName = value.text;
+const onVehicleTypeConfirm = ({ selectedOptions }) => {
+  if (selectedOptions && selectedOptions[0]) {
+    vehicleForm.value.vehicleTypeId = selectedOptions[0].value;
+    vehicleForm.value.vehicleTypeName = selectedOptions[0].text;
+  }
   showVehicleTypePicker.value = false;
 };
 

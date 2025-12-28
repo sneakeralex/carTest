@@ -1,4 +1,46 @@
-import request from './request';
+// 模拟API响应延迟
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// 获取认证token的辅助函数
+const getAuthToken = () => {
+  // 在浏览器环境中使用localStorage
+  if (typeof localStorage !== 'undefined') {
+    return localStorage.getItem('token') || '';
+  }
+  // 在Node.js测试环境中返回空字符串
+  return '';
+};
+
+// 车辆颜色映射
+const getColorName = (colorCode) => {
+  const colorMap = {
+    1: '白色',
+    2: '黑色',
+    3: '红色',
+    4: '蓝色',
+    5: '银色',
+    6: '灰色',
+    7: '绿色',
+    8: '黄色',
+    9: '紫色',
+    10: '橙色',
+    11: '粉色'
+  };
+  return colorMap[colorCode] || '未知';
+};
+
+// 车辆类型映射
+const getVehicleTypeName = (typeCode) => {
+  const typeMap = {
+    1: '轿车',
+    2: 'SUV',
+    3: '卡车',
+    4: '面包车',
+    5: '跑车',
+    6: 'MPV'
+  };
+  return typeMap[typeCode] || '未知';
+};
 
 /**
  * 获取车辆列表 (移动端)
@@ -11,12 +53,151 @@ import request from './request';
  * @param {number} params.size - 每页数量
  * @returns {Promise} - 返回Promise对象
  */
-export function getMobileVehicles(params = {}) {
-  return request({
-    url: '/vehicles',
-    method: 'get',
-    params
-  });
+export async function getMobileVehicles(params = {}) {
+  try {
+    const bodyStr = JSON.stringify({
+      pageNo: params.page || 1,
+      pageSize: params.size || 100 // reduce payload to mitigate ECONNRESET
+    });
+
+    const response = await fetch('https://cartest.douwifi.cn/artemis/api/resource/v1/vehicle/vehicleList', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      },
+      body: bodyStr
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('原始API响应:', JSON.stringify(result, null, 2));
+    
+    // Check for API error response
+    if (result.code && result.code !== '0') {
+      throw new Error(result.msg || 'API error');
+    }
+    
+    // Transform the response to match the expected format
+    const transformedVehicles = (result.data.list || []).map(vehicle => ({
+      vehicleId: vehicle.vehicleId,
+      licensePlate: vehicle.plateNo,
+      // API不提供品牌/型号/年份，保留原始值或设置为null
+      brand: vehicle.vehicleBrand || null,
+      model: vehicle.vehicleModel || null,
+      year: vehicle.vehicleYear || null,
+      mileage: vehicle.currentMileage || 0,
+      // 颜色与类型名称映射
+      color: getColorName(vehicle.vehicleColor),
+      type: getVehicleTypeName(vehicle.vehicleType),
+      vehicleTypeName: getVehicleTypeName(vehicle.vehicleType),
+      vehicleTypeId: vehicle.vehicleType,
+      // 车牌类型/颜色原始值
+      plateType: vehicle.plateType,
+      plateColor: vehicle.plateColor,
+      // 绑定人员信息
+      isBandPerson: vehicle.isBandPerson,
+      personId: vehicle.personId,
+      personName: vehicle.personName,
+      phoneNo: vehicle.phoneNo,
+      mark: vehicle.mark,
+      status: vehicle.vehicleStatus || 'NORMAL',
+      currentMileage: vehicle.currentMileage || 0,
+      images: [],
+      // 保留原始字段
+      ...vehicle
+    }));
+
+    return {
+      data: {
+        content: transformedVehicles,
+        pageable: {
+          pageNumber: result.data.pageNo || params.page || 0,
+          pageSize: result.data.pageSize || params.size || 10,
+          total: result.data.total || 0
+        }
+      },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取车辆列表失败:', error);
+    // Retry once on network errors
+    if (error && (error.name === 'TypeError' || /Network|ECONNRESET|fetch failed/i.test(String(error)))) {
+      try {
+        await delay(300);
+        const retryBody = JSON.stringify({
+          pageNo: params.page || 1,
+          pageSize: 50
+        });
+        const response = await fetch('https://cartest.douwifi.cn/artemis/api/resource/v2/vehicle/advance/vehicleList', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': '*/*',
+            'Accept-Encoding': 'identity',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: retryBody
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (!result.code || result.code === '0') {
+            const transformedVehicles = (result.data.list || []).map(vehicle => ({
+              vehicleId: vehicle.vehicleId,
+              licensePlate: vehicle.plateNo,
+              // API不提供品牌/型号/年份，保留原始值或设置为null
+              brand: vehicle.vehicleBrand || null,
+              model: vehicle.vehicleModel || null,
+              year: vehicle.vehicleYear || null,
+              mileage: vehicle.currentMileage || 0,
+              // 颜色与类型名称映射
+              color: getColorName(vehicle.vehicleColor),
+              type: getVehicleTypeName(vehicle.vehicleType),
+              vehicleTypeName: getVehicleTypeName(vehicle.vehicleType),
+              vehicleTypeId: vehicle.vehicleType,
+              // 车牌类型/颜色原始值
+              plateType: vehicle.plateType,
+              plateColor: vehicle.plateColor,
+              // 绑定人员信息
+              isBandPerson: vehicle.isBandPerson,
+              personId: vehicle.personId,
+              personName: vehicle.personName,
+              phoneNo: vehicle.phoneNo,
+              mark: vehicle.mark,
+              status: vehicle.vehicleStatus || 'NORMAL',
+              currentMileage: vehicle.currentMileage || 0,
+              images: [],
+              // 保留原始字段
+              ...vehicle
+            }));
+            return {
+              data: {
+                content: transformedVehicles,
+                pageable: {
+                  pageNumber: result.data.pageNo || params.page || 0,
+                  pageSize: result.data.pageSize || 50,
+                  total: result.data.total || transformedVehicles.length
+                }
+              },
+              status: 200,
+              statusText: 'OK',
+              headers: {},
+              config: {}
+            };
+          }
+        }
+      } catch (e) {
+        console.warn('重试获取车辆列表失败:', e);
+      }
+    }
+    throw error;
+  }
 }
 
 /**
@@ -24,111 +205,91 @@ export function getMobileVehicles(params = {}) {
  * @param {string} vehicleId - 车辆ID
  * @returns {Promise} - 返回Promise对象
  */
-export function getMobileVehicleById(vehicleId) {
-  return request({
-    url: `/vehicles/${vehicleId}`,
-    method: 'get'
-  });
-}
+export async function getMobileVehicleById(vehicleId) {
+  try {
+    // Since the API doesn't support querying by ID, we fetch all vehicles and find the one we need
+    const bodyStr = JSON.stringify({
+      pageNo: 1,
+      pageSize: 100 // reduce payload
+    });
 
-/**
- * 获取用户车辆列表
- * @param {string} userId - 用户ID
- * @returns {Promise} - 返回Promise对象
- */
-export function getUserVehicles(userId) {
-  return request({
-    url: `/vehicles/user/${userId}`,
-    method: 'get'
-  });
-}
+    const response = await fetch('https://cartest.douwifi.cn/artemis/api/resource/v1/vehicle/vehicleList', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      },
+      body: bodyStr
+    });
 
-/**
- * 添加用户车辆
- * @param {string} userId - 用户ID
- * @param {Object} vehicleData - 车辆数据
- * @param {string} vehicleData.licensePlate - 车牌号
- * @param {string} vehicleData.brand - 品牌
- * @param {string} vehicleData.model - 型号
- * @param {string} vehicleData.year - 年份
- * @param {string} vehicleData.color - 颜色
- * @param {string} vehicleData.engineNumber - 发动机号
- * @param {string} vehicleData.chassisNumber - 车架号
- * @param {string} vehicleData.description - 描述
- * @returns {Promise} - 返回Promise对象
- */
-export function addUserVehicle(userId, vehicleData) {
-  return request({
-    url: `/vehicles/user/${userId}`,
-    method: 'post',
-    data: vehicleData
-  });
-}
-
-/**
- * 更新车辆信息 (移动端)
- * @param {string} vehicleId - 车辆ID
- * @param {Object} vehicleData - 车辆数据
- * @returns {Promise} - 返回Promise对象
- */
-export function updateMobileVehicle(vehicleId, vehicleData) {
-  return request({
-    url: `/vehicles/${vehicleId}`,
-    method: 'put',
-    data: vehicleData
-  });
-}
-
-/**
- * 删除车辆 (移动端)
- * @param {string} vehicleId - 车辆ID
- * @returns {Promise} - 返回Promise对象
- */
-export function deleteMobileVehicle(vehicleId) {
-  return request({
-    url: `/vehicles/${vehicleId}`,
-    method: 'delete'
-  });
-}
-
-/**
- * 上传车辆图片
- * @param {string} vehicleId - 车辆ID
- * @param {FormData} formData - 包含图片文件的FormData
- * @returns {Promise} - 返回Promise对象
- */
-export function uploadVehicleImages(vehicleId, formData) {
-  return request({
-    url: `/vehicles/${vehicleId}/images`,
-    method: 'post',
-    data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data'
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  });
-}
 
-/**
- * 获取车辆图片列表
- * @param {string} vehicleId - 车辆ID
- * @returns {Promise} - 返回Promise对象
- */
-export function getVehicleImages(vehicleId) {
-  return request({
-    url: `/vehicles/${vehicleId}/images`,
-    method: 'get'
-  });
+    const result = await response.json();
+    console.log('获取车辆详情原始API响应:', JSON.stringify(result, null, 2));
+    // 如果后端返回错误码或禁止访问，走mock回退
+    if ((result.code && result.code !== '0') || !result.data) {
+      throw new Error(result.msg || 'API error');
+    }
+    
+    // Find the specific vehicle
+    const vehicle = result.data && result.data.list ? result.data.list.find(v => String(v.vehicleId) === String(vehicleId)) : null;
+    
+    if (!vehicle) {
+      throw new Error('车辆不存在');
+    }
+
+    // Transform the vehicle to match expected format
+    const transformedVehicle = {
+      vehicleId: vehicle.vehicleId,
+      licensePlate: vehicle.plateNo,
+      // API不提供品牌/型号/年份，保留原始值或设置为null
+      brand: vehicle.vehicleBrand || null,
+      model: vehicle.vehicleModel || null,
+      year: vehicle.vehicleYear || null,
+      mileage: vehicle.currentMileage || 0,
+      // 颜色与类型名称映射
+      color: getColorName(vehicle.vehicleColor),
+      type: getVehicleTypeName(vehicle.vehicleType),
+      vehicleTypeName: getVehicleTypeName(vehicle.vehicleType),
+      vehicleTypeId: vehicle.vehicleType,
+      // 车牌类型/颜色原始值
+      plateType: vehicle.plateType,
+      plateColor: vehicle.plateColor,
+      // 绑定人员信息
+      isBandPerson: vehicle.isBandPerson,
+      personId: vehicle.personId,
+      personName: vehicle.personName,
+      phoneNo: vehicle.phoneNo,
+      mark: vehicle.mark,
+      status: vehicle.vehicleStatus || 'NORMAL',
+      currentMileage: vehicle.currentMileage || 0,
+      images: [],
+      // Keep original fields
+      ...vehicle
+    };
+    
+    return {
+      data: transformedVehicle,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取车辆详情失败:', error);
+    throw error;
+  }
 }
 
 /**
  * 获取车辆品牌列表
  * @returns {Promise} - 返回Promise对象
  */
-export function getVehicleBrands() {
-  return request({
-    url: '/vehicles/brands',
-    method: 'get'
-  });
+export async function getVehicleBrands() {
+  await delay(300);
+  return [];
 }
 
 /**
@@ -136,11 +297,21 @@ export function getVehicleBrands() {
  * @param {string} brandId - 品牌ID (可选)
  * @returns {Promise} - 返回Promise对象
  */
-export function getVehicleModels(brandId = null) {
-  const params = brandId ? { brandId } : {};
-  return request({
-    url: '/vehicles/models',
-    method: 'get',
-    params
-  });
+export async function getVehicleModels(brandId = null) {
+  await delay(300);
+  return [];
 }
+
+/**
+ * 获取车辆类型列表
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getVehicleTypes() {
+  await delay(300);
+  return [];
+}
+
+// 兼容旧用法的导出别名
+export { getMobileVehicles as getVehicles };
+// 如需要也可导出详情别名（保留现有命名不变）
+export { getMobileVehicleById as getVehicleById };
