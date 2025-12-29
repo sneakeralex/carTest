@@ -1,11 +1,12 @@
 import { generateDailySchedule } from '@/mock/schedule';
+import { artemisRequest } from './request';
 
 // 判断是否使用mock数据
 const useMock = false; // Changed to false to prefer real API
 
-// 可配置的测试管理服务地址和端口
-export const test_management_server = import.meta.env.VITE_TEST_MANAGEMENT_SERVER || '117.88.42.183';
-export const test_management_port = import.meta.env.VITE_TEST_MANAGEMENT_PORT || '33624';
+// Remove hardcoded server/port defaults — frontend should not contain remote IPs/ports.
+export const test_management_server = import.meta.env.VITE_TEST_MANAGEMENT_SERVER || '';
+export const test_management_port = import.meta.env.VITE_TEST_MANAGEMENT_PORT || '';
 
 // 模拟延迟
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -72,25 +73,14 @@ export async function getDailySchedule(date) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/schedule/daily`;
     const queryParams = new URLSearchParams();
     queryParams.append('date', date);
 
-    const response = await fetch(`${url}?${queryParams}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    // Route via proxy; backend should handle any external routing/signing
+    const res = await artemisRequest(`/api/schedule/daily?${queryParams}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取每日场地安排原始API响应:', JSON.stringify(result, null, 2));
 
-    // Assuming the API returns data in a format that can be used directly or needs transformation
     return mockResponse(result.data || result);
   } catch (error) {
     console.error('获取每日场地安排失败，使用mock数据:', error);
@@ -119,40 +109,20 @@ export async function getSchedule(params) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/schedule/site`;
     const queryParams = new URLSearchParams();
     queryParams.append('testSiteId', params.testSiteId);
     if (params.date) queryParams.append('date', params.date);
 
-    const response = await fetch(`${url}?${queryParams}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/api/schedule/site?${queryParams}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取场地排期原始API响应:', JSON.stringify(result, null, 2));
 
-    // Transform response to expected format
-    const schedule = result.data || {
-      'AM': { available: true },
-      'PM': { available: true }
-    };
-
+    const schedule = result.data || { 'AM': { available: true }, 'PM': { available: true } };
     return mockResponse(schedule);
   } catch (error) {
     console.error('获取场地排期失败，使用mock数据:', error);
-    // Fallback to mock
     await delay(300);
-    const schedule = mockSchedules[params.testSiteId] || {
-      'AM': { available: true },
-      'PM': { available: true }
-    };
+    const schedule = mockSchedules[params.testSiteId] || { 'AM': { available: true }, 'PM': { available: true } };
     return mockResponse(schedule);
   }
 }
@@ -167,51 +137,25 @@ export async function getSchedule(params) {
 export async function getWeather(params) {
   if (useMock) {
     await delay(300);
-    const weather = mockWeather[params.testSiteId] || {
-      temperature: 20,
-      condition: '晴',
-      suitable: true
-    };
+    const weather = mockWeather[params.testSiteId] || { temperature: 20, condition: '晴', suitable: true };
     return mockResponse(weather);
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/schedule/weather`;
     const queryParams = new URLSearchParams();
     queryParams.append('testSiteId', params.testSiteId);
     if (params.date) queryParams.append('date', params.date);
 
-    const response = await fetch(`${url}?${queryParams}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/api/schedule/weather?${queryParams}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取天气信息原始API响应:', JSON.stringify(result, null, 2));
 
-    // Transform response to expected format
-    const weather = result.data || {
-      temperature: 20,
-      condition: '晴',
-      suitable: true
-    };
-
+    const weather = result.data || { temperature: 20, condition: '晴', suitable: true };
     return mockResponse(weather);
   } catch (error) {
     console.error('获取天气信息失败，使用mock数据:', error);
-    // Fallback to mock
     await delay(300);
-    const weather = mockWeather[params.testSiteId] || {
-      temperature: 20,
-      condition: '晴',
-      suitable: true
-    };
+    const weather = mockWeather[params.testSiteId] || { temperature: 20, condition: '晴', suitable: true };
     return mockResponse(weather);
   }
 }
@@ -224,50 +168,25 @@ export async function getWeather(params) {
 export async function createBooking(data) {
   if (useMock) {
     await delay(500);
-    // 模拟预约成功
-    return mockResponse({
-      bookingId: 'BK' + Date.now(),
-      ...data,
-      status: 'PENDING'
-    });
+    return mockResponse({ bookingId: 'BK' + Date.now(), ...data, status: 'PENDING' });
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/schedule/booking`;
-
-    const response = await fetch(url, {
+    const res = await artemisRequest('/api/schedule/booking', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = res?.data;
     console.log('创建预约原始API响应:', JSON.stringify(result, null, 2));
 
-    // Transform response
-    const booking = result.data || {
-      bookingId: 'BK' + Date.now(),
-      ...data,
-      status: 'PENDING'
-    };
-
+    const booking = result.data || { bookingId: 'BK' + Date.now(), ...data, status: 'PENDING' };
     return mockResponse(booking);
   } catch (error) {
     console.error('创建预约失败，使用mock数据:', error);
-    // Fallback to mock
     await delay(500);
-    // 模拟预约成功
-    return mockResponse({
-      bookingId: 'BK' + Date.now(),
-      ...data,
-      status: 'PENDING'
-    });
+    return mockResponse({ bookingId: 'BK' + Date.now(), ...data, status: 'PENDING' });
   }
 }
 

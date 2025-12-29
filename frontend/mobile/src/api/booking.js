@@ -1,5 +1,7 @@
 // 可配置的预约服务地址
-export const test_management_base_url = (globalThis?.import?.meta?.env?.VITE_TEST_MANAGEMENT_BASE_URL) || 'https://cartest.douwifi.cn/artemis';
+import { artemisRequest } from './request';
+// Use environment variable only. Do NOT default to an absolute Artemis host in frontend code.
+export const test_management_base_url = (globalThis?.import?.meta?.env?.VITE_TEST_MANAGEMENT_BASE_URL) || '';
 
 /**
  * 生成带认证头的fetch选项
@@ -29,28 +31,10 @@ export async function getBookings(params = {}) {
     const url = `${test_management_base_url}/api/v1/booking/list${queryString ? '?' + queryString : ''}`;
     console.log('获取预约列表请求URL:', url);
 
-    // 获取认证token
-    const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-      'Accept': '*/*'
-    };
-    
-    // 添加认证头
-    if (token) {
-      headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    }
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: headers
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    // Use artemisRequest via proxy
+    const proxiedPath = `/artemis/api/v1/booking/list${queryString ? '?' + queryString : ''}`;
+    const res = await artemisRequest(proxiedPath, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
+    const result = res?.data;
     console.log('预约列表原始API响应:', JSON.stringify(result, null, 2));
     console.log('API响应码:', result.code);
     console.log('响应码类型:', typeof result.code);
@@ -136,20 +120,13 @@ export async function createBooking(bookingData) {
     const url = `${test_management_base_url}/api/v1/booking/add`;
     console.log('创建预约请求URL:', url, '数据:', JSON.stringify(requestData, null, 2));
 
-    const response = await fetch(url, {
+    const res = await artemisRequest('/artemis/api/v1/booking/add', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestData)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = res?.data;
     console.log('创建预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -191,28 +168,8 @@ export async function getBookingById(id) {
     const url = `${test_management_base_url}/api/v1/booking/detail/${id}`;
     console.log('获取预约详情请求URL:', url);
 
-    // 获取认证token
-    const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-      'Accept': '*/*'
-    };
-    
-    // 添加认证头
-    if (token) {
-      headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    }
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: headers
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/v1/booking/detail/${id}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
+    const result = res?.data;
     console.log('预约详情原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -266,20 +223,13 @@ export async function updateBooking(bookingData) {
     const url = `${test_management_base_url}/api/v1/booking/update`;
     console.log('更新预约请求URL:', url, '数据:', JSON.stringify(requestData, null, 2));
 
-    const response = await fetch(url, {
+    const res = await artemisRequest('/artemis/api/v1/booking/update', {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestData)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = res?.data;
     console.log('更新预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -321,20 +271,8 @@ export async function cancelBooking(id) {
     const url = `${test_management_base_url}/api/v1/booking/cancel/${id}`;
     console.log('取消预约请求URL:', url);
 
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*'
-      },
-      body: JSON.stringify({})
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/v1/booking/cancel/${id}`, { method: 'PUT', body: JSON.stringify({}) });
+    const result = res?.data;
     console.log('取消预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -371,28 +309,8 @@ export async function getAvailableTimeSlots(params = {}) {
     const url = `${test_management_base_url}/api/v1/booking/available-slots${queryString ? '?' + queryString : ''}`;
     console.log('获取可用时间段请求URL:', url);
 
-    // 获取认证token
-    const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-      'Accept': '*/*'
-    };
-    
-    // 添加认证头
-    if (token) {
-      headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    }
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: headers
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/v1/booking/available-slots${queryString ? '?' + queryString : ''}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
+    const result = res?.data;
     console.log('可用时间段原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -420,29 +338,12 @@ export async function approveBooking(id, data) {
     const url = `${test_management_base_url}/api/v1/booking/approve/${id}`;
     console.log('批准预约请求URL:', url, '数据:', JSON.stringify(data, null, 2));
 
-    // 获取认证token
-    const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-      'Accept': '*/*'
-    };
-    
-    // 添加认证头
-    if (token) {
-      headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    }
-
-    const response = await fetch(url, {
+    const res = await artemisRequest(`/artemis/api/v1/booking/approve/${id}`, {
       method: 'PUT',
-      headers: headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = res?.data;
     console.log('批准预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -483,29 +384,12 @@ export async function rescheduleBooking(rescheduleData) {
     const url = `${test_management_base_url}/api/v1/booking/reschedule/${rescheduleData.id}`;
     console.log('重新安排预约请求URL:', url, '数据:', JSON.stringify(requestData, null, 2));
 
-    // 获取认证token
-    const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-      'Accept': '*/*'
-    };
-    
-    // 添加认证头
-    if (token) {
-      headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    }
-
-    const response = await fetch(url, {
+    const res = await artemisRequest(`/artemis/api/v1/booking/reschedule/${rescheduleData.id}`, {
       method: 'PUT',
-      headers: headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestData)
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = res?.data;
     console.log('重新安排预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -552,18 +436,8 @@ export async function getGroundList(params = {}) {
     const url = `${test_management_base_url}/ground/list${queryString ? '?' + queryString : ''}`;
     console.log('获取场地列表请求URL:', url);
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/ground/list${queryString ? '?' + queryString : ''}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
+    const result = res?.data;
     console.log('场地列表原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -604,18 +478,8 @@ export async function getVinList(corpId) {
     const url = `${test_management_base_url}/api/v1/booking/getVinList/${corpId}`;
     console.log('获取VIN列表请求URL:', url);
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/v1/booking/getVinList/${corpId}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
+    const result = res?.data;
     console.log('VIN列表原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -652,25 +516,14 @@ export async function getBookingNo(prefix) {
       const url = `${test_management_base_url}/api/v1/booking/getBookingNo/${prefix}`;
       console.log(`获取预约编号请求URL: ${url} (尝试 ${attempt}/${maxRetries})`);
 
-      // 添加超时控制
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+      // Use artemisRequest with a timeout via Promise.race
+      const timeoutMs = 10000;
+      const requestPromise = artemisRequest(`/artemis/api/v1/booking/getBookingNo/${prefix}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('请求超时')), timeoutMs));
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        signal: controller.signal
-      });
+      const res = await Promise.race([requestPromise, timeoutPromise]);
+      const result = res?.data;
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
       console.log('预约编号原始API响应:', JSON.stringify(result, null, 2));
 
       if (result.code !== '0' && result.code !== 200) {
@@ -693,9 +546,9 @@ export async function getBookingNo(prefix) {
       // 如果是最后一次尝试，直接抛出错误
       if (attempt === maxRetries) {
         // 增强错误信息
-        if (error.name === 'AbortError') {
+        if (error.message && error.message.includes('请求超时')) {
           throw new Error('请求超时');
-        } else if (error.message.includes('Failed to fetch')) {
+        } else if (error.message && error.message.includes('Failed to fetch')) {
           throw new Error('网络连接失败');
         } else {
           throw error;
@@ -720,18 +573,8 @@ export async function getTestItems() {
     const url = `${test_management_base_url}/api/v1/ground/testItem`;
     console.log('获取项目列表请求URL:', url);
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/v1/ground/testItem`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
+    const result = res?.data;
     console.log('项目列表原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {

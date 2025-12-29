@@ -86,6 +86,8 @@ const mockResponse = (data) => ({
   config: {}
 });
 
+import { artemisRequest } from './request';
+
 /**
  * 获取设备列表
  * @param {Object} params - 查询参数
@@ -133,21 +135,13 @@ export async function getEquipments(params = {}) {
 
     const bodyStr = JSON.stringify(bodyObj);
 
-    const response = await fetch('https://cartest.douwifi.cn/artemis/api/iotrm/v1/device/page', {
+    const res = await artemisRequest('/artemis/api/iotrm/v1/device/page', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
       body: bodyStr
     });
+    const result = res?.data;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('设备列表原始API响应:', JSON.stringify(result, null, 2));
     
     // Transform the response to match the expected format
@@ -249,21 +243,13 @@ export async function getEquipmentById(id) {
 
     const bodyStr = JSON.stringify(bodyObj);
 
-    const response = await fetch('https://cartest.douwifi.cn/artemis/api/iotrm/v1/device/page', {
+    const res = await artemisRequest('/artemis/api/iotrm/v1/device/page', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
       body: bodyStr
     });
+    const result = res?.data;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('设备详情原始API响应:', JSON.stringify(result, null, 2));
 
     const device = result.data.list.find(item => item.id == id || item.deviceId == id);
@@ -332,21 +318,13 @@ export async function createEquipment(data) {
       purchasePrice: data.purchasePrice
     };
 
-    const response = await fetch('https://cartest.douwifi.cn/artemis/api/iotrm/v1/device', {
+    const res = await artemisRequest('/artemis/api/iotrm/v1/device', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
       body: JSON.stringify(apiData)
     });
+    const result = res?.data;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('创建设备原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -423,21 +401,13 @@ export async function updateEquipment(id, data) {
       purchasePrice: data.purchasePrice
     };
 
-    const response = await fetch('https://cartest.douwifi.cn/artemis/api/iotrm/v1/device', {
+    const res = await artemisRequest('/artemis/api/iotrm/v1/device', {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
       body: JSON.stringify(apiData)
     });
+    const result = res?.data;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('更新设备原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -497,24 +467,13 @@ export async function updateEquipment(id, data) {
  */
 export async function deleteEquipment(id) {
   try {
-    const response = await fetch(`https://cartest.douwifi.cn/artemis/api/iotrm/v1/device/${id}`, {
+    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
+      headers: { 'Accept': '*/*', 'Accept-Encoding': 'identity' }
     });
+    const result = res?.data;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('删除设备原始API响应:', JSON.stringify(result, null, 2));
-
-    if (result.code !== '0' && result.code !== 200) {
-      throw new Error(result.msg || '删除设备失败');
-    }
 
     return {
       data: { message: '删除成功' },
@@ -571,21 +530,13 @@ export async function getEquipmentApplications(params = {}) {
 
     const bodyStr = JSON.stringify(bodyObj);
 
-    const response = await fetch('https://cartest.douwifi.cn/artemis/api/iotrm/v1/device/application/page', {
+    const res = await artemisRequest('/artemis/api/iotrm/v1/device/application/page', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
       body: bodyStr
     });
+    const result = res?.data;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('设备申请列表原始API响应:', JSON.stringify(result, null, 2));
     
     // Transform the response to match the expected format
@@ -661,20 +612,12 @@ export async function getEquipmentApplications(params = {}) {
  */
 export async function getEquipmentApplicationById(id) {
   try {
-    const response = await fetch(`https://cartest.douwifi.cn/artemis/api/iotrm/v1/device/application/${id}`, {
+    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' }
     });
+    const result = res?.data;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('设备申请详情原始API响应:', JSON.stringify(result, null, 2));
     
     // Transform the response to match the expected format
@@ -739,21 +682,13 @@ export async function applyEquipment(data) {
       ...data
     };
 
-    const response = await fetch('https://cartest.douwifi.cn/artemis/api/iotrm/v1/device/application', {
+    const res = await artemisRequest('/artemis/api/iotrm/v1/device/application', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
       body: JSON.stringify(requestData)
     });
+    const result = res?.data;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('提交设备申请原始API响应:', JSON.stringify(result, null, 2));
     
     // Transform the response to match the expected format
@@ -813,21 +748,13 @@ export async function updateApplicationStatus(id, data) {
       ...data
     };
 
-    const response = await fetch(`https://cartest.douwifi.cn/artemis/api/iotrm/v1/device/application/${id}`, {
+    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
       body: JSON.stringify(requestData)
     });
+    const result = res?.data;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('更新申请状态原始API响应:', JSON.stringify(result, null, 2));
     
     // Transform the response to match the expected format
@@ -894,21 +821,13 @@ export async function approveEquipmentRequest(id, data) {
       ...data
     };
 
-    const response = await fetch(`https://cartest.douwifi.cn/artemis/api/iotrm/v1/device/application/${id}/approve`, {
+    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}/approve`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
       body: JSON.stringify(requestData)
     });
+    const result = res?.data;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('审批设备申请原始API响应:', JSON.stringify(result, null, 2));
     
     // Transform the response to match the expected format
@@ -975,21 +894,13 @@ export async function cancelEquipmentRequest(id, data) {
       ...data
     };
 
-    const response = await fetch(`https://cartest.douwifi.cn/artemis/api/iotrm/v1/device/application/${id}/cancel`, {
+    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}/cancel`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
       body: JSON.stringify(requestData)
     });
+    const result = res?.data;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('取消设备申请原始API响应:', JSON.stringify(result, null, 2));
     
     // Transform the response to match the expected format

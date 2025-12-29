@@ -1,3 +1,5 @@
+import { artemisRequest } from './request';
+
 /**
  * 获取人员列表
  * @param {Object} params - 查询参数
@@ -10,23 +12,17 @@ export async function getStaffList(params = {}) {
   const pageSize = params.pageSize || 20;
 
   try {
-    const response = await fetch('https://cartest.douwifi.cn/artemis/api/v1/staff', {
+    const res = await artemisRequest('/artemis/api/v1/staff', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': '*/*'
       },
-      body: JSON.stringify({
-        pageSize,
-        pageNum
-      })
+      body: JSON.stringify({ pageSize, pageNum })
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('人员列表原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0') {
@@ -73,19 +69,13 @@ export async function getStaffList(params = {}) {
  */
 export async function getStaffById(staffId) {
   try {
-    const response = await fetch(`https://cartest.douwifi.cn/api/artemis/api/manage/auth/v2/manage/userService/getUserById/${staffId}`, {
+    const res = await artemisRequest(`/artemis/api/manage/auth/v2/manage/userService/getUserById/${staffId}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*'
-      }
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*' }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('人员详情原始API响应:', JSON.stringify(result, null, 2));
     
     // Transform the response to match the expected format
@@ -147,7 +137,7 @@ export async function createStaff(staffData) {
       ...staffData
     };
 
-    const response = await fetch('https://cartest.douwifi.cn/api/artemis/api/manage/auth/v2/manage/userService/createUser', {
+    const res = await artemisRequest('/artemis/api/manage/auth/v2/manage/userService/createUser', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -157,11 +147,8 @@ export async function createStaff(staffData) {
       body: JSON.stringify(requestData)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('创建人员原始API响应:', JSON.stringify(result, null, 2));
     
     // Transform the response to match the expected format
@@ -224,7 +211,7 @@ export async function updateStaff(staffData) {
       ...staffData
     };
 
-    const response = await fetch(`https://cartest.douwifi.cn/api/artemis/api/manage/auth/v2/manage/userService/updateUser`, {
+    const res = await artemisRequest('/artemis/api/manage/auth/v2/manage/userService/updateUser', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -234,11 +221,8 @@ export async function updateStaff(staffData) {
       body: JSON.stringify(requestData)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('更新人员原始API响应:', JSON.stringify(result, null, 2));
     
     // Transform the response to match the expected format
@@ -283,7 +267,7 @@ export async function updateStaff(staffData) {
  */
 export async function deleteStaff(staffId) {
   try {
-    const response = await fetch(`https://cartest.douwifi.cn/api/artemis/api/manage/auth/v2/manage/userService/deleteUser/${staffId}`, {
+    const res = await artemisRequest(`/artemis/api/manage/auth/v2/manage/userService/deleteUser/${staffId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -292,11 +276,8 @@ export async function deleteStaff(staffId) {
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('删除人员原始API响应:', JSON.stringify(result, null, 2));
 
     return {
@@ -319,7 +300,7 @@ export async function deleteStaff(staffId) {
  */
 export async function uploadStaffDocument(formData) {
   try {
-    const response = await fetch('https://cartest.douwifi.cn/api/artemis/api/manage/auth/v2/manage/userService/uploadDocument', {
+    const res = await artemisRequest('/artemis/api/manage/auth/v2/manage/userService/uploadDocument', {
       method: 'POST',
       headers: {
         'Accept': '*/*',
@@ -329,11 +310,8 @@ export async function uploadStaffDocument(formData) {
       body: formData
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('上传证件原始API响应:', JSON.stringify(result, null, 2));
     
     // Transform the response to match the expected format
@@ -368,7 +346,7 @@ export async function uploadStaffDocument(formData) {
  */
 export async function deleteStaffDocument(staffId, type) {
   try {
-    const response = await fetch(`https://cartest.douwifi.cn/api/artemis/api/manage/auth/v2/manage/userService/deleteDocument/${staffId}/${type}`, {
+    const res = await artemisRequest(`/artemis/api/manage/auth/v2/manage/userService/deleteDocument/${staffId}/${type}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -377,11 +355,8 @@ export async function deleteStaffDocument(staffId, type) {
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('删除证件原始API响应:', JSON.stringify(result, null, 2));
 
     return {

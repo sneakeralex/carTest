@@ -1,4 +1,4 @@
-import request from './request';
+import request, { artemisRequest } from './request';
 import { getWeatherInfo as getMockWeatherInfo } from '../mock/weather';
 
 // 使用mock数据
@@ -15,45 +15,21 @@ export function getWeatherInfo(siteId, date) {
   formData.append('siteId', siteId);
   formData.append('date', date);
   
-  // Generate auth headers
-  const reqInfo = {
+  // Call via centralized proxy using artemisRequest (fetch-based)
+  return artemisRequest('/apiv1/oeeooo7', {
     method: 'POST',
-    url: '/apiv1/oeeooo7',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'Accept': '*/*',
       'Accept-Encoding': 'identity'
     },
     body: formData.toString()
-  };
-  
-  // TODO: Get actual appKey and appSecret for weather API
-  const creds = {
-    appKey: '21345372', // From error message
-    appSecret: 'CmxKJ6ON0dVzZRdkUkdm' // Assuming same as other APIs
-  };
-  
-  // const authHeaders = generateArtemisAuthHeaders(reqInfo, creds);
-  
-  return fetch(`/apiv1/oeeooo7`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Accept': '*/*',
-      'Accept-Encoding': 'identity'
-      // ...authHeaders
-    },
-    body: formData.toString()
-  }).then(response => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-  }).then(result => {
-    console.log('获取天气信息原始API响应:', JSON.stringify(result, null, 2));
+  }).then(res => {
+    const result = res?.data;
     
-    if (result.code !== '0' && result.code !== 200) {
-      throw new Error(result.msg || '获取天气信息失败');
+    console.log('获取天气信息原始API响应:', JSON.stringify(result, null, 2));
+    if (result == null || (result.code !== '0' && result.code !== 200)) {
+      throw new Error(result?.msg || '获取天气信息失败');
     }
 
     // Transform response to expected format

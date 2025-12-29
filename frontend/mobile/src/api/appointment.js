@@ -1,4 +1,5 @@
 import { mockAppointments, SERVICE_TYPES, APPOINTMENT_STATUS } from '../mock/appointment.js';
+import { artemisRequest } from './request';
 
 // 判断是否使用mock数据
 const useMock = false; // Changed to false to prefer real API
@@ -67,20 +68,8 @@ export async function getAppointments(params = {}) {
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const response = await fetch(`/api/artemis/api/appointment/v1/appointments?${queryParams}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments?${queryParams}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取预约列表原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -164,20 +153,8 @@ export async function getAppointmentById(appointmentId) {
   }
 
   try {
-    const response = await fetch(`/api/artemis/api/appointment/v1/appointments/${appointmentId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments/${appointmentId}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取预约详情原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -251,21 +228,12 @@ export async function createAppointment(appointmentData) {
   }
 
   try {
-    const response = await fetch('/api/artemis/api/appointment/v1/appointments', {
+    const res = await artemisRequest('/artemis/api/appointment/v1/appointments', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(appointmentData)
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = res?.data;
     console.log('创建预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -347,21 +315,12 @@ export async function updateAppointment(appointmentId, appointmentData) {
   }
 
   try {
-    const response = await fetch(`/api/artemis/api/appointment/v1/appointments/${appointmentId}`, {
+    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments/${appointmentId}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(appointmentData)
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = res?.data;
     console.log('更新预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -427,20 +386,8 @@ export async function cancelAppointment(appointmentId) {
   }
 
   try {
-    const response = await fetch(`/api/artemis/api/appointment/v1/appointments/${appointmentId}/cancel`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments/${appointmentId}/cancel`, { method: 'PUT' });
+    const result = res?.data;
     console.log('取消预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -476,20 +423,8 @@ export async function getUserAppointments(userId) {
   }
 
   try {
-    const response = await fetch(`/api/artemis/api/appointment/v1/appointments/user/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments/user/${userId}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取用户预约列表原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -555,20 +490,8 @@ export async function getAvailableTimeSlots(date, serviceType) {
     queryParams.append('date', date);
     if (serviceType) queryParams.append('serviceType', serviceType);
 
-    const response = await fetch(`/api/artemis/api/appointment/v1/available-slots?${queryParams}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/appointment/v1/available-slots?${queryParams}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取可用时间段原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -623,21 +546,12 @@ export async function approveAppointment(appointmentId, data) {
   }
 
   try {
-    const response = await fetch(`/api/artemis/api/appointment/v1/appointments/${appointmentId}/approve`, {
+    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments/${appointmentId}/approve`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = res?.data;
     console.log('审批预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -700,21 +614,12 @@ export async function rescheduleAppointment(appointmentId, data) {
   }
 
   try {
-    const response = await fetch(`/api/artemis/api/appointment/v1/appointments/${appointmentId}/reschedule`, {
+    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments/${appointmentId}/reschedule`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = res?.data;
     console.log('改期预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {

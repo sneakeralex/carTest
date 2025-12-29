@@ -5,7 +5,7 @@ import { mockMyTestRegistrations, testRegistrationStatusMap, testTypeMap } from 
 const useMock = false; // Changed to false to prefer real API
 
 // 可配置的测试管理服务地址和端口
-export const test_management_server = import.meta.env.VITE_TEST_MANAGEMENT_SERVER || '117.88.42.183';
+export const test_management_server = import.meta.env.VITE_TEST_MANAGEMENT_SERVER || '';
 export const test_management_port = import.meta.env.VITE_TEST_MANAGEMENT_PORT || '33624';
 
 // 模拟API响应延迟
@@ -19,6 +19,8 @@ const mockResponse = (data) => ({
   headers: {},
   config: {}
 });
+
+import { artemisRequest } from './request';
 
 /**
  * 获取用户的测试报名列表
@@ -58,7 +60,6 @@ export async function getUserTestRegistrations(userId, params = {}) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-registration/user/${userId}`;
     const queryParams = new URLSearchParams();
     
     if (params.status && params.status !== 'ALL') queryParams.append('status', params.status);
@@ -66,18 +67,8 @@ export async function getUserTestRegistrations(userId, params = {}) {
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const response = await fetch(`${url}?${queryParams}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/apiv1/test-registration/user/${userId}?${queryParams}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取用户测试报名列表原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format

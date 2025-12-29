@@ -421,6 +421,7 @@ import { getStaffList } from '../api/staff';
 import { getTestSites } from '../api/testSite';
 import { getVinList, getBookingNo } from '../api/booking';
 import { getUserInfo } from '../utils/auth.js';
+import { artemisRequest } from '../api/request';
 
 // 状态
 const selectedDriver = ref(null);
@@ -537,22 +538,21 @@ async function fetchVinList() {
 async function fetchDrivers(groundId = null) {
   try {
     if (groundId) {
-      const url = 'https://cartest.douwifi.cn/artemis/api/v1/booking/driverList';
-      const token = localStorage.getItem('token') || '';
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = token;
       const body = JSON.stringify({ groundId: groundId?.toString?.() || groundId });
-      const res = await fetch(url, { method: 'POST', headers, body });
-      const json = await res.json();
-      if (json && (json.code === 200 || json.status === 200)) {
+      const res = await artemisRequest('/artemis/api/v1/booking/driverList', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body
+      });
+      const json = res?.data;
+      if (json && (json.code === 200 || json.status === 200 || json.code === '0')) {
         const list = Array.isArray(json.data) ? json.data : (json.data?.content || []);
         drivers.value = list.map(d => ({ id: d.id, name: d.driverName || d.name, driverId: d.id, phone: d.driverPhone }));
         return;
-      } else {
-        console.warn('获取驾驶员列表失败，返回:', json);
-        drivers.value = [];
-        return;
       }
+      console.warn('获取驾驶员列表失败，返回:', json);
+      drivers.value = [];
+      return;
     }
 
     // fallback: no groundId provided, try existing staff API
@@ -658,11 +658,9 @@ const testTypeColumns = computed(() => {
 const fetchTestTypes = async (projectNo, vin) => {
   if (!projectNo || !vin) return;
   try {
-    const url = `https://cartest.douwifi.cn/artemis/api/v1/booking/getTestType/${encodeURIComponent(projectNo)}/${encodeURIComponent(vin)}`;
-    const headers = { 'Content-Type': 'application/json' };
-    const res = await fetch(url, { method: 'GET', headers });
-    const json = await res.json();
-    if (json && (json.code === 200 || json.status === 200)) {
+    const res = await artemisRequest(`/artemis/api/v1/booking/getTestType/${encodeURIComponent(projectNo)}/${encodeURIComponent(vin)}`, { method: 'GET' });
+    const json = res?.data;
+    if (json && (json.code === 200 || json.status === 200 || json.code === '0')) {
       testTypes.value = Array.isArray(json.data) ? json.data : (json.data?.content || []);
     } else {
       console.warn('获取试验类型失败，返回:', json);
@@ -684,14 +682,14 @@ const testContentColumns = computed(() => {
 const fetchTestContents = async ({ vin, projectNo, provingGroundId, groundId, testTypeId }) => {
   if (!vin || !projectNo || !testTypeId) return;
   try {
-    const url = 'https://cartest.douwifi.cn/artemis/api/v1/booking/getTestContent';
-    const token = localStorage.getItem('token') || '';
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = token;
     const body = JSON.stringify({ vin, projectNo, provingGroundId: provingGroundId ?? '', groundId: groundId ?? '', testTypeId: testTypeId?.toString?.() || testTypeId });
-    const res = await fetch(url, { method: 'POST', headers, body });
-    const json = await res.json();
-    if (json && (json.code === 200 || json.status === 200)) {
+    const res = await artemisRequest('/artemis/api/v1/booking/getTestContent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body
+    });
+    const json = res?.data;
+    if (json && (json.code === 200 || json.status === 200 || json.code === '0')) {
       testContents.value = Array.isArray(json.data) ? json.data : (json.data?.content || []);
     } else {
       console.warn('获取试验内容失败，返回:', json);

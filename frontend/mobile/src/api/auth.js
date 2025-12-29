@@ -1,5 +1,7 @@
 import { mockUsers, mockAuth, DEFAULT_CREDENTIALS } from '../mock/auth.js';
 import CryptoJS from 'crypto-js';
+import { artemisRequest } from './request';
+import { getUserInfo as localGetUserInfo } from '../utils/auth.js';
 
 // 模拟API响应延迟
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -58,15 +60,12 @@ export async function changePassword(passwordData) {
       salt: salt
     };
 
-    const response = await fetch('/api/artemis/api/manage/auth/v2/manage/userService/changePassword', {
+    const res = await artemisRequest('/artemis/api/manage/auth/v2/manage/userService/changePassword', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(changeData)
     });
-
-    const result = await response.json();
+    const result = res?.data;
     if (result.code !== 200 && result.code !== '0') {
       throw new Error(result.msg || '修改密码失败');
     }
@@ -179,15 +178,12 @@ export async function register(userData) {
     }
   };
   
-  const response = await fetch('/api/artemis/api/manage/auth/v2/manage/userService/saveTripartiteUsers', {
+  const res = await artemisRequest('/artemis/api/manage/auth/v2/manage/userService/saveTripartiteUsers', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify([userObject])
   });
-  
-  const result = await response.json();
+  const result = res?.data;
   if (result.code !== '0') {
     throw new Error(result.msg || '注册失败');
   }
@@ -201,20 +197,44 @@ export async function register(userData) {
  */
 export async function getUserInfo(token = null) {
   try {
-    // Try to get user info from real API
-    const headers = {
-      'Content-Type': 'application/json'
-    };
+    // 首先优先使用本地 utils/auth.js 中保存的用户信息（避免对不存在的后端路径调用）
+    const local = localGetUserInfo();
+    if (local && Object.keys(local).length > 0) {
+      // 标准化返回格式
+      const userInfo = {
+        userId: local.userId || local.id,
+        username: local.username || local.name || local.displayName,
+        name: local.name || local.displayName || local.username,
+        email: local.email,
+        phone: local.phone,
+        avatar: local.avatar,
+        role: local.role || 'USER',
+        department: local.department,
+        status: local.status || 'ACTIVE',
+        lastLogin: local.lastLogin,
+        createdAt: local.createdAt,
+        updatedAt: local.updatedAt,
+        // keep original
+        ...local
+      };
+
+      return {
+        data: userInfo,
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {}
+      };
+    }
+
+    // 如果本地没有可用用户信息，再尝试调用后端（仅作为次选项）
+    const headers = { 'Content-Type': 'application/json', 'Accept': '*/*' };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch('/api/artemis/api/manage/auth/v2/manage/userService/getUserInfo', {
-      method: 'GET',
-      headers
-    });
-
-    const result = await response.json();
+    const res = await artemisRequest('/artemis/api/manage/auth/v2/manage/userService/getUserInfo', { method: 'GET', headers });
+    const result = res?.data;
     if (result.code !== 200 && result.code !== '0') {
       throw new Error(result.msg || '获取用户信息失败');
     }
@@ -232,7 +252,8 @@ export async function getUserInfo(token = null) {
       status: result.data?.status || 'ACTIVE',
       lastLogin: result.data?.lastLoginTime,
       createdAt: result.data?.createTime,
-      updatedAt: result.data?.updateTime
+      updatedAt: result.data?.updateTime,
+      ...result.data
     };
 
     return {
@@ -286,7 +307,7 @@ export async function updateUserInfo(userData) {
  * @param {string} language - 语言
  * @returns {Promise} - 返回Promise对象，包含token
  */
-export async function getAccessToken(userCode = 'admin', service = 'https://cartest.douwifi.cn', language = 'zh_CN') {
+export async function getAccessToken(userCode = 'admin', service = '', language = 'zh_CN') {
   try {
     const response = await fetch(`/v1/tgt/login?userCode=${encodeURIComponent(userCode)}&service=${encodeURIComponent(service)}&language=${encodeURIComponent(language)}`, {
       method: 'GET',

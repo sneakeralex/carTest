@@ -1,4 +1,5 @@
 import * as contractMock from '../mock/contract.js';
+import { artemisRequest } from './request';
 // import { generateArtemisAuthHeaders } from '../../artemis_sign.js';
 
 // 判断是否使用mock数据
@@ -70,7 +71,8 @@ export async function getContracts(params = {}) {
       pageSize: params.pageSize || 20
     };
 
-    const response = await fetch(`https://cartest.douwifi.cn/artemis/api/v1/contact/queryContract`, {
+    // Use centralized artemisRequest to route via local proxy and apply Authorization
+    const res = await artemisRequest('/artemis/api/v1/contact/queryContract', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -80,11 +82,8 @@ export async function getContracts(params = {}) {
       body: JSON.stringify(requestBody)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('获取合同列表原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -206,7 +205,7 @@ export async function getContractById(contractId, hideSensitive = true) {
       id: contractId
     };
 
-    const response = await fetch(`https://cartest.douwifi.cn/artemis/api/v1/contact/queryContractDetail`, {
+    const res = await artemisRequest('/artemis/api/v1/contact/queryContractDetail', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -216,11 +215,8 @@ export async function getContractById(contractId, hideSensitive = true) {
       body: JSON.stringify(requestBody)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('获取合同详情原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {

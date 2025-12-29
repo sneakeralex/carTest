@@ -42,6 +42,8 @@ const getVehicleTypeName = (typeCode) => {
   return typeMap[typeCode] || '未知';
 };
 
+import { artemisRequest } from './request';
+
 /**
  * 获取车辆列表 (移动端)
  * @param {Object} params - 查询参数
@@ -60,20 +62,14 @@ export async function getMobileVehicles(params = {}) {
       pageSize: params.size || 100 // reduce payload to mitigate ECONNRESET
     });
 
-    const response = await fetch('https://cartest.douwifi.cn/artemis/api/resource/v1/vehicle/vehicleList', {
+    const res = await artemisRequest('/artemis/api/resource/v1/vehicle/vehicleList', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*'
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*' },
       body: bodyStr
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('原始API响应:', JSON.stringify(result, null, 2));
     
     // Check for API error response
@@ -135,18 +131,13 @@ export async function getMobileVehicles(params = {}) {
           pageNo: params.page || 1,
           pageSize: 50
         });
-        const response = await fetch('https://cartest.douwifi.cn/artemis/api/resource/v2/vehicle/advance/vehicleList', {
+        const res = await artemisRequest('/artemis/api/resource/v2/vehicle/advance/vehicleList', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': '*/*',
-            'Accept-Encoding': 'identity',
-            'Authorization': `Bearer ${getAuthToken()}`
-          },
+          headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
           body: retryBody
         });
-        if (response.ok) {
-          const result = await response.json();
+        if (res) {
+          const result = res?.data;
           if (!result.code || result.code === '0') {
             const transformedVehicles = (result.data.list || []).map(vehicle => ({
               vehicleId: vehicle.vehicleId,
@@ -213,7 +204,7 @@ export async function getMobileVehicleById(vehicleId) {
       pageSize: 100 // reduce payload
     });
 
-    const response = await fetch('https://cartest.douwifi.cn/artemis/api/resource/v1/vehicle/vehicleList', {
+    const res = await artemisRequest('/artemis/api/resource/v1/vehicle/vehicleList', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -222,11 +213,7 @@ export async function getMobileVehicleById(vehicleId) {
       body: bodyStr
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = res?.data;
     console.log('获取车辆详情原始API响应:', JSON.stringify(result, null, 2));
     // 如果后端返回错误码或禁止访问，走mock回退
     if ((result.code && result.code !== '0') || !result.data) {

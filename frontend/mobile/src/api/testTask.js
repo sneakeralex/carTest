@@ -1,4 +1,5 @@
 import { mockTestTasks, mockTestRegistrations, mockTestStats } from '../mock/testTask.js';
+import { artemisRequest } from './request';
 
 // 模拟API响应延迟
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -23,26 +24,16 @@ const mockResponse = (data) => ({
  */
 export async function getTestTasks(params = {}) {
   try {
-    const url = `http://117.88.42.183:33624/api/test-task/list`;
     const queryParams = new URLSearchParams();
-    
     if (params.taskType) queryParams.append('taskType', params.taskType);
     if (params.difficulty) queryParams.append('difficulty', params.difficulty);
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const response = await fetch(`${url}?${queryParams}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const res = await artemisRequest(`/apiv1/test-task/list?${queryParams}`, { method: 'GET' });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('获取测试任务列表原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format
@@ -91,18 +82,10 @@ export async function getTestTasks(params = {}) {
  */
 export async function getTestTaskById(taskId) {
   try {
-    const response = await fetch(`http://117.88.42.183:33624/api/test-task/${taskId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const res = await artemisRequest(`/apiv1/test-task/${taskId}`, { method: 'GET' });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('获取测试任务详情原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format
@@ -154,25 +137,15 @@ export async function getTestTaskById(taskId) {
  */
 export async function getTestRegistrations(params = {}) {
   try {
-    const url = `http://117.88.42.183:33624/api/test-registration/list`;
     const queryParams = new URLSearchParams();
-    
     if (params.status) queryParams.append('status', params.status);
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const response = await fetch(`${url}?${queryParams}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const res = await artemisRequest(`/apiv1/test-registration/list?${queryParams}`, { method: 'GET' });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('获取测试报名列表原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format
@@ -219,18 +192,10 @@ export async function getTestRegistrations(params = {}) {
  */
 export async function getTestRegistrationById(registrationId) {
   try {
-    const response = await fetch(`http://117.88.42.183:33624/api/test-registration/${registrationId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const res = await artemisRequest(`/apiv1/test-registration/${registrationId}`, { method: 'GET' });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('获取测试报名详情原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format
@@ -280,7 +245,7 @@ export async function getTestRegistrationById(registrationId) {
  */
 export async function createTestRegistration(registrationData) {
   try {
-    const response = await fetch('http://117.88.42.183:33624/api/test-registration', {
+    const res = await artemisRequest('/apiv1/test-registration', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -288,11 +253,8 @@ export async function createTestRegistration(registrationData) {
       body: JSON.stringify(registrationData)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('创建测试报名原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format
@@ -344,7 +306,7 @@ export async function createTestRegistration(registrationData) {
  */
 export async function updateTestRegistration(registrationId, registrationData) {
   try {
-    const response = await fetch(`http://117.88.42.183:33624/api/test-registration/${registrationId}`, {
+    const res = await artemisRequest(`/apiv1/test-registration/${registrationId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -352,11 +314,8 @@ export async function updateTestRegistration(registrationId, registrationData) {
       body: JSON.stringify(registrationData)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('更新测试报名原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format
@@ -408,18 +367,15 @@ export async function updateTestRegistration(registrationId, registrationData) {
  */
 export async function cancelTestRegistration(registrationId) {
   try {
-    const response = await fetch(`http://117.88.42.183:33624/api/test-registration/${registrationId}/cancel`, {
+    const res = await artemisRequest(`/apiv1/test-registration/${registrationId}/cancel`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('取消测试报名原始API响应:', JSON.stringify(result, null, 2));
 
     return {
@@ -452,7 +408,7 @@ export async function cancelTestRegistration(registrationId) {
  */
 export async function scheduleTest(registrationId, scheduleData) {
   try {
-    const response = await fetch(`http://117.88.42.183:33624/api/test-registration/${registrationId}/schedule`, {
+    const res = await artemisRequest(`/apiv1/test-registration/${registrationId}/schedule`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -460,11 +416,8 @@ export async function scheduleTest(registrationId, scheduleData) {
       body: JSON.stringify(scheduleData)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('安排测试时间原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format
@@ -518,7 +471,7 @@ export async function scheduleTest(registrationId, scheduleData) {
  */
 export async function completeTest(registrationId, resultData) {
   try {
-    const response = await fetch(`http://117.88.42.183:33624/api/test-registration/${registrationId}/complete`, {
+    const res = await artemisRequest(`/apiv1/test-registration/${registrationId}/complete`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -526,11 +479,8 @@ export async function completeTest(registrationId, resultData) {
       body: JSON.stringify(resultData)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('完成测试原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format
@@ -580,18 +530,10 @@ export async function completeTest(registrationId, resultData) {
  */
 export async function getUserTestRegistrations(userId) {
   try {
-    const response = await fetch(`http://117.88.42.183:33624/api/test-registration/user/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const res = await artemisRequest(`/apiv1/test-registration/user/${userId}`, { method: 'GET' });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('获取用户测试报名列表原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format
@@ -632,18 +574,10 @@ export async function getUserTestRegistrations(userId) {
  */
 export async function getTaskRegistrations(taskId) {
   try {
-    const response = await fetch(`http://117.88.42.183:33624/api/test-registration/task/${taskId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const res = await artemisRequest(`/apiv1/test-registration/task/${taskId}`, { method: 'GET' });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('获取任务报名列表原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format
@@ -683,18 +617,10 @@ export async function getTaskRegistrations(taskId) {
  */
 export async function getTestStats() {
   try {
-    const response = await fetch('http://117.88.42.183:33624/api/test/stats', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const res = await artemisRequest('/apiv1/test/stats', { method: 'GET' });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('获取测试统计信息原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format
@@ -731,7 +657,7 @@ export async function getTestStats() {
  */
 export async function createTestTask(taskData) {
   try {
-    const response = await fetch('http://117.88.42.183:33624/api/test-task', {
+    const res = await artemisRequest('/apiv1/test-task', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -739,11 +665,8 @@ export async function createTestTask(taskData) {
       body: JSON.stringify(taskData)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = res?.data;
 
-    const result = await response.json();
     console.log('创建测试任务原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format

@@ -1,11 +1,12 @@
 // import request from './request.js';
 import * as maintenanceMock from '../mock/maintenance.js';
+import { artemisRequest } from './request';
 
 // 判断是否使用mock数据
 const useMock = false; // Changed to false to prefer real API
 
-// Base URL for API calls
-const BASE_URL = 'https://cartest.douwifi.cn';
+// Base URL for API calls - DO NOT hardcode external hosts in frontend. Use env var or proxy.
+export const MAINTENANCE_BASE_URL = (globalThis?.import?.meta?.env?.VITE_MAINTENANCE_BASE_URL) || '';
 
 // 模拟API响应延迟
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -25,20 +26,8 @@ const mockResponse = (data) => ({
  */
 export async function getMaintenanceRecords() {
   try {
-    const response = await fetch(`${BASE_URL}/artemis/api/maintenance/v1/records`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest('/artemis/api/maintenance/v1/records', { method: 'GET' });
+    const result = res?.data;
     console.log('获取维护记录列表原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -95,20 +84,8 @@ export async function getMaintenanceRecords() {
  */
 export async function getMaintenanceById(id) {
   try {
-    const response = await fetch(`${BASE_URL}/artemis/api/maintenance/v1/records/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/maintenance/v1/records/${id}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取维护详情原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -164,21 +141,12 @@ export async function getMaintenanceById(id) {
  */
 export async function createMaintenance(maintenanceData) {
   try {
-    const response = await fetch(`${BASE_URL}/artemis/api/maintenance/v1/records`, {
+    const res = await artemisRequest('/artemis/api/maintenance/v1/records', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(maintenanceData)
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = res?.data;
     console.log('创建维护记录原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -238,21 +206,12 @@ export async function createMaintenance(maintenanceData) {
  */
 export async function updateMaintenance(id, maintenanceData) {
   try {
-    const response = await fetch(`${BASE_URL}/artemis/api/maintenance/v1/records/${id}`, {
+    const res = await artemisRequest(`/artemis/api/maintenance/v1/records/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(maintenanceData)
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = res?.data;
     console.log('更新维护记录原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -310,20 +269,8 @@ export async function updateMaintenance(id, maintenanceData) {
  */
 export async function cancelMaintenance(id) {
   try {
-    const response = await fetch(`${BASE_URL}/artemis/api/maintenance/v1/records/${id}/cancel`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/maintenance/v1/records/${id}/cancel`, { method: 'PUT' });
+    const result = res?.data;
     console.log('取消维护记录原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {

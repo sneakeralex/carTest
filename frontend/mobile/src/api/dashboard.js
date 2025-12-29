@@ -8,6 +8,7 @@ import {
 } from '../mock/dashboard.js';
 import { delay, mockResponse, validateToken, MockApiError } from '../mock/utils.js';
 import { useBookingStore } from '../stores/booking';
+import { artemisRequest } from './request';
 
 const bookingStore = useBookingStore();
 /**
@@ -16,20 +17,8 @@ const bookingStore = useBookingStore();
  */
 export async function getMobileDashboardStats() {
   try {
-    const response = await fetch('/api/artemis/api/dashboard/v1/mobile/stats', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest('/artemis/api/dashboard/v1/mobile/stats', { method: 'GET' });
+    const result = res?.data;
     console.log('获取仪表板统计原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -172,20 +161,8 @@ export async function getRecentBookings(limit = 5) {
  */
 export async function getNotifications(limit = 10) {
   try {
-    const response = await fetch(`/api/artemis/api/notification/v1/list?limit=${limit}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`/artemis/api/notification/v1/list?limit=${limit}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取通知列表原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
@@ -232,20 +209,8 @@ export async function getNotifications(limit = 10) {
  */
 export async function getQuickActions() {
   try {
-    const response = await fetch('/api/artemis/api/dashboard/v1/quick-actions', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest('/artemis/api/dashboard/v1/quick-actions', { method: 'GET' });
+    const result = res?.data;
     console.log('获取快捷操作原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {

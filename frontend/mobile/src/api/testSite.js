@@ -1,3 +1,5 @@
+import { artemisRequest } from './request';
+
 /**
  * 获取测试场列表
  * @param {Object} params - 查询参数
@@ -7,8 +9,8 @@
  */
 export async function getTestSites(params = {}) {
   try {
-    // Use booking groundList API
-    const url = `https://cartest.douwifi.cn/artemis/api/v1/booking/groundList`;
+    // Use booking groundList API via proxy
+    const path = `/artemis/api/v1/booking/groundList`;
     const queryParams = new URLSearchParams();
 
     if (params.provingGroundId) queryParams.append('provingGroundId', params.provingGroundId);
@@ -16,16 +18,8 @@ export async function getTestSites(params = {}) {
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const response = await fetch(`${url}?${queryParams}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const res = await artemisRequest(`${path}?${queryParams}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取测试场列表原始API响应:', JSON.stringify(result, null, 2));
 
     // result.data is expected to be an array of ground objects
@@ -73,10 +67,10 @@ export async function getTestSites(params = {}) {
         first: (params.page || 0) === 0,
         numberOfElements: sites.length
       },
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      config: response
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
     };
   } catch (error) {
     console.error('获取测试场列表失败:', error);
@@ -91,16 +85,8 @@ export async function getTestSites(params = {}) {
  */
 export async function getTestSiteById(siteId) {
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-site/${siteId}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    const result = await response.json();
+    const res = await artemisRequest(`/api/test-site/${siteId}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取测试场详情原始API响应:', JSON.stringify(result, null, 2));
 
     const site = result.data || {};
@@ -120,10 +106,10 @@ export async function getTestSiteById(siteId) {
 
     return {
       data: transformedSite,
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      config: response
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
     };
   } catch (error) {
     console.error('获取测试场详情失败:', error);
@@ -136,28 +122,22 @@ export async function getTestSiteById(siteId) {
  */
 export async function getAvailableTimeSlots(params) {
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-site/available-slots`;
+    const path = `/api/test-site/available-slots`;
     const queryParams = new URLSearchParams();
     if (params.testSiteId) queryParams.append('testSiteId', params.testSiteId);
     if (params.date) queryParams.append('date', params.date);
 
-    const response = await fetch(`${url}?${queryParams}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    const result = await response.json();
+    const res = await artemisRequest(`${path}?${queryParams}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取可用时间段原始API响应:', JSON.stringify(result, null, 2));
 
     const timeSlots = result.data || result;
     return {
       data: timeSlots,
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      config: response
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
     };
   } catch (error) {
     console.error('获取可用时间段失败:', error);
@@ -170,17 +150,8 @@ export async function getAvailableTimeSlots(params) {
  */
 export async function createBooking(bookingData) {
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-site/booking`;
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bookingData)
-    });
-
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    const result = await response.json();
+    const res = await artemisRequest('/api/test-site/booking', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookingData) });
+    const result = res?.data;
     console.log('创建测试场预约原始API响应:', JSON.stringify(result, null, 2));
 
     const booking = result.data || result;
@@ -199,10 +170,10 @@ export async function createBooking(bookingData) {
 
     return {
       data: transformedBooking,
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      config: response
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
     };
   } catch (error) {
     console.error('创建测试场预约失败:', error);
@@ -215,20 +186,14 @@ export async function createBooking(bookingData) {
  */
 export async function getBookings(params = {}) {
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-site/bookings`;
+    const path = `/api/test-site/bookings`;
     const queryParams = new URLSearchParams();
     if (params.status) queryParams.append('status', params.status);
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const response = await fetch(`${url}?${queryParams}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    const result = await response.json();
+    const res = await artemisRequest(`${path}?${queryParams}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取预约列表原始API响应:', JSON.stringify(result, null, 2));
 
     const rawList = result.data?.content || result.data?.bookings || result.data || [];
@@ -254,10 +219,10 @@ export async function getBookings(params = {}) {
           total: result.data?.totalElements || bookings.length
         }
       },
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      config: response
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
     };
   } catch (error) {
     console.error('获取预约列表失败:', error);
@@ -270,12 +235,8 @@ export async function getBookings(params = {}) {
  */
 export async function getBookingById(bookingId) {
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-site/booking/${bookingId}`;
-
-    const response = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    const result = await response.json();
+    const res = await artemisRequest(`/api/test-site/booking/${bookingId}`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取预约详情原始API响应:', JSON.stringify(result, null, 2));
 
     const booking = result.data || {};
@@ -294,10 +255,10 @@ export async function getBookingById(bookingId) {
 
     return {
       data: transformedBooking,
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      config: response
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
     };
   } catch (error) {
     console.error('获取预约详情失败:', error);
@@ -310,17 +271,8 @@ export async function getBookingById(bookingId) {
  */
 export async function updateBooking(bookingId, bookingData) {
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-site/booking/${bookingId}`;
-
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bookingData)
-    });
-
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    const result = await response.json();
+    const res = await artemisRequest(`/api/test-site/booking/${bookingId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookingData) });
+    const result = res?.data;
     console.log('更新预约原始API响应:', JSON.stringify(result, null, 2));
 
     const booking = result.data || {};
@@ -339,10 +291,10 @@ export async function updateBooking(bookingId, bookingData) {
 
     return {
       data: transformedBooking,
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      config: response
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
     };
   } catch (error) {
     console.error('更新预约失败:', error);
@@ -355,17 +307,8 @@ export async function updateBooking(bookingId, bookingData) {
  */
 export async function cancelBooking(bookingId, data) {
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-site/booking/${bookingId}/cancel`;
-
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    const result = await response.json();
+    const res = await artemisRequest(`/api/test-site/booking/${bookingId}/cancel`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const result = res?.data;
     console.log('取消预约原始API响应:', JSON.stringify(result, null, 2));
 
     const booking = result.data || {};
@@ -385,10 +328,10 @@ export async function cancelBooking(bookingId, data) {
 
     return {
       data: transformedBooking,
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      config: response
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
     };
   } catch (error) {
     console.error('取消预约失败:', error);
@@ -401,12 +344,8 @@ export async function cancelBooking(bookingId, data) {
  */
 export async function getUserBookings(userId) {
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-site/user/${userId}/bookings`;
-
-    const response = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    const result = await response.json();
+    const res = await artemisRequest(`/api/test-site/user/${userId}/bookings`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取用户预约列表原始API响应:', JSON.stringify(result, null, 2));
 
     const bookings = (result.data || []).map(booking => ({
@@ -424,10 +363,10 @@ export async function getUserBookings(userId) {
 
     return {
       data: bookings,
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      config: response
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
     };
   } catch (error) {
     console.error('获取用户预约列表失败:', error);
@@ -440,21 +379,17 @@ export async function getUserBookings(userId) {
  */
 export async function getBookingStats() {
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-site/booking/stats`;
-
-    const response = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    const result = await response.json();
+    const res = await artemisRequest(`/api/test-site/booking/stats`, { method: 'GET' });
+    const result = res?.data;
     console.log('获取预约统计原始API响应:', JSON.stringify(result, null, 2));
 
     const stats = result.data || {};
     return {
       data: stats,
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      config: response
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
     };
   } catch (error) {
     console.error('获取预约统计失败:', error);
