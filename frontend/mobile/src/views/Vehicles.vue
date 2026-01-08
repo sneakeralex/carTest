@@ -1,5 +1,15 @@
 <template>
   <div class="vehicles-container">
+    <!-- 顶部导航栏 -->
+    <van-nav-bar 
+      title="我的车辆"
+      fixed
+    >
+      <template #right>
+        <van-icon name="plus" @click="showAddVehiclePopup" style="font-size: 20px;" />
+      </template>
+    </van-nav-bar>
+
     <!-- 顶部搜索栏 -->
     <van-search
       v-model="searchText"
@@ -45,17 +55,6 @@
         <van-empty v-else description="暂无车辆信息" />
       </van-list>
     </van-pull-refresh>
-    
-    <!-- 添加车辆按钮 -->
-    <van-button
-      type="primary"
-      icon="plus"
-      class="add-button"
-      round
-      @click="showAddVehiclePopup"
-    >
-      添加车辆
-    </van-button>
     
     <!-- 添加车辆弹出层 -->
     <van-popup
@@ -240,54 +239,14 @@ const fetchVehicleTypes = async () => {
 
 // 获取车辆详情
 const fetchVehicleById = async (id) => {
-  // mock数据
-  const mockVehicles = [
-    {
-      vehicleId: '1', // 修正为字符串类型
-      licensePlate: '粤A12345',
-      brand: '特斯拉',
-      model: 'Model 3',
-      year: 2024,
-      mileage: 12000,
-      vehicleTypeId: 1,
-      vehicleTypeName: '轿车',
-      status: 'NORMAL',
-      color: '红色',
-      vin: 'TESLA123456789',
-      engineNo: 'ENGTESLA001',
-      owner: '张三',
-      insurance: '太平洋保险',
-      description: '电动轿车，续航500km',
-      image: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-8.jpeg',
-      registrationDate: '2024-01-10',
-      lastServiceDate: '2025-09-01',
-      nextServiceDate: '2026-03-01'
-    },
-    {
-      vehicleId: '2',
-      licensePlate: '粤B67890',
-      brand: '比亚迪',
-      model: '汉',
-      year: 2023,
-      mileage: 8000,
-      vehicleTypeId: 2,
-      vehicleTypeName: 'SUV',
-      status: 'MAINTENANCE',
-      color: '黑色',
-      vin: 'BYD987654321',
-      engineNo: 'ENGBYD002',
-      owner: '李四',
-      insurance: '中国人保',
-      description: '混动SUV，空间大',
-      image: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-8.jpeg',
-      registrationDate: '2023-05-20',
-      lastServiceDate: '2025-08-15',
-      nextServiceDate: '2026-02-15'
-    }
-  ];
-  // 兼容字符串和数字类型的id
-  const found = mockVehicles.find(v => String(v.vehicleId) === String(id));
-  return found || mockVehicles[0];
+  try {
+    // Use the centralized store/api instead of local mock data
+    const vehicle = await vehicleStore.fetchVehicleById(id);
+    return vehicle;
+  } catch (error) {
+    console.error('获取车辆详情失败:', error);
+    throw error;
+  }
 };
 
 // 下拉刷新
@@ -387,6 +346,7 @@ const getStatusText = (status) => {
 
 <style lang="less" scoped>
 .vehicles-container {
+  padding-top: 46px;
   padding-bottom: 80px;
 }
 
@@ -395,12 +355,7 @@ const getStatusText = (status) => {
   border-radius: 4px;
 }
 
-.add-button {
-  position: fixed;
-  bottom: 80px;
-  right: 20px;
-  z-index: 10;
-}
+/* removed .add-button floating styles; add-button now uses top-right nav icon */
 
 .popup-title {
   text-align: center;

@@ -1,11 +1,12 @@
 import axios from 'axios';
-import { showNotify } from 'vant';
-import router from '../router/index.js';
+// Removed static imports of browser-only modules to allow Node test scripts to import this file
+// import { showNotify } from 'vant';
+// import router from '../router/index.js';
 import * as equipmentMock from '../mock/equipment.js';
 import * as maintenanceMock from '../mock/maintenance.js';
 
-// 判断是否使用mock数据
-const useMock = import.meta.env.MODE === 'development';
+// 判断是否使用mock数据 — guard import.meta.env for Node test imports
+const useMock = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE === 'development') || false;
 
 // mock处理函数集合
 const mockHandlers = useMock ? { ...equipmentMock, ...maintenanceMock } : {};
@@ -86,34 +87,53 @@ service.interceptors.request.use(
 // 响应拦截器 (axios service)
 service.interceptors.response.use(
   response => response,
-  error => {
+  // Make the error handler async and perform dynamic imports of browser-only helpers when running in a browser
+  async error => {
     const { response } = error || {};
+
+    // Dynamic imports only when running in a browser environment
+    let showNotifyFn = (opts) => { console.warn('notify:', opts && opts.message ? opts.message : opts); };
+    let routerModule = null;
+    if (typeof window !== 'undefined') {
+      try {
+        const vant = await import('vant');
+        showNotifyFn = vant.showNotify || vant.Notify || showNotifyFn;
+      } catch (e) {
+        // ignore - fallback to console
+      }
+
+      try {
+        const mod = await import('../router/index.js');
+        routerModule = mod && (mod.default || mod);
+      } catch (e) {
+        // ignore
+      }
+    }
 
     if (response) {
       switch (response.status) {
         case 400:
-          showNotify({ type: 'danger', message: '请求参数错误' });
+          showNotifyFn({ type: 'danger', message: '请求参数错误' });
           break;
         case 401:
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          router.push('/login');
-          showNotify({ type: 'danger', message: '登录已过期，请重新登录' });
+          try { localStorage.removeItem('token'); localStorage.removeItem('user'); } catch (e) {}
+          if (routerModule && typeof routerModule.push === 'function') routerModule.push('/login');
+          showNotifyFn({ type: 'danger', message: '登录已过期，请重新登录' });
           break;
         case 403:
-          showNotify({ type: 'danger', message: '没有权限访问该资源' });
+          showNotifyFn({ type: 'danger', message: '没有权限访问该资源' });
           break;
         case 404:
-          showNotify({ type: 'danger', message: '请求的资源不存在' });
+          showNotifyFn({ type: 'danger', message: '请求的资源不存在' });
           break;
         case 500:
-          showNotify({ type: 'danger', message: '服务器内部错误' });
+          showNotifyFn({ type: 'danger', message: '服务器内部错误' });
           break;
         default:
-          showNotify({ type: 'danger', message: `请求失败: ${response.status}` });
+          showNotifyFn({ type: 'danger', message: `请求失败: ${response.status}` });
       }
     } else {
-      showNotify({ type: 'danger', message: '网络错误，请检查您的网络连接' });
+      showNotifyFn({ type: 'danger', message: '网络错误，请检查您的网络连接' });
     }
 
     return Promise.reject(error);

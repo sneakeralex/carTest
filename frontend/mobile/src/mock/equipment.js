@@ -1,55 +1,9 @@
 import Mock from 'mockjs';
 import { getQueryParams, mockResponse, MockApiError } from './utils.js';
 
-// 为设备API提供的静态数据导出
-export const mockEquipments = Mock.mock({
-  [`list|85`]: [{
-    'equipmentId|+1': 1,
-    'equipmentNo': /EQ[A-Z]{2}\d{4}/,
-    'equipmentName': '@ctitle(3, 8)',
-    'equipmentType|1': ['压力测试仪', '温度检测仪', '电压表', '万用表', '示波器', '信号发生器', '专用工具', '其他设备'],
-    'specification': '@string("upper", 2, 2)@natural(100, 999)',
-    'manufacturer': '@ctitle(3, 8)科技有限公司',
-    'purchaseDate': '@date("yyyy-MM-dd")',
-    'status|1': ['IDLE', 'IDLE', 'IDLE', 'IN_USE', 'IN_USE', 'MAINTENANCE', 'RETIRED'], // 增加IDLE的概率
-    'location': '@ctitle(5, 10)实验室',
-    'departmentName': '@ctitle(3, 6)部',
-    'description': '@cparagraph(1, 2)',
-    'maintenanceCycle': '@integer(30, 180)',
-    'lastMaintenanceDate': '@date("yyyy-MM-dd")',
-    'responsiblePerson': '@cname',
-    'contactInfo': /1[3-9]\d{9}/,
-    'purchasePrice': '@float(1000, 100000, 2, 2)'
-  }]
-}).list;
-
-export const mockEquipmentApplications = Mock.mock({
-  [`list|20`]: [{
-    'applicationId|+1': 1,
-    'equipmentId|1-85': 1,
-    'equipmentName': '@ctitle(3, 8)',
-    'equipmentNo': /EQ[A-Z]{2}\d{4}/,
-    'applicantId': '@natural(1, 100)',
-    'applicantName': '@cname',
-    'applyType|1': ['BORROW', 'USE'],
-    'status|1': ['PENDING', 'APPROVED', 'REJECTED', 'RETURNED'],
-    'applyTime': '@datetime("yyyy-MM-dd HH:mm:ss")',
-    'expectedStartTime': '@datetime("yyyy-MM-dd HH:mm:ss")',
-    'expectedEndTime': '@datetime("yyyy-MM-dd HH:mm:ss")',
-    'purpose': '@ctitle(5, 15)',
-    'approveTime': function() {
-      const applyTime = new Date(this.applyTime);
-      const approve = new Date(applyTime);
-      approve.setHours(applyTime.getHours() + Mock.Random.natural(1, 48));
-      return approve.toISOString().split('.')[0].replace('T', ' ');
-    },
-    'approveRemarks|1': [
-      '同意申请，请按时归还',
-      '批准使用，注意安全操作',
-      '已审核通过，请遵守使用规范'
-    ]
-  }]
-}).list;
+// No mock equipments — UI will render empty state when backend has no equipment data.
+export const mockEquipments = [];
+export const mockEquipmentApplications = [];
 
 // 生成测试设备数据
 const generateEquipmentList = (params = {}) => {

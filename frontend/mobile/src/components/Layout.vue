@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 
@@ -54,23 +54,22 @@ const navItems = computed(() => {
   return items;
 });
 
-// 当前激活的标签页
-const activeTab = computed(() => {
+// 当前激活的标签页 (可写 ref，与路由同步)
+const activeTab = ref(0);
+
+function updateActiveTabFromRoute() {
   const currentPath = route.path;
   const index = navItems.value.findIndex(item => {
-    // 如果是根路径，需要精确匹配
-    if (item.path === '/') {
-      return currentPath === '/';
-    }
-    // 预约路径特殊处理
-    if (item.path === '/bookings') {
-      return currentPath.startsWith('/booking') || currentPath.startsWith('/bookings');
-    }
-    // 其他路径检查是否以该路径开头
+    if (item.path === '/') return currentPath === '/';
+    if (item.path === '/bookings') return currentPath.startsWith('/booking') || currentPath.startsWith('/bookings');
     return currentPath.startsWith(item.path);
   });
-  return index >= 0 ? index : 0;
-});
+  activeTab.value = index >= 0 ? index : 0;
+}
+
+// 初始化并在路由变化时同步
+updateActiveTabFromRoute();
+watch(() => route.path, () => { updateActiveTabFromRoute(); });
 
 // 处理标签页切换
 const onTabChange = (index) => {
@@ -78,6 +77,8 @@ const onTabChange = (index) => {
   if (route.path !== path) {
     router.push(path);
   }
+  // ensure activeTab stays in sync
+  activeTab.value = index;
 };
 </script>
 

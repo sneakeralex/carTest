@@ -29,11 +29,11 @@
       <van-grid-item icon="logistics" text="我的车辆" to="/vehicles" />
       <van-grid-item icon="setting-o" text="维修保养" to="/maintenance" />
       <van-grid-item icon="desktop-o" text="设备领用" to="/equipment/applications" />
-      <van-grid-item icon="records" text="设备台账" to="/equipment/ledger" />
+      <van-grid-item icon="records-o" text="设备台账" to="/equipment/ledger" />
       <van-grid-item icon="location-o" text="测试场预约" to="/test-sites" />
       <van-grid-item icon="medal-o" text="测试任务" to="/test-tasks" />
       <van-grid-item icon="phone-o" text="测试咨询" to="/appointments" />
-      <van-grid-item icon="description" text="合同管理" to="/contracts" />
+      <van-grid-item icon="description-o" text="合同管理" to="/contracts" />
     </van-grid>
 
     <!-- 统计信息卡片 -->

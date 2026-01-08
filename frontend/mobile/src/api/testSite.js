@@ -19,7 +19,7 @@ export async function getTestSites(params = {}) {
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const res = await artemisRequest(`${path}?${queryParams}`, { method: 'GET' });
+    const res = await artemisRequest(`${path}?${queryParams}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
     console.log('获取测试场列表原始API响应:', JSON.stringify(result, null, 2));
 
@@ -87,7 +87,7 @@ export async function getTestSites(params = {}) {
 export async function getTestSiteById(siteId) {
   try {
     // Route through /artemis proxy
-    const res = await artemisRequest(`/artemis/api/v1/test-site/${siteId}`, { method: 'GET' });
+    const res = await artemisRequest(`/artemis/api/v1/test-site/${siteId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
     console.log('获取测试场详情原始API响应:', JSON.stringify(result, null, 2));
 
@@ -129,7 +129,7 @@ export async function getAvailableTimeSlots(params) {
     if (params.testSiteId) queryParams.append('testSiteId', params.testSiteId);
     if (params.date) queryParams.append('date', params.date);
 
-    const res = await artemisRequest(`${path}?${queryParams}`, { method: 'GET' });
+    const res = await artemisRequest(`${path}?${queryParams}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
     console.log('获取可用时间段原始API响应:', JSON.stringify(result, null, 2));
 
@@ -194,7 +194,7 @@ export async function getBookings(params = {}) {
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const res = await artemisRequest(`${path}?${queryParams}`, { method: 'GET' });
+    const res = await artemisRequest(`${path}?${queryParams}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
     console.log('获取预约列表原始API响应:', JSON.stringify(result, null, 2));
 
@@ -237,7 +237,7 @@ export async function getBookings(params = {}) {
  */
 export async function getBookingById(bookingId) {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/test-site/booking/${bookingId}`, { method: 'GET' });
+    const res = await artemisRequest(`/artemis/api/v1/test-site/booking/${bookingId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
     console.log('获取预约详情原始API响应:', JSON.stringify(result, null, 2));
 
@@ -346,7 +346,7 @@ export async function cancelBooking(bookingId, data) {
  */
 export async function getUserBookings(userId) {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/test-site/user/${userId}/bookings`, { method: 'GET' });
+    const res = await artemisRequest(`/artemis/api/v1/test-site/user/${userId}/bookings`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
     console.log('获取用户预约列表原始API响应:', JSON.stringify(result, null, 2));
 
@@ -381,7 +381,7 @@ export async function getUserBookings(userId) {
  */
 export async function getBookingStats() {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/test-site/booking/stats`, { method: 'GET' });
+    const res = await artemisRequest(`/artemis/api/v1/test-site/booking/stats`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
     console.log('获取预约统计原始API响应:', JSON.stringify(result, null, 2));
 

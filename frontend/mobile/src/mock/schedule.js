@@ -17,7 +17,7 @@ export const generateDailySchedule = (date) => {
         taskName: '车辆碰撞测试',
         timeSlot: '09:00-12:00',
         status: 'OCCUPIED',
-        vehiclePlate: '沪A12345',
+        vehiclePlate: null,
         testType: 'CRASH_TEST',
         responsible: '张工程师',
         phone: '13812345678'
@@ -29,7 +29,7 @@ export const generateDailySchedule = (date) => {
         taskName: '制动性能测试',
         timeSlot: '14:00-16:00',
         status: 'SCHEDULED',
-        vehiclePlate: '京B67890',
+        vehiclePlate: null,
         testType: 'BRAKE_TEST',
         responsible: '李工程师',
         phone: '13987654321'
@@ -59,7 +59,7 @@ export const generateDailySchedule = (date) => {
         taskName: '性能综合测试',
         timeSlot: '10:00-15:00',
         status: 'SCHEDULED',
-        vehiclePlate: '粤C98765',
+        vehiclePlate: null,
         testType: 'PERFORMANCE_TEST',
         responsible: '王工程师',
         phone: '13765432109'
@@ -83,7 +83,7 @@ export const generateDailySchedule = (date) => {
         taskName: '电池安全测试',
         timeSlot: '13:00-18:00',
         status: 'SCHEDULED',
-        vehiclePlate: '川A11111',
+        vehiclePlate: null,
         testType: 'BATTERY_SAFETY',
         responsible: '陈工程师',
         phone: '13654321098'
@@ -101,7 +101,7 @@ export const generateDailySchedule = (date) => {
         taskName: '噪声测试',
         timeSlot: '09:30-12:30',
         status: 'SCHEDULED',
-        vehiclePlate: '浙A66666',
+        vehiclePlate: null,
         testType: 'NOISE_TEST',
         responsible: '孙工程师',
         phone: '13432109876'
