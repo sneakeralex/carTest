@@ -16,7 +16,7 @@ export function getWeatherInfo(siteId, date) {
   formData.append('date', date);
   
   // Call via centralized proxy using artemisRequest (fetch-based)
-  return artemisRequest('/apiv1/oeeooo7', {
+  return artemisRequest('/artemis/api/v1/oeeooo7', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',

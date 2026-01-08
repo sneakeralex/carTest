@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>全称简称多关键字动态检索</title>
+    <style>
+        /* 页面基础样式 + 全局重置 */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft YaHei", sans-serif; }
+        body { 
+            padding: 12px; 
+            background-color: #f5f7fa; 
+            min-width: 320px; 
+        }
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            background: #fff; 
+            padding: 16px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+            width: 100%; 
+        }
+        
+        .search-wrap {
+            position: relative;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px; /* ✅ 核心优化：用弹性间距统一分隔输入框和按钮，最优雅的间距方案 */
+        }
+        #searchInput { 
+            width: 100%; 
+            padding: 12px 15px; /* 已缩小尺寸，视觉精致 */
+            font-size: 16px;
+            border: 2px solid #e0e6ed; 
+            border-radius: 8px; /* 完整圆角，美观统一 */
+            outline: none; 
+            -webkit-appearance: none; 
+        }
+        #searchInput:focus { 
+            border-color: #409eff; 
+            box-shadow: 0 0 0 2px rgba(64,158,255,0.1); 
+        }
+        #searchInput::placeholder {
+            font-size: 14px;
+            color: #c0c4cc;
+        }
+
+        #clearBtn {
+            height: 44px;      /* 与输入框高度严格对齐 */
+            padding: 0 20px;   /* 按钮内边距优化，点击区域更舒适 */
+            background: #f5f7fa;
+            color: #909399;
+            border: 2px solid #e0e6ed; 
+            border-radius: 8px;/* 完整圆角，和输入框风格统一 */
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;    /* 关键：按钮不被挤压变形 */
+        }
+        #clearBtn:hover {
+            background: #f0f2f5;
+            color: #606266;
+        }
+        #clearBtn:active {
+            background: #e8ebef;
+        }
+        #clearBtn:disabled {
+            background: #fafafa;
+            color: #dcdcdc;
+            cursor: not-allowed;
+        }
+
+        .hot-keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0 15px 0;
+            align-items: center;
+        }
+        .hot-keywords .keyword-list { display: flex; gap: 8px; align-items: center; }
+        /* ensure keyword items don't shrink when in a single-row layout */
+        .hot-keywords .keyword-list .keyword-item { flex: 0 0 auto; }
+        /* update hint shown below hot keywords */
+        .update-box {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #606266;
+        }
+        /* hidden state: keep styles but allow explicitly hiding the box */
+        .update-box.hidden { display: none !important; }
+        /* visible hint icon placed before the update message */
+        .hint-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(180deg,#fff,#fff); /* subtle */
+            border-radius: 50%;
+            border: 1px solid #ffd8a8;
+            color: #fa8c16;
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: 0 2px 6px rgba(173,59,0,0.05);
+        }
+        .update-box .update-btn {
+            background: #409eff;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .update-box .update-btn:hover { background: #2f8fe6; }
+        /* prominent update message */
+        .update-box .update-msg {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(90deg,#fff9f0,#fff3ea);
+            border: 1px solid #ffd8a8;
+            color: #ad3b00;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(173,59,0,0.06);
+        }
+        .update-box .update-msg::before {
+            content: none;
+        }
+        /* Ensure all tables are left-aligned for readability */
+        .org-table th,
+        .org-table td {
+            text-align: left;
+            padding: 12px 8px;
+        }
+        .hot-keywords .title {
+            font-size: 14px;
+            color: #606266;
+            white-space: nowrap;
+            margin-right: 4px;
+        }
+        .hot-keywords .keyword-item {
+            padding: 6px 12px;
+            background: #f2f6fc;
+            color: #409eff;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #e6f0ff;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .hot-keywords .keyword-item:hover {
+            background: #e6f0ff;
+            transform: translateY(-1px);
+        }
+        .hot-keywords .keyword-item:active {
+            background: #d9ecff;
+            transform: translateY(0);
+        }
+
+        .result-box { 
+            margin-top: 8px; 
+            padding: 10px; 
+            border-radius: 6px; 
+            min-height: 60px; 
+            width: 100%;
+            overflow-x: hidden; 
+        }
+        .no-result { 
+            color: #909399; 
+            font-size: 15px; 
+            text-align: center; 
+            padding: 30px 10px; 
+            background: #f9fafc; 
+            border-radius: 6px; 
+            line-height: 1.6;
+        }
+        
+        .highlight { 
+            color: #e64340; 
+            background: #fff2f0; 
+            padding: 2px 4px; 
+            border-radius: 3px; 
+            border: 1px solid #ffccc7; 
+        }
+
+        /* small prefix badge for full/short labels */
+        .name-prefix {
+            display: inline-block;
+            min-width: 20px;
+            text-align: center;
+            background: #f2f6fc;
+            color: #409eff;
+            border-radius: 3px;
+            padding: 2px 6px;
+            margin-right: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        /* copy menu */
+        .copy-menu {
+            position: absolute;
+            z-index: 99999;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            min-width: 140px;
+            overflow: hidden;
+            font-size: 14px;
+            color: #333;
+        }
+        .copy-menu .item {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fff;
+            cursor: pointer;
+            text-align: left;
+        }
+        .copy-menu .item:last-child { border-bottom: none; }
+        .copy-menu .item:hover { background: #f5f7fa; }
+        
+        .org-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 14px; 
+            table-layout: fixed; 
+            word-break: break-all; 
+        }
+        .org-table thead { background-color: #f2f6fc; }
+        .org-table th {
+            color: #1f2329; 
+            font-weight: 600; 
+            font-size: 14px;
+            padding: 12px 8px;
+            border-bottom: 1px solid #e8e8e8;
+            text-align: left; /* 统一左对齐 */
+        }
+        .org-table td { 
+            padding: 12px 8px; 
+            text-align: left; /* 统一左对齐 */
+            border-bottom: 1px solid #e8e8e8; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal; 
+        }
+        .org-table tr:hover { background-color: #f9fafc; }
+        .col-fullname { width: 50%; }
+        .col-shortname { width: 30%; }
+        .col-op { width: 15%; text-align: left; }
+
+        .copy-btn { 
+            padding: 6px 5px; 
+            border: none; 
+            border-radius: 4px; 
+            background: #f0f7ff; 
+            color: #409eff; 
+            cursor: pointer; 
+            font-size: 12px;
+            margin: 2px 1px;
+            display: inline-block; 
+            min-width: 55px; 
+            line-height: 1.2;
+        }
+        .copy-btn:hover { background: #e6f0ff; }
+        .copy-btn:active { background: #d9ecff; }
+
+        .copy-tip {
+            position: fixed;
+            top: 20px;
+            left: 50%; 
+            transform: translateX(-50%);
+            padding: 10px 18px;
+            background: #f0f9eb;
+            color: #52c41a;
+            border-radius: 6px;
+            font-size: 15px;
+            z-index: 9999;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        /* Copy menu (anchored small popup) */
+        .copy-menu {
+            position: fixed;
+            background: #fff;
+            border: 1px solid #e6eef9;
+            box-shadow: 0 6px 18px rgba(31,35,41,0.12);
+            border-radius: 6px;
+            padding: 6px 8px;
+            z-index: 10000;
+            min-width: 140px;
+            font-size: 14px;
+            color: #1f2329;
+        }
+        .copy-menu button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: none;
+            padding: 8px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .copy-menu button:hover { background: #f5f8ff; }
+
+        .hidden-content { display: none; }
+
+        @media screen and (min-width: 768px) {
+            body { padding: 50px 20px; }
+            .container { padding: 30px; }
+            .search-wrap { gap: 12px; } /* 大屏端间距适度放大，视觉更舒展 */
+            #searchInput { 
+                padding: 12px 20px; 
+                font-size: 15px;
+                border-radius:6px;
+            }
+            #clearBtn { 
+                height: 44px;
+                padding:0 24px;
+                font-size:15px; 
+                border-radius:6px;
+            }
+            .hot-keywords { margin: 12px 0 20px 0; gap:10px; }
+            .hot-keywords .title { font-size:15px; }
+            .hot-keywords .keyword-item { padding:8px 15px; font-size:14px; }
+            .result-box { padding:20px; margin-top:10px; }
+            .org-table th, .org-table td { padding:14px 12px; font-size:15px; }
+            .col-fullname { width: 55%; }
+            .col-shortname { width: 30%; }
+            .col-op { width: 15%; }
+            .copy-btn { padding:4px 8px; min-width: unset; }
+            .copy-tip { top:20px; right:20px; left:auto; transform: translateX(0); }
+            .no-result { padding:40px 20px; font-size:16px; }
+        }
+
+        /* Responsive improvements for mobile: make each table row a 2-row grid so copy buttons don't overlap */
+        @media screen and (max-width: 600px) {
+            /* keep comfortable input padding but normal font-size */
+            #searchInput { font-size: 16px; padding: 12px 15px; }
+            .hot-keywords { overflow: hidden; }
+            .hot-keywords .keyword-list { display: flex; white-space: nowrap; gap: 8px; }
+            .hot-keywords .title { flex: 0 0 auto; margin-right: 8px; }
+            .hot-keywords .keyword-item { flex: 0 0 auto; }
+            .hot-keywords .keyword-item { font-size: 13px; padding: 6px 12px; }
+            .org-table { font-size: 14px; }
+            .copy-btn { font-size: 12px; min-width: 55px; padding: 6px 5px; }
+            .update-box { gap: 10px; }
+            .update-box .update-msg { font-size: 14px; padding: 8px 10px; }
+            /* enlarge base font for better readability on small screens */
+            body { font-size: initial; }
+            /* enlarge search input and keywords for elderly-friendly UX */
+            #searchInput { font-size: 16px; padding: 12px 15px; }
+            .hot-keywords .keyword-item { font-size: 13px; padding: 6px 12px; }
+            .org-table { font-size: 14px; }
+            .copy-btn { font-size: 12px; }
+            .org-table { width: 100%; border: 0; }
+            .org-table thead { display: none; }
+
+            /* Each row becomes a 2x2 grid: full name | copy  then short name | copy */
+            .org-table tbody tr {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                grid-template-rows: auto auto;
+                grid-template-areas: "full copy" "short copy";
+                gap: 6px 10px;
+                padding: 10px 8px;
+                border-bottom: 1px solid #eef2f6;
+                align-items: center;
+                background: #ffffff;
+                margin-bottom: 6px;
+            }
+
+            .org-table tbody tr td {
+                display: block;
+                padding: 0;
+                border: none;
+                text-align: left; /* mobile 同样左对齐 */
+                white-space: normal;
+                overflow: visible;
+            }
+
+            .org-table tbody tr td:nth-child(1) { grid-area: full; }
+            .org-table tbody tr td:nth-child(2) { grid-area: short; color: #606266; font-size: 14px; }
+            .org-table tbody tr td:nth-child(3) { grid-area: copy; display:flex; justify-content:flex-end; align-items:center; }
+
+            /* Hide copy buttons on small screens (mobile doesn't need copy buttons) */
+            .copy-btn { display: none !important; }
+
+            /* Reduce button min-width on small screens and prevent shrinking that causes overlap */
+            .copy-btn {
+                min-width: 44px !important;
+                padding: 6px 8px;
+                font-size: 13px;
+                box-sizing: border-box;
+                flex-shrink: 0;
+            }
+
+            .col-fullname, .col-shortname { width: auto; }
+            .col-op { width: auto; }
+
+            /* Make the result box use full width and remove horizontal scroll */
+            .result-box { overflow-x: hidden; padding: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="search-wrap">
+            <input type="text" id="searchInput" placeholder="输入机构名称/简称检索，多关键字用空格分隔（示例：吉林 教育厅、中国 一汽），输入即实时检索" autocomplete="off">
+            <button id="clearBtn" disabled>清除输入</button>
+        </div>
+
+        <div class="hot-keywords" id="hotKeywordsBox"></div>
+        <div class="update-box hidden" id="updateBox" aria-hidden="true">
+            <span class="hint-icon" aria-hidden="true">ℹ</span>
+            <div class="update-msg">使用异常，请更新客户端</div>
+            <button class="update-btn" id="updateBtn">更新</button>
+        </div>
+        <div id="resultBox" class="result-box"></div>
+
+        <div class="hidden-content" id="hiddenContent">
+            <p>吉林省人民政府办公厅           （省政府办公厅）</p>
+            <p>吉林省发展和改革委员会         （省发展改革委）</p>
+            <p>吉林省教育厅                   （省教育厅）</p>
+            <p>吉林省科学技术厅               （省科技厅）</p>
+            <p>吉林省工业和信息化厅           （省工业和信息化厅）</p>
+            <p>吉林省民族事务委员会           （省民委）</p>
+            <p>吉林省公安厅                   （省公安厅）</p>
+            <p>吉林省民政厅                   （省民政厅）</p>
+            <p>吉林省司法厅                   （省司法厅）</p>
+            <p>吉林省财政厅                   （省财政厅）</p>
+            <p>吉林省人力资源和社会保障厅     （省人力资源社会保障厅）</p>
+            <p>吉林省自然资源厅               （省自然资源厅）</p>
+            <p>吉林省生态环境厅               （省生态环境厅）</p>
+            <p>吉林省住房和城乡建设厅         （省住房城乡建设厅）</p>
+            <p>吉林省交通运输厅               （省交通运输厅）</p>
+            <p>吉林省水利厅                   （省水利厅）</p>
+            <p>吉林省农业农村厅               （省农业农村厅）</p>
+            <p>吉林省商务厅                   （省商务厅）</p>
+            <p>吉林省文化和旅游厅             （省文化和旅游厅）</p>
+            <p>吉林省卫生健康委员会           （省卫生健康委）</p>
+            <p>吉林省退役军人事务厅           （省退役军人事务厅）</p>
+            <p>吉林省应急管理厅               （省应急管理厅）</p>
+            <p>吉林省审计厅                   （省审计厅）</p>
+            <p>吉林省外事办公室               （省外办）</p>
+            <p>吉林省市场监督管理厅           （省市场监管厅）</p>
+            <p>吉林省国有资产监督管理委员会   （省国资委）</p>
+            <p>吉林省广播电视局               （省广电局）</p>
+            <p>吉林省体育局                   （省体育局）</p>
+            <p>吉林省信访局                   （省信访局）</p>
+            <p>吉林省统计局                   （省统计局）</p>
+            <p>吉林省医疗保障局               （省医保局）</p>
+            <p>吉林省机关事务管理局           （省管局）</p>
+            <p>吉林省政府研究室               （省政府研究室）</p>
+            <p>吉林省粮食和物资储备局         （省粮食和储备局）</p>
+            <p>吉林省国防动员办公室（吉林省人民防空办公室）  省国动办（省人防办）</p>
+            <p>吉林省政务服务和数字化建设管理局       （省政务服务和数字化局）</p>
+            <p>吉林省林业和草原局             （省林草局）</p>
+            <p>吉林省能源局                   （省能源局）</p>
+            <p>吉林省监狱管理局               （省监狱管理局）</p>
+            <p>吉林省畜牧业管理局             （省畜牧局）</p>
+            <p>吉林省中医药管理局             （省中医药局）</p>
+            <p>吉林省药品监督管理局           （省药监局）</p>
+            <p>吉林省疾病预防控制局           （省疾控局）</p>
+            <p>省通信管理局                   （省通信管理局）</p>
+            <p>吉林出入境边防检查总站         （吉林边检总站）</p>
+            <p>省国家安全厅                   （省国家安全厅）</p>
+            <p>财政部吉林监管局               （财政部吉林监管局）</p>
+            <p>生态环境部松辽流域生态环境监督管理局   （生态环境部松辽流域局）</p>
+            <p>水利部松辽水利委员会           （水利部松辽委）</p>
+            <p>省消防救援总队                 （省消防救援总队）</p>
+            <p>省森林消防总队                 （省森林消防总队）</p>
+            <p>审计署驻长春特派员办事处       （审计署长春特派办）</p>
+            <p>长春海关                       （长春海关）</p>
+            <p>国家税务总局吉林省税务局       （省税务局）</p>
+            <p>国家统计局吉林调查总队           （国家统计局吉林调查总队）</p>
+            <p>省气象局                       （省气象局）</p>
+            <p>中国科学院长春分院             （中科院长春分院）</p>
+            <p>省烟草专卖局                   （省烟草专卖局）</p>
+            <p>东北虎豹国家公园管理局           （东北虎豹国家公园管理局）</p>
+            <p>国家矿山安全监察局吉林局       （国家矿山安监局吉林局）</p>
+            <p>国家粮食和物资储备局吉林局       （国家粮食和储备局吉林局）</p>
+            <p>省邮政管理局                   （省邮政管理局）</p>
+            <p>省地震局                       （省地震局）</p>
+            <p>国家能源局东北监管局吉林业务办公室     （东北能源监管局吉林业务办）</p>
+            <p>中国民用航空吉林安全监督管理局 （民航吉林监管局）</p>
+            <p>中国铁路沈阳局集团有限公司长春铁路办事处   （中国铁路沈阳局长春办）</p>
+            <p>中国人民银行吉林省分行         （人民银行吉林省分行）</p>
+            <p>国家金融监督管理总局吉林监管局 （吉林金融监管局）</p>
+            <p>中国证券监督管理委员会吉林监管局 （吉林证监局）</p>
+            <p>中国第一汽车集团有限公司       （中国一汽）</p>
+            <p>国家开发银行吉林省分行         （国开行吉林省分行）</p>
+            <p>中国农业发展银行吉林省分行     （农发行吉林省分行）</p>
+            <p>中国进出口银行吉林省分行       （进出口银行吉林省分行）</p>
+            <p>中国工商银行股份有限公司吉林省分行     （工商银行吉林省分行）</p>
+            <p>中国农业银行股份有限公司吉林省分行     （农行吉林省分行）</p>
+            <p>中国银行股份有限公司吉林省分行 （中国银行吉林省分行）</p>
+            <p>中国建设银行股份有限公司吉林省分行     （建设银行吉林省分行）</p>
+            <p>交通银行股份有限公司吉林省分行 （交通银行吉林省分行）</p>
+            <p>中国邮政储蓄银行股份有限公司吉林省分行 （邮储银行吉林省分行）</p>
+            <p>中国石油天然气股份有限公司吉林石化分公司   （中国石油吉林石化公司）</p>
+            <p>中国石油天然气股份有限公司吉林油田分公司   （中国石油吉林油田公司）</p>
+            <p>中国石油天然气股份有限公司吉林销售分公司   （中国石油吉林销售公司）</p>
+            <p>中国石油化工股份有限公司东北油气分公司 （中国石化东北油气分公司）</p>
+            <p>中国石化销售股份有限公司吉林石油分公司 （中国石化吉林石油分公司）</p>
+            <p>中车长春轨道客车股份有限公司   （中车长客股份公司）</p>
+            <p>国网吉林省电力有限公司         （国网吉林省电力公司）</p>
+            <p>华能吉林发电有限公司           （华能吉林公司）</p>
+            <p>大唐吉林发电有限公司           （大唐吉林公司）</p>
+            <p>华电吉林能源有限公司           （华电吉林公司）</p>
+            <p>国家能源集团吉林电力有限公司   （国家能源集团吉林公司）</p>
+            <p>吉林电力股份有限公司           （吉电股份）</p>
+            <p>中国移动通信集团吉林有限公司   （中国移动吉林公司）</p>
+            <p>中国联合网络通信有限公司吉林省分公司   （中国联通吉林省分公司）</p>
+            <p>中国电信集团有限公司吉林分公司 （中国电信吉林分公司）</p>
+            <p>中国邮政集团有限公司吉林省分公司 （中国邮政吉林省分公司）</p>
+            <p>吉林省民航机场集团有限公司     （省民航机场集团）</p>
+            <p>吉林烟草工业有限责任公司       （吉林烟草工业公司）</p>
+        </div>
+    </div>
+
+    <script>
+        // 获取核心元素
+        const searchInput = document.getElementById('searchInput');
+        const resultBox = document.getElementById('resultBox');
+        const hiddenContent = document.getElementById('hiddenContent');
+        const hotKeywordsBox = document.getElementById('hotKeywordsBox');
+        const clearBtn = document.getElementById('clearBtn');
+
+        // ✅ 永久固定的高频关键词（核心需求），可直接修改此处内容调整固定高频词
+        const FIXED_HOT_KEYWORDS = ["教育厅", "财政厅", "中国一汽", "银行", "电力"];
+        // 解析隐藏数据 → 拆分【全称】和【简称】数组
+        const orgDataList = [];
+        hiddenContent.querySelectorAll('p').forEach(item => {
+            const fullText = item.innerText.trim();
+            const bracketIndex = fullText.lastIndexOf('（');
+            if (bracketIndex > -1) {
+                const fullname = fullText.substring(0, bracketIndex).trim();
+                const shortname = fullText.substring(bracketIndex + 1, fullText.lastIndexOf('）')).trim();
+                orgDataList.push({ fullname, shortname });
+            }
+        });
+
+        // Default: hide the update hint. Only show it on explicit errors.
+        hideUpdateBox();
+
+        // 初始化固定高频词（只执行一次，永久不变）
+        initFixedHotKeywords();
+        // 首次加载时显示全部条目（搜索框为空时展示所有内容）
+        try {
+            doSearch();
+        } catch (e) {
+            console.error('初始化检索失败：', e);
+            showUpdateBox('页面初始化失败，无法检索，请更新客户端或稍后重试');
+        }
+        // 绑定检索事件
+        searchInput.addEventListener('input', function() {
+            clearBtn.disabled = !this.value.trim();
+            doSearch();
+        });
+        searchInput.addEventListener('keyup', (e) => e.key === 'Enter' && doSearch());
+        
+        // 清除按钮事件
+        clearBtn.addEventListener('click', function() {
+            searchInput.value = '';       
+            // 清空后重新渲染（显示全部）
+            clearBtn.disabled = true;    
+            searchInput.focus();         
+            doSearch();                  
+        });
+
+        // 更新按钮逻辑：iOS -> App Store 指定应用页；Android -> 本机安卓市场搜索（market://），桌面 -> 官方下载页
+        (function initUpdateButton() {
+            const updateBtn = document.getElementById('updateBtn');
+            // use direct App Store page for the given app id
+            const iosUrl = 'https://apps.apple.com/cn/app/id1266531722';
+            // Android: open official download page
+            const androidUrl = 'https://zwwx.ndrc.gov.cn';
+            const desktopUrl = 'https://zwwx.ndrc.gov.cn';
+
+            function getPlatform() {
+                const ua = navigator.userAgent || '';
+                if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return 'ios';
+                if (/Android/.test(ua)) return 'android';
+                return 'desktop';
+            }
+
+            updateBtn.addEventListener('click', function() {
+                const platform = getPlatform();
+                try {
+                    if (platform === 'ios') {
+                        // open App Store page (will open in App Store app on iOS)
+                        window.open(iosUrl, '_blank');
+                    } else if (platform === 'android') {
+                        // open official download page on Android
+                        window.open(androidUrl, '_blank');
+                    } else {
+                        window.open(desktopUrl, '_blank');
+                    }
+                } catch (e) {
+                    window.open(desktopUrl, '_blank');
+                }
+            });
+        })();
+
+        // 检索核心逻辑
+        function doSearch() {
+            try {
+                resultBox.innerHTML = '';
+                const keywordStr = searchInput.value.trim().toLowerCase();
+                const keywords = keywordStr ? keywordStr.split(/\s+/).filter(k => k) : [];
+
+                // 当搜索框为空时展示全部条目；否则仅展示匹配项
+                let matchData = [];
+                if (!keywordStr) {
+                    // include original index so buttons reference correct item
+                    matchData = orgDataList.map((it, i) => ({ idx: i, item: it }));
+                } else {
+                    matchData = orgDataList.map((it, i) => ({ idx: i, item: it })).filter(({ item }) => {
+                        const full = item.fullname.toLowerCase();
+                        const short = item.shortname.toLowerCase();
+                        return keywords.every(keyword => full.includes(keyword) || short.includes(keyword));
+                    });
+                }
+
+                if (matchData.length > 0) {
+                    let tableHtml = `
+                        <table class="org-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-fullname">全称</th>
+                                    <th class="col-shortname">简称</th>
+                                    <th class="col-op">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    matchData.forEach(({ idx, item }) => {
+                        let highlightFullname = item.fullname;
+                        keywords.forEach(keyword => {
+                            highlightFullname = highlightKeyword(highlightFullname, keyword);
+                        });
+                        const originShortname = item.shortname;
+
+                        tableHtml += `
+                            <tr>
+                                <td data-full="${item.fullname}"><span class="name-prefix">全</span>${highlightFullname}</td>
+                                <td data-short="${item.shortname}"><span class="name-prefix">简</span>${originShortname}</td>
+                                <td>
+                                    <button class="copy-btn" data-index="${idx}">复制</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tableHtml += `</tbody></table>`;
+                    resultBox.innerHTML = tableHtml;
+                    bindCopyEvent();
+                } else {
+                    resultBox.innerHTML = `<div class="no-result">❌ 未检索到同时包含「${keywords.join('、')}」的机构，请更换关键字重试！</div>`;
+                }
+            } catch (err) {
+                console.error('检索出错：', err);
+                resultBox.innerHTML = `<div class="no-result">❌ 出现错误，无法完成检索，请稍后重试。</div>`;
+                showUpdateBox('使用异常，请更新客户端或稍后重试');
+            }
+        }
+
+        // 关键字高亮函数
+        function highlightKeyword(text, keyword) {
+            if (!keyword) return text;
+            return text.replace(new RegExp(keyword, 'gi'), '<span class="highlight">$&</span>');
+        }
+
+        // ✅ 初始化固定高频词 - 永久不变，无动态变化逻辑
+        function initFixedHotKeywords() {
+            // Render keywords; on small screens limit to first 3 so they fit on one line
+            function renderKeywords() {
+                const isMobile = window.innerWidth <= 600;
+                const keywords = isMobile ? FIXED_HOT_KEYWORDS.slice(0, 3) : FIXED_HOT_KEYWORDS;
+                hotKeywordsBox.innerHTML = `
+                    <span class="title">高频检索：</span>
+                    <div class="keyword-list">
+                        ${keywords.map(key => `<span class="keyword-item">${key}</span>`).join('')}
+                    </div>
+                `;
+                bindHotKeywordClick();
+            }
+
+            renderKeywords();
+            // Re-render when crossing mobile/desktop breakpoint (avoid excessive rerenders)
+            let lastIsMobile = window.innerWidth <= 600;
+            window.addEventListener('resize', () => {
+                const nowIsMobile = window.innerWidth <= 600;
+                if (nowIsMobile !== lastIsMobile) {
+                    lastIsMobile = nowIsMobile;
+                    renderKeywords();
+                }
+            });
+        }
+
+        // 高频词点击事件（仅填充检索框，无频次统计）
+        function bindHotKeywordClick() {
+            const keywordItems = document.querySelectorAll('.keyword-item');
+            keywordItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const hotKey = this.innerText.trim();
+                    searchInput.value = hotKey;
+                    clearBtn.disabled = false;
+                    searchInput.focus();
+                    doSearch();
+                });
+            });
+        }
+
+        // 复制功能绑定
+        function bindCopyEvent() {
+            const allCopyBtns = document.querySelectorAll('.copy-btn');
+            allCopyBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    const index = this.dataset.index;
+                    showCopyMenu(this, index);
+                });
+            });
+        }
+
+        // 显示基于按钮锚点的复制选单（顺序：简称, 全称, 全称+简称）
+        function showCopyMenu(anchorEl, index) {
+            hideCopyMenu(); // ensure single menu
+            const menu = document.createElement('div');
+            menu.className = 'copy-menu';
+            menu.innerHTML = `
+                <button data-action="short">简称</button>
+                <button data-action="full">全称</button>
+                <button data-action="both">全称+简称</button>
+            `;
+        
+            // attach handlers
+            menu.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const action = btn.getAttribute('data-action');
+                    // lookup using original index
+                    const fullname = orgDataList[index] && orgDataList[index].fullname ? orgDataList[index].fullname : '';
+                    const shortname = orgDataList[index] && orgDataList[index].shortname ? orgDataList[index].shortname : '';
+                    let text = '';
+                    if (action === 'short') text = shortname;
+                    else if (action === 'full') text = fullname;
+                    else text = `${fullname} ${shortname}`.trim();
+        
+                    copySelection(text);
+                    hideCopyMenu();
+                });
+            });
+        
+            document.body.appendChild(menu);
+        
+            // position menu near anchor (try below-right, fallback above)
+            const rect = anchorEl.getBoundingClientRect();
+            // use fixed positioning relative to viewport (avoid adding scroll offsets)
+            menu.style.position = 'fixed';
+            const menuRect = menu.getBoundingClientRect();
+            let top = rect.bottom + 8;
+            let left = rect.right - menuRect.width;
+            // ensure within viewport horizontally
+            if (left < 8) left = rect.left;
+            if (left + menuRect.width > window.innerWidth - 8) left = window.innerWidth - menuRect.width - 8;
+            // if bottom clipped, place above anchor
+            if (top + menuRect.height > window.innerHeight - 8) top = rect.top - menuRect.height - 8;
+        
+            menu.style.top = `${Math.max(8, top)}px`;
+            menu.style.left = `${Math.max(8, left)}px`;
+         
+            // global handlers to dismiss
+            setTimeout(() => { // allow current click to finish
+                document.addEventListener('click', onDocClick);
+                window.addEventListener('scroll', hideCopyMenu);
+                window.addEventListener('resize', hideCopyMenu);
+            }, 0);
+        
+            function onDocClick(ev) {
+                if (!menu.contains(ev.target) && ev.target !== anchorEl) hideCopyMenu();
+            }
+        
+            // stash the handler so it can be removed later
+            menu._onDocClick = onDocClick;
+        }
+        
+        function hideCopyMenu() {
+            const existing = document.querySelector('.copy-menu');
+            if (!existing) return;
+            const handler = existing._onDocClick;
+            if (handler) document.removeEventListener('click', handler);
+            window.removeEventListener('scroll', hideCopyMenu);
+            window.removeEventListener('resize', hideCopyMenu);
+            existing.remove();
+        }
+        
+        // 统一的复制函数（使用 navigator.clipboard，失败回退 textarea）
+        function copySelection(text) {
+            if (!text) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => showCopyTip()).catch(() => fallbackCopyTextToClipboard(text));
+            } else {
+                fallbackCopyTextToClipboard(text);
+            }
+        }
+
+        // 复制成功提示
+        function showCopyTip() {
+            const oldTip = document.querySelector('.copy-tip');
+            if (oldTip) oldTip.remove();
+            
+            const tip = document.createElement('div');
+            tip.className = 'copy-tip';
+            tip.innerText = '✅ 复制成功！内容已存入剪贴板';
+            document.body.appendChild(tip);
+            setTimeout(() => tip.remove(), 1500);
+        }
+
+        // 复制兼容方案
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                successful ? showCopyTip() : alert('❌ 复制失败，请手动复制！');
+            } catch (err) {
+                alert('❌ 复制失败，请手动复制！');
+                console.error('复制失败：', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // helpers to control update hint visibility
+        function showUpdateBox(message) {
+            const box = document.getElementById('updateBox');
+            if (!box) return;
+            const msgEl = box.querySelector('.update-msg');
+            if (message) msgEl.textContent = message;
+            box.classList.remove('hidden');
+            box.setAttribute('aria-hidden', 'false');
+        }
+
+        function hideUpdateBox() {
+            const box = document.getElementById('updateBox');
+            if (!box) return;
+            box.classList.add('hidden');
+            box.setAttribute('aria-hidden', 'true');
+        }
+    </script>
+</body>
+</html>

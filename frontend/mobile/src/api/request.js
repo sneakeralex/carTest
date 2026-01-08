@@ -180,21 +180,48 @@ async function runResponseInterceptors(ctx) {
   return res;
 }
 
-// Rewrite logic: convert absolute Artemis URLs and known prefixes to local /api proxy
+// Rewrite logic: convert absolute Artemis URLs and known prefixes to local /artemis proxy
 function rewriteToProxy(inputPath) {
   if (!inputPath) return inputPath;
+
+  // Canonical upstream host (absolute) — always use this for Artemis endpoints
+  const UPSTREAM_HOST = 'https://cartest.douwifi.cn';
+
+  // Helper to ensure single leading slash on suffix
+  const ensureLeading = (s) => s.startsWith('/') ? s : '/' + s;
+
+  // If input is an absolute URL that points to the upstream, normalize and return absolute URL
   try {
-    const u = new URL(inputPath, window?.location?.origin);
-    if (/cartest\.douwifi\.cn|artemis|apiv1|apiv2/.test(u.hostname) || /\/artemis\//.test(inputPath)) {
-      return DEFAULT_BASE.replace(/\/$/, '') + u.pathname + (u.search || '');
+    const u = new URL(inputPath, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+    const hostMatch = /cartest\.douwifi\.cn|artemis/.test(u.hostname);
+    if (hostMatch) {
+      // Build canonical upstream URL: https://cartest.douwifi.cn/artemis{path...}
+      const path = u.pathname || '/';
+      const suffix = path.startsWith('/artemis') ? path.slice('/artemis'.length) : path;
+      return UPSTREAM_HOST + '/artemis' + ensureLeading(suffix) + (u.search || '');
     }
   } catch (e) {
     // ignore
   }
-  if (inputPath.startsWith('/artemis') || inputPath.startsWith('/apiv1') || inputPath.startsWith('/apiv2')) {
-    return DEFAULT_BASE.replace(/\/$/, '') + inputPath;
+
+  // Map known shorthand or prefixed local paths to upstream absolute URLs
+  if (inputPath.startsWith('/apiv1')) {
+    return UPSTREAM_HOST + '/artemis/api/v1' + inputPath.slice('/apiv1'.length);
   }
-  if (inputPath.startsWith(DEFAULT_BASE)) return inputPath;
+  if (inputPath.startsWith('/apiv2')) {
+    return UPSTREAM_HOST + '/artemis/api/v2' + inputPath.slice('/apiv2'.length);
+  }
+  if (inputPath.startsWith('/v1')) {
+    return UPSTREAM_HOST + '/artemis/v1' + inputPath.slice('/v1'.length);
+  }
+
+  // If starts with /artemis, map to upstream absolute URL and avoid duplicating the segment
+  if (inputPath.startsWith('/artemis')) {
+    const suffix = inputPath.slice('/artemis'.length);
+    return UPSTREAM_HOST + '/artemis' + (suffix || '');
+  }
+
+  // Non-artemis paths (same-origin APIs or assets) should remain unchanged
   return inputPath;
 }
 

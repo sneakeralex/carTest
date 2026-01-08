@@ -76,8 +76,8 @@ export async function getDailySchedule(date) {
     const queryParams = new URLSearchParams();
     queryParams.append('date', date);
 
-    // Route via proxy; backend should handle any external routing/signing
-    const res = await artemisRequest(`/api/schedule/daily?${queryParams}`, { method: 'GET' });
+    // Route via local /artemis proxy so upstream calls are forwarded through the dev proxy
+    const res = await artemisRequest(`/artemis/api/schedule/daily?${queryParams}`, { method: 'GET' });
     const result = res?.data;
     console.log('获取每日场地安排原始API响应:', JSON.stringify(result, null, 2));
 
@@ -113,7 +113,7 @@ export async function getSchedule(params) {
     queryParams.append('testSiteId', params.testSiteId);
     if (params.date) queryParams.append('date', params.date);
 
-    const res = await artemisRequest(`/api/schedule/site?${queryParams}`, { method: 'GET' });
+    const res = await artemisRequest(`/artemis/api/schedule/site?${queryParams}`, { method: 'GET' });
     const result = res?.data;
     console.log('获取场地排期原始API响应:', JSON.stringify(result, null, 2));
 
@@ -146,7 +146,7 @@ export async function getWeather(params) {
     queryParams.append('testSiteId', params.testSiteId);
     if (params.date) queryParams.append('date', params.date);
 
-    const res = await artemisRequest(`/api/schedule/weather?${queryParams}`, { method: 'GET' });
+    const res = await artemisRequest(`/artemis/api/schedule/weather?${queryParams}`, { method: 'GET' });
     const result = res?.data;
     console.log('获取天气信息原始API响应:', JSON.stringify(result, null, 2));
 
@@ -172,7 +172,7 @@ export async function createBooking(data) {
   }
 
   try {
-    const res = await artemisRequest('/api/schedule/booking', {
+    const res = await artemisRequest('/artemis/api/schedule/booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)

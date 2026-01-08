@@ -110,43 +110,29 @@ export async function getEquipments(params = {}) {
 
     // Add filters based on params
     if (params.status) {
-      bodyObj.array.push({
-        key: "status",
-        option: "eq",
-        value: params.status
-      });
+      bodyObj.array.push({ key: 'status', option: 'eq', value: params.status });
     }
 
     if (params.type) {
-      bodyObj.array.push({
-        key: "deviceType",
-        option: "eq", 
-        value: params.type
-      });
+      bodyObj.array.push({ key: 'deviceType', option: 'eq', value: params.type });
     }
 
     if (params.keyword) {
-      bodyObj.array.push({
-        key: "name",
-        option: "like",
-        value: params.keyword
-      });
+      bodyObj.array.push({ key: 'name', option: 'like', value: params.keyword });
     }
 
     const bodyStr = JSON.stringify(bodyObj);
 
     const res = await artemisRequest('/artemis/api/iotrm/v1/device/page', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
+      headers: { 'Content-Type': 'application/json', Accept: '*/*' },
       body: bodyStr
     });
-    const result = res?.data;
+    const result = res?.data || {};
 
-    console.log('设备列表原始API响应:', JSON.stringify(result, null, 2));
-    
     // Transform the response to match the expected format
-    // Assuming the API returns data in a similar structure
-    const transformedEquipments = (result.data?.list || result.data?.records || []).map(device => ({
+    const list = result.data?.list || result.data?.records || [];
+    const transformedEquipments = (list || []).map(device => ({
       equipmentId: device.deviceId || device.id,
       equipmentNo: device.deviceCode || device.code || device.indexCode,
       equipmentName: device.name || device.deviceName,
@@ -163,7 +149,6 @@ export async function getEquipments(params = {}) {
       responsiblePerson: device.responsiblePerson || device.manager || '',
       contactInfo: device.contactInfo || device.phone || '',
       purchasePrice: device.purchasePrice || 0,
-      // Keep original fields for compatibility
       ...device
     }));
 
@@ -182,38 +167,32 @@ export async function getEquipments(params = {}) {
       config: {}
     };
   } catch (error) {
-    console.error('获取设备列表失败:', error);
     // Fallback to mock data if API fails
     await delay(500);
     let filteredEquipments = [...mockEquipments];
-    
-    if (params.status) {
-      filteredEquipments = filteredEquipments.filter(e => e.status === params.status);
-    }
-    if (params.type) {
-      filteredEquipments = filteredEquipments.filter(e => e.equipmentType === params.type);
-    }
+
+    if (params.status) filteredEquipments = filteredEquipments.filter(e => e.status === params.status);
+    if (params.type) filteredEquipments = filteredEquipments.filter(e => e.equipmentType === params.type);
     if (params.keyword) {
       const keyword = params.keyword.toLowerCase();
-      filteredEquipments = filteredEquipments.filter(e => 
+      filteredEquipments = filteredEquipments.filter(e =>
         e.equipmentName.toLowerCase().includes(keyword) ||
         e.equipmentNo.toLowerCase().includes(keyword) ||
         e.equipmentType.toLowerCase().includes(keyword)
       );
     }
-    
-    // Paginate mock data
+
     const page = params.page || 1;
     const size = params.size || 20;
     const startIndex = (page - 1) * size;
     const endIndex = startIndex + size;
     const paginatedEquipments = filteredEquipments.slice(startIndex, endIndex);
-    
+
     return {
       data: {
         content: paginatedEquipments,
         pageable: {
-          pageNumber: page - 1, // 0-based
+          pageNumber: page - 1,
           pageSize: size,
           total: filteredEquipments.length
         }
@@ -233,31 +212,32 @@ export async function getEquipments(params = {}) {
  */
 export async function getEquipmentById(id) {
   try {
-    // Since the list API returns complete device details, we can fetch all devices and find the one we need
-    const bodyObj = {
-      pageNo: 1,
-      pageSize: 1000, // Set large pageSize to get all devices
-      array: [],
-      containChildOrg: false
-    };
-
+    const bodyObj = { pageNo: 1, pageSize: 1000, array: [], containChildOrg: false };
     const bodyStr = JSON.stringify(bodyObj);
 
     const res = await artemisRequest('/artemis/api/iotrm/v1/device/page', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
+      headers: { 'Content-Type': 'application/json', Accept: '*/*' },
       body: bodyStr
     });
-    const result = res?.data;
+    const result = res?.data || {};
 
-    console.log('设备详情原始API响应:', JSON.stringify(result, null, 2));
+    // handle case where API returns a paginated list or a single object
+    const list = result.data?.list || result.data?.records || (Array.isArray(result.data) ? result.data : []);
+    let device = null;
 
-    const device = result.data.list.find(item => item.id == id || item.deviceId == id);
-    if (!device) {
-      throw new Error('设备不存在');
+    if (Array.isArray(list) && list.length > 0) {
+      device = list.find(item => item.id == id || item.deviceId == id || item.deviceId == String(id));
     }
 
-    // Transform the device to match expected format
+    // If not found in list, check if result.data itself is an object representing a single device
+    if (!device && result.data && typeof result.data === 'object' && !Array.isArray(result.data)) {
+      const obj = result.data;
+      if (obj.id == id || obj.deviceId == id || obj.deviceId == String(id)) device = obj;
+    }
+
+    if (!device) throw new Error('设备不存在');
+
     const transformedEquipment = {
       equipmentId: device.deviceId || device.id,
       equipmentNo: device.deviceCode || device.code || device.indexCode,
@@ -275,20 +255,12 @@ export async function getEquipmentById(id) {
       responsiblePerson: device.responsiblePerson || device.manager || '',
       contactInfo: device.contactInfo || device.phone || '',
       purchasePrice: device.purchasePrice || 0,
-      // Keep original fields for compatibility
       ...device
     };
 
-    return {
-      data: transformedEquipment,
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {}
-    };
+    return { data: transformedEquipment, status: 200, statusText: 'OK', headers: {}, config: {} };
   } catch (error) {
-    console.error('获取设备详情失败:', error);
-    throw error; // No fallback to mock data
+    throw error;
   }
 }
 
@@ -299,7 +271,6 @@ export async function getEquipmentById(id) {
  */
 export async function createEquipment(data) {
   try {
-    // Transform frontend data to API format
     const apiData = {
       name: data.equipmentName,
       deviceCode: data.equipmentNo,
@@ -320,18 +291,15 @@ export async function createEquipment(data) {
 
     const res = await artemisRequest('/artemis/api/iotrm/v1/device', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
+      headers: { 'Content-Type': 'application/json', Accept: '*/*' },
       body: JSON.stringify(apiData)
     });
-    const result = res?.data;
+    const result = res?.data || {};
 
-    console.log('创建设备原始API响应:', JSON.stringify(result, null, 2));
-
-    if (result.code !== '0' && result.code !== 200) {
+    if (result.code && result.code !== '0' && result.code !== 200 && result.code !== 0) {
       throw new Error(result.msg || '创建设备失败');
     }
 
-    // Transform response back to frontend format
     const createdEquipment = {
       equipmentId: result.data?.deviceId || result.data?.id,
       equipmentNo: result.data?.deviceCode || data.equipmentNo,
@@ -351,23 +319,11 @@ export async function createEquipment(data) {
       purchasePrice: result.data?.purchasePrice || data.purchasePrice
     };
 
-    return {
-      data: createdEquipment,
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {}
-    };
+    return { data: createdEquipment, status: 200, statusText: 'OK', headers: {}, config: {} };
   } catch (error) {
-    console.error('创建设备失败:', error);
     // Fallback to mock data if API fails
     await delay(800);
-    const newEquipment = {
-      ...data,
-      equipmentId: mockEquipments.length + 1,
-      createTime: new Date().toISOString(),
-      updateTime: new Date().toISOString()
-    };
+    const newEquipment = { ...data, equipmentId: mockEquipments.length + 1, createTime: new Date().toISOString(), updateTime: new Date().toISOString() };
     mockEquipments.push(newEquipment);
     return mockResponse(newEquipment);
   }
@@ -381,7 +337,6 @@ export async function createEquipment(data) {
  */
 export async function updateEquipment(id, data) {
   try {
-    // Transform frontend data to API format
     const apiData = {
       deviceId: id,
       name: data.equipmentName,
@@ -403,18 +358,15 @@ export async function updateEquipment(id, data) {
 
     const res = await artemisRequest('/artemis/api/iotrm/v1/device', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
+      headers: { 'Content-Type': 'application/json', Accept: '*/*' },
       body: JSON.stringify(apiData)
     });
-    const result = res?.data;
+    const result = res?.data || {};
 
-    console.log('更新设备原始API响应:', JSON.stringify(result, null, 2));
-
-    if (result.code !== '0' && result.code !== 200) {
+    if (result.code && result.code !== '0' && result.code !== 200 && result.code !== 0) {
       throw new Error(result.msg || '更新设备失败');
     }
 
-    // Transform response back to frontend format
     const updatedEquipment = {
       equipmentId: id,
       equipmentNo: result.data?.deviceCode || data.equipmentNo,
@@ -434,28 +386,14 @@ export async function updateEquipment(id, data) {
       purchasePrice: result.data?.purchasePrice || data.purchasePrice
     };
 
-    return {
-      data: updatedEquipment,
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {}
-    };
+    return { data: updatedEquipment, status: 200, statusText: 'OK', headers: {}, config: {} };
   } catch (error) {
-    console.error('更新设备失败:', error);
     // Fallback to mock data if API fails
     await delay(600);
     const index = mockEquipments.findIndex(eq => eq.equipmentId === id || eq.equipmentId === parseInt(id));
-    if (index === -1) {
-      throw new Error('设备不存在');
-    }
-    
-    mockEquipments[index] = {
-      ...mockEquipments[index],
-      ...data,
-      updateTime: new Date().toISOString()
-    };
-    
+    if (index === -1) throw new Error('设备不存在');
+
+    mockEquipments[index] = { ...mockEquipments[index], ...data, updateTime: new Date().toISOString() };
     return mockResponse(mockEquipments[index]);
   }
 }
@@ -467,30 +405,13 @@ export async function updateEquipment(id, data) {
  */
 export async function deleteEquipment(id) {
   try {
-    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/${id}`, {
-      method: 'DELETE',
-      headers: { 'Accept': '*/*', 'Accept-Encoding': 'identity' }
-    });
-    const result = res?.data;
-
-    console.log('删除设备原始API响应:', JSON.stringify(result, null, 2));
-
-    return {
-      data: { message: '删除成功' },
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {}
-    };
+    await artemisRequest(`/artemis/api/iotrm/v1/device/${id}`, { method: 'DELETE', headers: { Accept: '*/*' } });
+    return { data: { message: '删除成功' }, status: 200, statusText: 'OK', headers: {}, config: {} };
   } catch (error) {
-    console.error('删除设备失败:', error);
     // Fallback to mock data if API fails
     await delay(400);
     const index = mockEquipments.findIndex(eq => eq.equipmentId === id || eq.equipmentId === parseInt(id));
-    if (index === -1) {
-      throw new Error('设备不存在');
-    }
-    
+    if (index === -1) throw new Error('设备不存在');
     mockEquipments.splice(index, 1);
     return mockResponse({ message: '删除成功' });
   }
@@ -503,44 +424,22 @@ export async function deleteEquipment(id) {
  */
 export async function getEquipmentApplications(params = {}) {
   try {
-    // Build the request body according to the API specification
-    const bodyObj = {
-      pageSize: params.size || 20,
-      pageNo: params.page || 1,
-      array: [],
-      containChildOrg: false
-    };
+    const bodyObj = { pageSize: params.size || 20, pageNo: params.page || 1, array: [], containChildOrg: false };
 
-    // Add filters based on params
-    if (params.status) {
-      bodyObj.array.push({
-        key: "status",
-        option: "eq",
-        value: params.status
-      });
-    }
-
-    if (params.applicantId) {
-      bodyObj.array.push({
-        key: "applicantId",
-        option: "eq", 
-        value: params.applicantId
-      });
-    }
+    if (params.status) bodyObj.array.push({ key: 'status', option: 'eq', value: params.status });
+    if (params.applicantId) bodyObj.array.push({ key: 'applicantId', option: 'eq', value: params.applicantId });
 
     const bodyStr = JSON.stringify(bodyObj);
 
     const res = await artemisRequest('/artemis/api/iotrm/v1/device/application/page', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
+      headers: { 'Content-Type': 'application/json', Accept: '*/*' },
       body: bodyStr
     });
-    const result = res?.data;
+    const result = res?.data || {};
 
-    console.log('设备申请列表原始API响应:', JSON.stringify(result, null, 2));
-    
-    // Transform the response to match the expected format
-    const transformedApplications = (result.data?.list || result.data?.records || []).map(app => ({
+    const list = result.data?.list || result.data?.records || [];
+    const transformedApplications = (list || []).map(app => ({
       applicationId: app.applicationId || app.id,
       equipmentId: app.equipmentId || app.deviceId,
       equipmentName: app.equipmentName || app.deviceName,
@@ -555,53 +454,21 @@ export async function getEquipmentApplications(params = {}) {
       purpose: app.purpose || app.description,
       approveTime: app.approveTime,
       approveRemarks: app.approveRemarks || app.approveRemark,
-      // Keep original fields for compatibility
       ...app
     }));
 
-    return {
-      data: {
-        content: transformedApplications,
-        pageable: {
-          pageNumber: result.data?.pageNo || params.page || 0,
-          pageSize: result.data?.pageSize || params.size || 20,
-          total: result.data?.total || 0
-        }
-      },
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {}
-    };
+    return { data: { content: transformedApplications, pageable: { pageNumber: result.data?.pageNo || params.page || 0, pageSize: result.data?.pageSize || params.size || 20, total: result.data?.total || 0 } }, status: 200, statusText: 'OK', headers: {}, config: {} };
   } catch (error) {
-    console.error('获取设备申请列表失败:', error);
-    // Fallback to mock data if API fails
     await delay(400);
     let filteredApplications = [...mockEquipmentApplications];
-    
-    if (params.status) {
-      filteredApplications = filteredApplications.filter(app => app.status === params.status);
-    }
-    
-    if (params.applicantId) {
-      filteredApplications = filteredApplications.filter(app => app.applicantId === params.applicantId);
-    }
-    
-    // 分页处理
+    if (params.status) filteredApplications = filteredApplications.filter(app => app.status === params.status);
+    if (params.applicantId) filteredApplications = filteredApplications.filter(app => app.applicantId === params.applicantId);
     const page = params.page || 1;
     const size = params.size || 20;
     const start = (page - 1) * size;
     const end = start + size;
     const records = filteredApplications.slice(start, end);
-    
-    return mockResponse({
-      content: records,
-      pageable: {
-        pageNumber: page,
-        pageSize: size,
-        total: filteredApplications.length
-      }
-    });
+    return mockResponse({ content: records, pageable: { pageNumber: page, pageSize: size, total: filteredApplications.length } });
   }
 }
 
@@ -612,15 +479,8 @@ export async function getEquipmentApplications(params = {}) {
  */
 export async function getEquipmentApplicationById(id) {
   try {
-    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' }
-    });
-    const result = res?.data;
-
-    console.log('设备申请详情原始API响应:', JSON.stringify(result, null, 2));
-    
-    // Transform the response to match the expected format
+    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}`, { method: 'GET', headers: { 'Content-Type': 'application/json', Accept: '*/*' } });
+    const result = res?.data || {};
     const app = result.data || result;
     const transformedApplication = {
       applicationId: app.applicationId || app.id,
@@ -637,25 +497,13 @@ export async function getEquipmentApplicationById(id) {
       purpose: app.purpose || app.description,
       approveTime: app.approveTime,
       approveRemarks: app.approveRemarks || app.approveRemark,
-      // Keep original fields for compatibility
       ...app
     };
-
-    return {
-      data: transformedApplication,
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {}
-    };
+    return { data: transformedApplication, status: 200, statusText: 'OK', headers: {}, config: {} };
   } catch (error) {
-    console.error('获取设备申请详情失败:', error);
-    // Fallback to mock data if API fails
     await delay(300);
     const application = mockEquipmentApplications.find(app => app.applicationId === id || app.applicationId === parseInt(id));
-    if (!application) {
-      throw new Error('申请记录不存在');
-    }
+    if (!application) throw new Error('申请记录不存在');
     return mockResponse(application);
   }
 }
@@ -667,67 +515,15 @@ export async function getEquipmentApplicationById(id) {
  */
 export async function applyEquipment(data) {
   try {
-    // Transform data to match API expectations
-    const requestData = {
-      equipmentId: data.equipmentId,
-      equipmentName: data.equipmentName,
-      equipmentNo: data.equipmentNo,
-      applicantId: data.applicantId,
-      applicantName: data.applicantName,
-      applyType: data.applyType,
-      expectedStartTime: data.expectedStartTime,
-      expectedEndTime: data.expectedEndTime,
-      purpose: data.purpose,
-      // Add any other required fields
-      ...data
-    };
-
-    const res = await artemisRequest('/artemis/api/iotrm/v1/device/application', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
-      body: JSON.stringify(requestData)
-    });
-    const result = res?.data;
-
-    console.log('提交设备申请原始API响应:', JSON.stringify(result, null, 2));
-    
-    // Transform the response to match the expected format
+    const requestData = { equipmentId: data.equipmentId, equipmentName: data.equipmentName, equipmentNo: data.equipmentNo, applicantId: data.applicantId, applicantName: data.applicantName, applyType: data.applyType, expectedStartTime: data.expectedStartTime, expectedEndTime: data.expectedEndTime, purpose: data.purpose, ...data };
+    const res = await artemisRequest('/artemis/api/iotrm/v1/device/application', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: '*/*' }, body: JSON.stringify(requestData) });
+    const result = res?.data || {};
     const app = result.data || result;
-    const transformedApplication = {
-      applicationId: app.applicationId || app.id,
-      equipmentId: app.equipmentId || app.deviceId,
-      equipmentName: app.equipmentName || app.deviceName,
-      equipmentNo: app.equipmentNo || app.deviceCode,
-      applicantId: app.applicantId || app.userId,
-      applicantName: app.applicantName || app.userName,
-      applyType: app.applyType || app.type,
-      status: app.status || 'PENDING',
-      applyTime: app.applyTime || app.createTime || new Date().toISOString(),
-      expectedStartTime: app.expectedStartTime || app.startTime,
-      expectedEndTime: app.expectedEndTime || app.endTime,
-      purpose: app.purpose || app.description,
-      // Keep original fields for compatibility
-      ...app
-    };
-
-    return {
-      data: transformedApplication,
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {}
-    };
+    const transformedApplication = { applicationId: app.applicationId || app.id, equipmentId: app.equipmentId || app.deviceId, equipmentName: app.equipmentName || app.deviceName, equipmentNo: app.equipmentNo || app.deviceCode, applicantId: app.applicantId || app.userId, applicantName: app.applicantName || app.userName, applyType: app.applyType || app.type, status: app.status || 'PENDING', applyTime: app.applyTime || app.createTime || new Date().toISOString(), expectedStartTime: app.expectedStartTime || app.startTime, expectedEndTime: app.expectedEndTime || app.endTime, purpose: app.purpose || app.description, ...app };
+    return { data: transformedApplication, status: 200, statusText: 'OK', headers: {}, config: {} };
   } catch (error) {
-    console.error('提交设备申请失败:', error);
-    // Fallback to mock data if API fails
     await delay(800);
-    const newApplication = {
-      ...data,
-      applicationId: mockEquipmentApplications.length + 1,
-      status: 'PENDING',
-      createTime: new Date().toISOString(),
-      updateTime: new Date().toISOString()
-    };
+    const newApplication = { ...data, applicationId: mockEquipmentApplications.length + 1, status: 'PENDING', createTime: new Date().toISOString(), updateTime: new Date().toISOString() };
     mockEquipmentApplications.push(newApplication);
     return mockResponse(newApplication);
   }
@@ -741,66 +537,17 @@ export async function applyEquipment(data) {
  */
 export async function updateApplicationStatus(id, data) {
   try {
-    // Transform data to match API expectations
-    const requestData = {
-      status: data.status,
-      updateTime: new Date().toISOString(),
-      ...data
-    };
-
-    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
-      body: JSON.stringify(requestData)
-    });
-    const result = res?.data;
-
-    console.log('更新申请状态原始API响应:', JSON.stringify(result, null, 2));
-    
-    // Transform the response to match the expected format
+    const requestData = { status: data.status, updateTime: new Date().toISOString(), ...data };
+    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Accept: '*/*' }, body: JSON.stringify(requestData) });
+    const result = res?.data || {};
     const app = result.data || result;
-    const transformedApplication = {
-      applicationId: app.applicationId || app.id,
-      equipmentId: app.equipmentId || app.deviceId,
-      equipmentName: app.equipmentName || app.deviceName,
-      equipmentNo: app.equipmentNo || app.deviceCode,
-      applicantId: app.applicantId || app.userId,
-      applicantName: app.applicantName || app.userName,
-      applyType: app.applyType || app.type,
-      status: app.status,
-      applyTime: app.applyTime || app.createTime,
-      expectedStartTime: app.expectedStartTime || app.startTime,
-      expectedEndTime: app.expectedEndTime || app.endTime,
-      purpose: app.purpose || app.description,
-      approveTime: app.approveTime,
-      approveRemarks: app.approveRemarks || app.approveRemark,
-      updateTime: app.updateTime || new Date().toISOString(),
-      // Keep original fields for compatibility
-      ...app
-    };
-
-    return {
-      data: transformedApplication,
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {}
-    };
+    const transformedApplication = { applicationId: app.applicationId || app.id, equipmentId: app.equipmentId || app.deviceId, equipmentName: app.equipmentName || app.deviceName, equipmentNo: app.equipmentNo || app.deviceCode, applicantId: app.applicantId || app.userId, applicantName: app.applicantName || app.userName, applyType: app.applyType || app.type, status: app.status, applyTime: app.applyTime || app.createTime, expectedStartTime: app.expectedStartTime || app.startTime, expectedEndTime: app.expectedEndTime || app.endTime, purpose: app.purpose || app.description, approveTime: app.approveTime, approveRemarks: app.approveRemarks || app.approveRemark, updateTime: app.updateTime || new Date().toISOString(), ...app };
+    return { data: transformedApplication, status: 200, statusText: 'OK', headers: {}, config: {} };
   } catch (error) {
-    console.error('更新申请状态失败:', error);
-    // Fallback to mock data if API fails
     await delay(600);
     const index = mockEquipmentApplications.findIndex(app => app.applicationId === id || app.applicationId === parseInt(id));
-    if (index === -1) {
-      throw new Error('申请记录不存在');
-    }
-    
-    mockEquipmentApplications[index] = {
-      ...mockEquipmentApplications[index],
-      ...data,
-      updateTime: new Date().toISOString()
-    };
-    
+    if (index === -1) throw new Error('申请记录不存在');
+    mockEquipmentApplications[index] = { ...mockEquipmentApplications[index], ...data, updateTime: new Date().toISOString() };
     return mockResponse(mockEquipmentApplications[index]);
   }
 }
@@ -813,68 +560,17 @@ export async function updateApplicationStatus(id, data) {
  */
 export async function approveEquipmentRequest(id, data) {
   try {
-    // Transform data to match API expectations
-    const requestData = {
-      status: 'APPROVED',
-      approveTime: new Date().toISOString(),
-      approveRemarks: data.approveRemark || data.approveRemarks,
-      ...data
-    };
-
-    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}/approve`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
-      body: JSON.stringify(requestData)
-    });
-    const result = res?.data;
-
-    console.log('审批设备申请原始API响应:', JSON.stringify(result, null, 2));
-    
-    // Transform the response to match the expected format
+    const requestData = { status: 'APPROVED', approveTime: new Date().toISOString(), approveRemarks: data.approveRemark || data.approveRemarks, ...data };
+    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}/approve`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Accept: '*/*' }, body: JSON.stringify(requestData) });
+    const result = res?.data || {};
     const app = result.data || result;
-    const transformedApplication = {
-      applicationId: app.applicationId || app.id,
-      equipmentId: app.equipmentId || app.deviceId,
-      equipmentName: app.equipmentName || app.deviceName,
-      equipmentNo: app.equipmentNo || app.deviceCode,
-      applicantId: app.applicantId || app.userId,
-      applicantName: app.applicantName || app.userName,
-      applyType: app.applyType || app.type,
-      status: app.status || 'APPROVED',
-      applyTime: app.applyTime || app.createTime,
-      expectedStartTime: app.expectedStartTime || app.startTime,
-      expectedEndTime: app.expectedEndTime || app.endTime,
-      purpose: app.purpose || app.description,
-      approveTime: app.approveTime || new Date().toISOString(),
-      approveRemarks: app.approveRemarks || app.approveRemark || data.approveRemark,
-      // Keep original fields for compatibility
-      ...app
-    };
-
-    return {
-      data: transformedApplication,
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {}
-    };
+    const transformedApplication = { applicationId: app.applicationId || app.id, equipmentId: app.equipmentId || app.deviceId, equipmentName: app.equipmentName || app.deviceName, equipmentNo: app.equipmentNo || app.deviceCode, applicantId: app.applicantId || app.userId, applicantName: app.applicantName || app.userName, applyType: app.applyType || app.type, status: app.status || 'APPROVED', applyTime: app.applyTime || app.createTime, expectedStartTime: app.expectedStartTime || app.startTime, expectedEndTime: app.expectedEndTime || app.endTime, purpose: app.purpose || app.description, approveTime: app.approveTime || new Date().toISOString(), approveRemarks: app.approveRemarks || app.approveRemark || data.approveRemark, ...app };
+    return { data: transformedApplication, status: 200, statusText: 'OK', headers: {}, config: {} };
   } catch (error) {
-    console.error('审批设备申请失败:', error);
-    // Fallback to mock data if API fails
     await delay(600);
     const index = mockEquipmentApplications.findIndex(app => app.applicationId === id || app.applicationId === parseInt(id));
-    if (index === -1) {
-      throw new Error('申请记录不存在');
-    }
-    
-    mockEquipmentApplications[index] = {
-      ...mockEquipmentApplications[index],
-      status: 'APPROVED',
-      approveTime: new Date().toISOString(),
-      approveRemark: data.approveRemark || '',
-      updateTime: new Date().toISOString()
-    };
-    
+    if (index === -1) throw new Error('申请记录不存在');
+    mockEquipmentApplications[index] = { ...mockEquipmentApplications[index], status: 'APPROVED', approveTime: new Date().toISOString(), approveRemark: data.approveRemark || '', updateTime: new Date().toISOString() };
     return mockResponse(mockEquipmentApplications[index]);
   }
 }
@@ -887,65 +583,17 @@ export async function approveEquipmentRequest(id, data) {
  */
 export async function cancelEquipmentRequest(id, data) {
   try {
-    // Transform data to match API expectations
-    const requestData = {
-      status: 'CANCELLED',
-      cancelRemark: data.cancelRemark,
-      ...data
-    };
-
-    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}/cancel`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
-      body: JSON.stringify(requestData)
-    });
-    const result = res?.data;
-
-    console.log('取消设备申请原始API响应:', JSON.stringify(result, null, 2));
-    
-    // Transform the response to match the expected format
+    const requestData = { status: 'CANCELLED', cancelRemark: data.cancelRemark, ...data };
+    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}/cancel`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Accept: '*/*' }, body: JSON.stringify(requestData) });
+    const result = res?.data || {};
     const app = result.data || result;
-    const transformedApplication = {
-      applicationId: app.applicationId || app.id,
-      equipmentId: app.equipmentId || app.deviceId,
-      equipmentName: app.equipmentName || app.deviceName,
-      equipmentNo: app.equipmentNo || app.deviceCode,
-      applicantId: app.applicantId || app.userId,
-      applicantName: app.applicantName || app.userName,
-      applyType: app.applyType || app.type,
-      status: app.status || 'CANCELLED',
-      applyTime: app.applyTime || app.createTime,
-      expectedStartTime: app.expectedStartTime || app.startTime,
-      expectedEndTime: app.expectedEndTime || app.endTime,
-      purpose: app.purpose || app.description,
-      cancelRemark: app.cancelRemark || data.cancelRemark,
-      // Keep original fields for compatibility
-      ...app
-    };
-
-    return {
-      data: transformedApplication,
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {}
-    };
+    const transformedApplication = { applicationId: app.applicationId || app.id, equipmentId: app.equipmentId || app.deviceId, equipmentName: app.equipmentName || app.deviceName, equipmentNo: app.equipmentNo || app.deviceCode, applicantId: app.applicantId || app.userId, applicantName: app.applicantName || app.userName, applyType: app.applyType || app.type, status: app.status || 'CANCELLED', applyTime: app.applyTime || app.createTime, expectedStartTime: app.expectedStartTime || app.startTime, expectedEndTime: app.expectedEndTime || app.endTime, purpose: app.purpose || app.description, cancelRemark: app.cancelRemark || data.cancelRemark, ...app };
+    return { data: transformedApplication, status: 200, statusText: 'OK', headers: {}, config: {} };
   } catch (error) {
-    console.error('取消设备申请失败:', error);
-    // Fallback to mock data if API fails
     await delay(400);
     const index = mockEquipmentApplications.findIndex(app => app.applicationId === id || app.applicationId === parseInt(id));
-    if (index === -1) {
-      throw new Error('申请记录不存在');
-    }
-    
-    mockEquipmentApplications[index] = {
-      ...mockEquipmentApplications[index],
-      status: 'CANCELLED',
-      cancelRemark: data.cancelRemark || '',
-      updateTime: new Date().toISOString()
-    };
-    
+    if (index === -1) throw new Error('申请记录不存在');
+    mockEquipmentApplications[index] = { ...mockEquipmentApplications[index], status: 'CANCELLED', cancelRemark: data.cancelRemark || '', updateTime: new Date().toISOString() };
     return mockResponse(mockEquipmentApplications[index]);
   }
 }

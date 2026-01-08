@@ -251,20 +251,9 @@ export async function getQuickActions() {
 export async function getWeatherInfo(city = null) {
   try {
     const queryParams = city ? `?city=${encodeURIComponent(city)}` : '';
-    const response = await fetch(`/api/weather/v1/current${queryParams}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      }
-    });
+    const res = await artemisRequest(`/artemis/api/weather/v1/current${queryParams}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
+    const result = res?.data || res;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('获取天气信息原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {

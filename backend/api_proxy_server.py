@@ -146,6 +146,114 @@ APP_KEY = "21345372"
 APP_SECRET = "ZDiCR75CVHCpfravKC0o"
 
 
+@app.route('/login', methods=['POST'])
+def login():
+    """Login endpoint: query internal staff API by phone, then validate password."""
+    try:
+        payload = request.get_json(silent=True) or {}
+        phone = payload.get('phone')
+        password = payload.get('password')
+        if not phone or not password:
+            return Response(json.dumps({"error": "缺少 phone 或 password"}, ensure_ascii=False), status=400, mimetype='application/json')
+
+        # Build internal staff search request
+        staff_path = 'artemis/api/v1/staff'
+        target_url = urllib.parse.urljoin(TARGET_BASE_URL, staff_path)
+        internal_body = json.dumps({"phone": phone, "pageSize": 20, "pageNum": 1}, ensure_ascii=False)
+
+        # Prepare headers for signing
+        headers = {'Accept': 'application/json', 'Content-Type': 'application/json', 'appKey': APP_KEY}
+        signature_headers = ApiSigner.sign_request('POST', target_url, internal_body, headers, APP_KEY, APP_SECRET)
+        request_headers = {**headers, **signature_headers}
+
+        print(f"[DEBUG][LOGIN] Querying staff API {target_url} with phone={phone}")
+        print(f"[DEBUG][LOGIN] Request headers: {request_headers}")
+        print(f"[DEBUG][LOGIN] Request body: {internal_body}")
+
+        resp = requests.post(target_url, headers=request_headers, data=internal_body, verify=False, timeout=30)
+
+        print(f"[DEBUG][LOGIN] Staff API response status: {resp.status_code}")
+        try:
+            resp_json = resp.json()
+            print(f"[DEBUG][LOGIN] Staff API response json: {json.dumps(resp_json)[:1000]}")
+        except Exception:
+            print(f"[ERROR][LOGIN] Failed to parse staff API response as JSON: {resp.text}")
+            return Response(json.dumps({"error": "用户不存在"}, ensure_ascii=False), status=404, mimetype='application/json')
+
+        # Try to extract user list from expected response shape first
+        users = None
+        if isinstance(resp_json, dict):
+            # Expected format: {"code":"0","msg":"SUCCESS","data":{"pageNo":1,...,"list":[{...}]}}
+            data_obj = resp_json.get('data') if isinstance(resp_json.get('data'), dict) else None
+            if data_obj and isinstance(data_obj.get('list'), list):
+                users = data_obj.get('list')
+            else:
+                # Fallback to previous common response shapes
+                for key in ('data', 'result', 'records', 'list', 'items'):
+                    if key in resp_json and resp_json[key]:
+                        users = resp_json[key]
+                        break
+                if users is None:
+                    # if any value is a list, use the first list
+                    for v in resp_json.values():
+                        if isinstance(v, list) and v:
+                            users = v
+                            break
+        elif isinstance(resp_json, list):
+            users = resp_json
+
+        if not users:
+            return Response(json.dumps({"error": "用户不存在"}, ensure_ascii=False), status=404, mimetype='application/json')
+
+        # normalize to list
+        if isinstance(users, dict):
+            users = [users]
+
+        if len(users) == 0:
+            return Response(json.dumps({"error": "用户不存在"}, ensure_ascii=False), status=404, mimetype='application/json')
+
+        # Find user by phone in list
+        matching_user = None
+        for u in users:
+            if not isinstance(u, dict):
+                continue
+            u_phone = u.get('phone')
+            if u_phone is None:
+                continue
+            if str(u_phone) == str(phone):
+                matching_user = u
+                break
+
+        if matching_user is None:
+            return Response(json.dumps({"error": "用户不存在"}, ensure_ascii=False), status=404, mimetype='application/json')
+
+        user = matching_user
+
+        # Try several common password field names
+        stored_pwd = None
+        if isinstance(user, dict):
+            for key in ('password', 'passwd', 'pwd', 'passWord'):
+                if key in user:
+                    stored_pwd = user[key]
+                    break
+
+        if stored_pwd is None:
+            # Cannot validate password if no field available
+            return Response(json.dumps({"error": "无法验证用户密码"}, ensure_ascii=False), status=502, mimetype='application/json')
+
+        # Compare passwords (simple equality as requested)
+        if str(password) == str(stored_pwd):
+            return Response(json.dumps({"message": "登录成功", "user": user}, ensure_ascii=False), status=200, mimetype='application/json')
+        else:
+            return Response(json.dumps({"error": "登录失败"}, ensure_ascii=False), status=401, mimetype='application/json')
+
+    except Exception as e:
+        import traceback
+        print(f"[ERROR][LOGIN] Exception: {e}")
+        print(traceback.format_exc())
+        return Response(json.dumps({"error": "Proxy login error", "message": str(e)}), status=500, mimetype='application/json')
+
+
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'])
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'])
 def proxy(path):
@@ -154,8 +262,18 @@ def proxy(path):
         print(f"[DEBUG] Received {request.method} {request.url}")
         print(f"[DEBUG] Request headers: {dict(request.headers)}")
 
+        # If the incoming path ends with 'login' (e.g. '/login' or '/artemis/login'), handle locally
+        if path and path.strip('/').lower().endswith('login'):
+            print(f"[DEBUG] Incoming path '{path}' ends with 'login' - handling with local login()")
+            # Call the login handler directly and return its Response
+            return login()
+
         # Construct target URL
-        target_url = urllib.parse.urljoin(TARGET_BASE_URL, path)
+        # If the incoming path is 'login' or '/login', forward to internal '/login' path
+        if path is not None and path.strip('/') == 'login':
+            target_url = urllib.parse.urljoin(TARGET_BASE_URL, 'login')
+        else:
+            target_url = urllib.parse.urljoin(TARGET_BASE_URL, path)
 
         # Add query parameters if any
         if request.query_string:

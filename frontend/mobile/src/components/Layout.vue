@@ -40,7 +40,7 @@ const navItems = computed(() => {
     { title: '车辆', icon: 'logistics', path: '/vehicles' },
     { title: '预约', icon: 'calendar-o', path: '/bookings' },
     { title: '测试', icon: 'medal-o', path: '/test-tasks' },
-    { title: '合同', icon: 'description', path: '/contracts' },
+    { title: '合同', icon: 'description-o', path: '/contracts' },
   ];
   
   // 管理员显示人员管理菜单
@@ -49,7 +49,7 @@ const navItems = computed(() => {
   }
   
   // 添加我的页面
-  items.push({ title: '我的', icon: 'contact', path: '/profile' });
+  items.push({ title: '我的', icon: 'contact-o', path: '/profile' });
   
   return items;
 });

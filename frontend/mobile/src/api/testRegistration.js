@@ -20,7 +20,7 @@ const mockResponse = (data) => ({
   config: {}
 });
 
-import { artemisRequest } from './request';
+import { artemisRequest, service } from './request';
 
 /**
  * 获取用户的测试报名列表
@@ -67,9 +67,9 @@ export async function getUserTestRegistrations(userId, params = {}) {
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const res = await artemisRequest(`/apiv1/test-registration/user/${userId}?${queryParams}`, { method: 'GET' });
+    // Route this call through the local /artemis proxy so server-side signing is used when required
+    const res = await artemisRequest(`/artemis/api/v1/test-registration/user/${userId}?${queryParams}`, { method: 'GET' });
     const result = res?.data;
-    console.log('获取用户测试报名列表原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format
     const registrations = (result.data?.content || result.data?.registrations || result.data || []).map(reg => ({
@@ -146,24 +146,11 @@ export async function getTestRegistrationById(registrationId) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-registration/${registrationId}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('获取测试报名详情原始API响应:', JSON.stringify(result, null, 2));
+    const res = await artemisRequest(`/artemis/api/v1/test-registration/${registrationId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const result = res?.data;
 
     // Transform response
-    const reg = result.data;
+    const reg = result?.data || result;
     const transformedReg = {
       registrationId: reg.id || reg.registrationId,
       userId: reg.userId,
@@ -218,25 +205,11 @@ export async function createTestRegistration(registrationData) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-registration`;
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(registrationData)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('创建测试报名原始API响应:', JSON.stringify(result, null, 2));
+    const res = await artemisRequest('/artemis/api/v1/test-registration', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(registrationData) });
+    const result = res?.data;
 
     // Transform response
-    const reg = result.data;
+    const reg = result?.data || result;
     const transformedReg = {
       registrationId: reg.id || reg.registrationId,
       userId: reg.userId,
@@ -296,25 +269,11 @@ export async function updateTestRegistration(registrationId, updateData) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-registration/${registrationId}`;
-
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(updateData)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('更新测试报名原始API响应:', JSON.stringify(result, null, 2));
+    const res = await artemisRequest(`/artemis/api/v1/test-registration/${registrationId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updateData) });
+    const result = res?.data;
 
     // Transform response
-    const reg = result.data;
+    const reg = result?.data || result;
     const transformedReg = {
       registrationId: reg.id || reg.registrationId,
       userId: reg.userId,
@@ -380,22 +339,7 @@ export async function cancelTestRegistration(registrationId, reason) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-registration/${registrationId}/cancel`;
-
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ reason })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('取消测试报名原始API响应:', JSON.stringify(result, null, 2));
+    await artemisRequest(`/artemis/api/v1/test-registration/${registrationId}/cancel`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) });
 
     return mockResponse({ success: true });
   } catch (error) {
@@ -451,6 +395,7 @@ export async function getTestRegistrationStats(userId) {
     stats.latestTest = latestCompleted ? {
       taskName: latestCompleted.taskName,
       completedTime: latestCompleted.completedTime,
+      completedTime: latestCompleted.completedTime,
       testResult: latestCompleted.testResult,
       testScore: latestCompleted.testScore
     } : null;
@@ -459,24 +404,11 @@ export async function getTestRegistrationStats(userId) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-registration/stats/${userId}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('获取测试报名统计原始API响应:', JSON.stringify(result, null, 2));
+    const res = await artemisRequest(`/artemis/api/v1/test-registration/stats/${userId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const result = res?.data;
 
     // Transform response
-    const stats = result.data || {
+    const stats = result?.data || result || {
       total: 0,
       pending: 0,
       approved: 0,
@@ -511,7 +443,6 @@ export async function getTestRegistrationStats(userId) {
     // 最近一次测试
     const latestCompleted = userRegistrations
       .filter(reg => reg.status === 'COMPLETED')
-      .sort((a, b) => new Date(b.completedTime) - new Date(a.completedTime))[0];
     
     stats.latestTest = latestCompleted ? {
       taskName: latestCompleted.taskName,
@@ -565,28 +496,17 @@ export async function getAll(params = {}) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-registration/all`;
+    const url = `/artemis/api/v1/test-registration/all`;
     const queryParams = new URLSearchParams();
     
     if (params.status && params.status !== 'ALL') queryParams.append('status', params.status);
     if (params.taskType) queryParams.append('taskType', params.taskType);
 
-    const response = await fetch(`${url}?${queryParams}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('获取所有测试报名原始API响应:', JSON.stringify(result, null, 2));
+    const res = await artemisRequest(`${url}?${queryParams}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const result = res?.data;
 
     // Transform response
-    const registrations = (result.data || []).map(reg => ({
+    const registrations = (result?.data || result || []).map(reg => ({
       registrationId: reg.id || reg.registrationId,
       userId: reg.userId,
       taskId: reg.taskId,
@@ -643,24 +563,11 @@ export async function getById(id) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-registration/${id}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('根据ID获取测试报名原始API响应:', JSON.stringify(result, null, 2));
+    const res = await artemisRequest(`/artemis/api/v1/test-registration/${id}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const result = res?.data;
 
     // Transform response
-    const reg = result.data;
+    const reg = result?.data || result;
     const transformedReg = {
       registrationId: reg.id || reg.registrationId,
       userId: reg.userId,
@@ -715,25 +622,11 @@ export async function create(data) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-registration`;
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('创建测试报名原始API响应:', JSON.stringify(result, null, 2));
+    const res = await artemisRequest('/artemis/api/v1/test-registration', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const result = res?.data;
 
     // Transform response
-    const reg = result.data;
+    const reg = result?.data || result;
     const transformedReg = {
       id: reg.id || Date.now(),
       ...data,
@@ -787,25 +680,11 @@ export async function update(id, data) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-registration/${id}`;
-
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('更新测试报名原始API响应:', JSON.stringify(result, null, 2));
+    const res = await artemisRequest(`/artemis/api/v1/test-registration/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const result = res?.data;
 
     // Transform response
-    const reg = result.data;
+    const reg = result?.data || result;
     const transformedReg = {
       id: reg.id || parseInt(id),
       ...mockMyTestRegistrations.find(r => r.id === parseInt(id)),
@@ -853,21 +732,8 @@ export async function deleteTestRegistration(id) {
   }
 
   try {
-    const url = `http://${test_management_server}:${test_management_port}/api/test-registration/${id}`;
-
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('删除测试报名原始API响应:', JSON.stringify(result, null, 2));
+    const res = await artemisRequest(`/artemis/api/v1/test-registration/${id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } });
+    const result = res?.data;
 
     return { success: true, message: '测试报名已删除' };
   } catch (error) {

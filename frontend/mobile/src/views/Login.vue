@@ -18,9 +18,9 @@
           登录
         </van-button>
 
-        <div class="register-link">
+        <div class="register-link" v-if="false">
           <span>还没有账号？请联系管理员开通账号</span>
-          <!-- <router-link to="/register">立即注册</router-link> -->
+          <router-link to="/register">立即注册</router-link>
         </div>
       </div>
     </van-form>
@@ -138,7 +138,14 @@ const onSubmit = async () => {
     await authStore.login(phoneNumber.value, password.value);
     showNotify({ type: 'success', message: '登录成功' });
   } catch (error) {
-    showNotify({ type: 'danger', message: error || '登录失败，请检查手机号和密码' });
+    // Ensure we pass a string message to showNotify
+    let msg = '';
+    if (!error) msg = '登录失败，请检查手机号和密码';
+    else if (typeof error === 'string') msg = error;
+    else if (error.message) msg = error.message;
+    else msg = String(error);
+
+    showNotify({ type: 'danger', message: msg });
   } finally {
     loading.value = false;
   }

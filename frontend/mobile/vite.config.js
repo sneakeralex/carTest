@@ -53,32 +53,13 @@ export default defineConfig({
       credentials: true
     },
     proxy: {
-      '/api': {
+      // Only proxy /artemis to the upstream Artemis host during development
+      '/artemis': {
         target: 'https://cartest.douwifi.cn',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-        headers: {
-          'Accept-Encoding': 'identity'
-        }
-      },
-      '/v1': {
-        target: 'https://cartest.douwifi.cn',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/v1/, 'artemis/v1'),
-        headers: {
-          'Accept-Encoding': 'identity',
-          'Connection': 'keep-alive'
-        },
-        timeout: 30000,
-        proxyTimeout: 30000
-      },
-      '/apiv1': {
-        target: 'https://cartest.douwifi.cn',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/apiv1/, 'artemis/api/v1'),
+        // keep the /artemis prefix when forwarding
+        rewrite: (path) => path.replace(/^\/artemis/, '/artemis'),
         headers: {
           'Accept-Encoding': 'identity',
           'Connection': 'keep-alive'

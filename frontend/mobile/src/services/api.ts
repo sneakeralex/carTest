@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: '/api', // 使用相对路径，让 Vite 代理处理
+  baseURL: '/artemis', // Route axios same-origin calls through the /artemis dev proxy
   timeout: 10000, // 请求超时时间
 });
 

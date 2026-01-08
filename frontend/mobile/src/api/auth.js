@@ -1,6 +1,7 @@
 import { mockUsers, mockAuth, DEFAULT_CREDENTIALS } from '../mock/auth.js';
 import CryptoJS from 'crypto-js';
-import { artemisRequest } from './request';
+import { artemisRequest, service } from './request';
+import { getStaffList } from './staff.js';
 import { getUserInfo as localGetUserInfo } from '../utils/auth.js';
 
 // 模拟API响应延迟
@@ -107,46 +108,34 @@ export async function login(phoneNumber, password) {
     throw new Error('请输入正确的手机号');
   }
 
-  // 验证密码规则：默认密码为手机号后四位
-  const expectedPassword = phoneNumber.slice(-4);
-  if (password !== expectedPassword) {
-    throw new Error('密码错误，默认密码为手机号后四位');
-  }
+  const payload = { phone: phoneNumber, password };
 
   try {
-    // 调用staff API验证手机号是否存在
-    const { getStaffList } = await import('../api/staff.js');
-    const staffResponse = await getStaffList();
-    const staffList = staffResponse.data || [];
-
-    // 查找匹配的员工
-    const matchedStaff = staffList.find(staff => staff.phone === phoneNumber);
-
-    if (!matchedStaff) {
-      throw new Error('该手机号未注册，请联系管理员');
-    }
-
-    // 登录成功，返回用户信息
-    const userInfo = {
-      userId: matchedStaff.userId || matchedStaff.id,
-      username: matchedStaff.name,
-      phone: matchedStaff.phone,
-      department: matchedStaff.department,
-      position: matchedStaff.position,
-      type: matchedStaff.type,
-      ...matchedStaff // 保留其他字段
-    };
-
-    const token = 'staff-jwt-token-' + Date.now() + '-' + matchedStaff.userId;
-
-    return mockResponse({
-      token: token,
-      user: userInfo
+    // Use artemisRequest to route through local proxy and include JSON content-type
+    const res = await artemisRequest('/artemis/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
 
-  } catch (error) {
-    console.error('登录失败:', error);
-    throw error;
+    const body = res?.data || res;
+    if (!body) throw new Error('空响应');
+    if (body.error) throw new Error(body.error);
+    // If upstream doesn't return a user, treat as credential error
+    if (!body.user) throw new Error('用户名或密码错误，请再试');
+
+    return { data: body, status: 200 };
+  } catch (err) {
+    // Map common upstream 404/Not Found or 401 Unauthorized to credential error so UI shows friendly message
+    const status = err?.meta?.status || err?.status || null;
+    const msg = (err && err.message) ? String(err.message) : '';
+
+    if (status === 404 || status === 401 || /401|404|Unauthorized|Not Found|未找到|找不到|未授权/.test(msg)) {
+      throw new Error('用户名或密码错误，请再试');
+    }
+
+    // For other errors, propagate a readable message
+    throw new Error(msg || '登录失败，请重试');
   }
 }
 
@@ -156,38 +145,71 @@ export async function login(phoneNumber, password) {
  * @returns {Promise} - 返回Promise对象
  */
 export async function register(userData) {
-  const salt = generateUUID();
-  const password = userData.password || 'Abc123++';
-  const encryptedPassword = encryptPassword(password, salt);
-  
-  const userObject = {
-    username: userData.username,
-    groupId: 'd1',
-    groupAuth: '0',
-    remark: '备注',
-    expireTime: '2024-12-15T00:00:05.000+08:00',
-    password: encryptedPassword,
-    salt: salt,
-    extendMap: {
-      id: generateUUID(),
-      principalId: generateUUID(),
-      principalType: 'USER',
-      extFieldKey: 'department',
-      extFieldValue: 'huodong',
-      tenantIndexCode: '111'
-    }
+  // Prepare payload for local staff-save API
+  const payload = {
+    enterpriseId: userData.enterpriseId || 33,
+    staffName: userData.username || userData.staffName || '',
+    gender: userData.gender || '0',
+    phone: userData.phone || '',
+    identityType: userData.identityType || '02',
+    address: userData.address || '',
+    department: userData.department || userData.extendMap?.department || '未指定',
+    password: userData.password || 'Abc123++',
+    remark: userData.remark || ''
   };
-  
-  const res = await artemisRequest('/artemis/api/manage/auth/v2/manage/userService/saveTripartiteUsers', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify([userObject])
-  });
-  const result = res?.data;
-  if (result.code !== '0') {
-    throw new Error(result.msg || '注册失败');
+
+  // If this is an update operation and an id is provided, include it; for new registrations do not send id
+  if (userData && (userData.id !== undefined && userData.id !== null && userData.id !== '')) {
+    payload.id = userData.id;
   }
-  return result;
+
+  // Don't log secrets in production. Keep a minimal debug-safe trace during development.
+  try {
+    // only log length to avoid accidental secret exposure
+    // console.debug && console.debug('register payload length:', JSON.stringify(payload || {}).length);
+  } catch (e) {
+    // ignore
+  }
+
+  try {
+    // Route both duplicate-check and save through the client-side artemisRequest helper
+    // so the actual AK/SK signing happens on the server-side proxy.
+    const checkBody = { phone: payload.phone, pageSize: 10000, pageNum: 1 };
+    const checkResp = await artemisRequest('/artemis/api/v1/staff', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(checkBody)
+    });
+
+    const checkResult = checkResp?.data || checkResp;
+    if (!checkResult) throw new Error('检验手机号时收到空响应');
+    const list = Array.isArray(checkResult.data) ? checkResult.data : (checkResult.data?.list || checkResult.list || []);
+    if (Array.isArray(list) && list.some(s => (s.phone || '').toString() === (payload.phone || '').toString())) {
+      throw new Error('手机号已存在，请勿重复注册');
+    }
+
+    const saveResp = await artemisRequest('/artemis/api/v1/saveStaff', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = saveResp?.data || saveResp;
+    if (!result) throw new Error('空响应');
+    if (result.code !== '0' && result.code !== 0) {
+      throw new Error(result.msg || '注册失败');
+    }
+
+    return result;
+  } catch (error) {
+    // If this is a known duplicate phone error, rethrow so UI shows message
+    console.error('注册到后端失败或校验失败:', error);
+    if (error && error.message && error.message.includes('手机号已存在')) {
+      throw error;
+    }
+    // For any other failure, do not return a success response. Propagate error to caller/UI.
+    throw new Error(error?.message || '注册失败');
+  }
 }
 
 /**
@@ -309,14 +331,10 @@ export async function updateUserInfo(userData) {
  */
 export async function getAccessToken(userCode = 'admin', service = '', language = 'zh_CN') {
   try {
-    const response = await fetch(`/v1/tgt/login?userCode=${encodeURIComponent(userCode)}&service=${encodeURIComponent(service)}&language=${encodeURIComponent(language)}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const query = `userCode=${encodeURIComponent(userCode)}&service=${encodeURIComponent(service)}&language=${encodeURIComponent(language)}`;
+    const res = await artemisRequest(`/artemis/v1/tgt/login?${query}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const result = res?.data || res;
 
-    const result = await response.json();
     if (result.code !== 200 && result.code !== '0') {
       throw new Error(result.msg || '获取token失败');
     }
