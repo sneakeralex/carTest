@@ -37,6 +37,9 @@
         <van-tab title="设备" name="equipment">
           <van-badge :content="equipmentNotifications.length" v-if="equipmentNotifications.length > 0" />
         </van-tab>
+        <van-tab title="告警" name="alert">
+          <van-badge :content="alertNotifications.length" v-if="alertNotifications.length > 0" />
+        </van-tab>
       </van-tabs>
     </div>
 
@@ -190,6 +193,10 @@ const equipmentNotifications = computed(() => {
   return allNotifications.value.filter(n => n.category === 'equipment');
 });
 
+const alertNotifications = computed(() => {
+  return allNotifications.value.filter(n => n.category === 'alert');
+});
+
 const displayNotifications = computed(() => {
   switch (activeTab.value) {
     case 'unread':
@@ -200,6 +207,8 @@ const displayNotifications = computed(() => {
       return siteNotifications.value;
     case 'equipment':
       return equipmentNotifications.value;
+    case 'alert':
+      return alertNotifications.value;
     default:
       return allNotifications.value;
   }
@@ -214,7 +223,33 @@ onMounted(async () => {
 const loadNotifications = async () => {
   try {
     await dashboardStore.initializeDashboard();
-    allNotifications.value = dashboardStore.announcements;
+    
+    // 加载告警信息
+    try {
+      await dashboardStore.fetchAlerts();
+      // 将告警信息添加到通知列表中
+      const alerts = dashboardStore.alerts;
+      if (alerts && alerts.length > 0) {
+        alerts.forEach(alert => {
+          // 确保告警有唯一ID
+          if (!alert.id) {
+            alert.id = `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          }
+          // 确保告警有read属性
+          if (alert.read === undefined) {
+            alert.read = false;
+          }
+        });
+      }
+    } catch (alertError) {
+      console.error('加载告警信息失败:', alertError);
+      // 告警加载失败不影响通知加载
+    }
+    
+    // 合并通知和告警
+    const notifications = dashboardStore.announcements || [];
+    const alerts = dashboardStore.alerts || [];
+    allNotifications.value = [...notifications, ...alerts];
     finished.value = true;
   } catch (error) {
     console.error('加载通知失败:', error);
@@ -260,7 +295,8 @@ const getNotificationIcon = (type) => {
     'SITE_NOTIFICATION': 'location-o',
     'EQUIPMENT_REMINDER': 'tool-o',
     'APPOINTMENT': 'calendar-o',
-    'TEST': 'experiment'
+    'TEST': 'experiment',
+    'ALERT': 'warning-o'
   };
   return iconMap[type] || 'bell';
 };
@@ -303,7 +339,8 @@ const getCategoryType = (category) => {
   const typeMap = {
     'approval': 'warning',
     'site': 'primary',
-    'equipment': 'success'
+    'equipment': 'success',
+    'alert': 'danger'
   };
   return typeMap[category] || 'default';
 };
@@ -313,7 +350,8 @@ const getCategoryText = (category) => {
   const textMap = {
     'approval': '审批',
     'site': '场地',
-    'equipment': '设备'
+    'equipment': '设备',
+    'alert': '告警'
   };
   return textMap[category] || category;
 };

@@ -64,6 +64,7 @@ function updateActiveTabFromRoute() {
     if (item.path === '/bookings') return currentPath.startsWith('/booking') || currentPath.startsWith('/bookings');
     return currentPath.startsWith(item.path);
   });
+  // 即使找不到匹配的路径，也保持activeTab为0（首页），确保底部导航栏始终显示
   activeTab.value = index >= 0 ? index : 0;
 }
 
@@ -74,9 +75,8 @@ watch(() => route.path, () => { updateActiveTabFromRoute(); });
 // 处理标签页切换
 const onTabChange = (index) => {
   const path = navItems.value[index].path;
-  if (route.path !== path) {
-    router.push(path);
-  }
+  // 无论当前路径是什么，点击底部导航栏的项目都应该跳转到对应的路径
+  router.push(path);
   // ensure activeTab stays in sync
   activeTab.value = index;
 };

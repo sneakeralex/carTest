@@ -76,15 +76,27 @@
                   <van-icon name="passed" />
                   <span>及格: {{ task.passScore }}分</span>
                 </div>
+                <div class="info-row">
+                  <van-icon name="status" />
+                  <span>状态: {{ getStatusText(task.status) }}</span>
+                </div>
               </div>
               <div class="action-buttons">
                 <van-button 
                   size="small" 
                   type="primary" 
                   @click.stop="registerTask(task)"
-                  :disabled="task.status !== 'ACTIVE'"
+                  :disabled="task.status !== 'APPROVED'"
                 >
-                  {{ task.status === 'ACTIVE' ? '立即报名' : '暂停报名' }}
+                  {{ task.status === 'APPROVED' ? '立即报名' : '不可报名' }}
+                </van-button>
+                <van-button 
+                  size="small" 
+                  type="danger" 
+                  @click.stop="deleteTask(task)"
+                  style="margin-left: 8px;"
+                >
+                  删除
                 </van-button>
               </div>
             </template>
@@ -282,6 +294,41 @@ const getDifficultyText = (difficulty) => {
     'HARD': '困难'
   };
   return textMap[difficulty] || difficulty;
+};
+
+// 获取状态文本
+const getStatusText = (status) => {
+  const textMap = {
+    'DRAFT': '草稿',
+    'PENDING': '待审核',
+    'APPROVED': '已审核',
+    'IN_PROGRESS': '进行中',
+    'COMPLETED': '已完成',
+    'CANCELLED': '已取消'
+  };
+  return textMap[status] || status;
+};
+
+// 删除任务
+const deleteTask = async (task) => {
+  try {
+    await showConfirmDialog({
+      title: '确认删除',
+      message: `确定要删除测试任务"${task.taskName}"吗？`,
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    });
+    
+    await testTaskStore.deleteTestTask(task.id || task.taskId);
+    showToast('删除成功');
+    // 刷新列表
+    fetchTestTasks(true);
+  } catch (error) {
+    console.error('删除任务失败:', error);
+    if (error !== 'cancel') {
+      showToast('删除失败，请稍后重试');
+    }
+  }
 };
 
 // 跳转到测试任务详情

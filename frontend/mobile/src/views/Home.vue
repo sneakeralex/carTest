@@ -46,17 +46,17 @@
         </template>
       </van-skeleton>
       
-      <template v-else-if="dashboardStats">
+      <template v-else>
         <van-row gutter="12">
           <van-col span="12">
             <div class="stat-card">
-              <div class="stat-number">{{ dashboardStats?.totalBookings || 0 }}</div>
+              <div class="stat-number">{{ dashboardStats?.totalBookings || systemStats?.totalBookings || 0 }}</div>
               <div class="stat-label">总预约数</div>
             </div>
           </van-col>
           <van-col span="12">
             <div class="stat-card">
-              <div class="stat-number">{{ dashboardStats?.completedTests || 0 }}</div>
+              <div class="stat-number">{{ dashboardStats?.completedTests || testTaskStats?.completed || 0 }}</div>
               <div class="stat-label">已完成测试</div>
             </div>
           </van-col>
@@ -65,7 +65,7 @@
         <van-row gutter="12" style="margin-top: 12px;">
           <van-col span="12">
             <div class="stat-card">
-              <div class="stat-number">{{ dashboardStats?.pendingBookings || 0 }}</div>
+              <div class="stat-number">{{ dashboardStats?.pendingBookings || bookingStats?.pending || 0 }}</div>
               <div class="stat-label">待确认预约</div>
             </div>
           </van-col>
@@ -76,9 +76,36 @@
             </div>
           </van-col>
         </van-row>
-      </template>
-      <template v-else>
-        <van-empty description="暂无数据" />
+
+        <van-row gutter="12" style="margin-top: 12px;">
+          <van-col span="12">
+            <div class="stat-card">
+              <div class="stat-number">{{ equipmentStats?.total || systemStats?.totalEquipment || 0 }}</div>
+              <div class="stat-label">设备总数</div>
+            </div>
+          </van-col>
+          <van-col span="12">
+            <div class="stat-card">
+              <div class="stat-number">{{ equipmentStats?.available || 0 }}</div>
+              <div class="stat-label">可用设备</div>
+            </div>
+          </van-col>
+        </van-row>
+
+        <van-row gutter="12" style="margin-top: 12px;">
+          <van-col span="12">
+            <div class="stat-card">
+              <div class="stat-number">{{ staffStats?.total || systemStats?.totalStaff || 0 }}</div>
+              <div class="stat-label">人员总数</div>
+            </div>
+          </van-col>
+          <van-col span="12">
+            <div class="stat-card">
+              <div class="stat-number">{{ alertStats?.active || systemStats?.activeAlerts || 0 }}</div>
+              <div class="stat-label">活跃告警</div>
+            </div>
+          </van-col>
+        </van-row>
       </template>
     </div>
 
@@ -237,47 +264,90 @@
     <div class="section-title">场地排期日历</div>
     <div class="calendar-section">
       <van-cell-group inset>
-        <!-- 日期选择 -->
-        <van-cell 
-          title="查看日期" 
-          :value="formatSelectedDate(selectedCalendarDate)"
-          is-link 
-          @click="showCalendar = true"
-        />
-        
-        <!-- 选中日期的场地安排 -->
-        <div v-if="selectedCalendarDate && dailySchedule.length > 0" class="daily-schedule">
-          <div class="schedule-header">
-            <span>{{ formatSelectedDate(selectedCalendarDate) }} 场地安排</span>
+        <!-- 月历展示 -->
+        <div class="month-calendar">
+          <div class="calendar-header">
+            <van-button @click="changeMonth(-1)" size="small">上个月</van-button>
+            <h3>{{ currentMonthText }}</h3>
+            <van-button @click="changeMonth(1)" size="small">下个月</van-button>
           </div>
-          <div class="schedule-list">
-            <div 
-              v-for="schedule in dailySchedule" 
-              :key="schedule.id"
-              class="schedule-item"
-              @click="goToTestSiteDetail(schedule.testSiteId)"
-            >
-              <div class="schedule-time">{{ schedule.timeSlot }}</div>
-              <div class="schedule-info">
-                <div class="site-name">{{ schedule.testSiteName }}</div>
-                <div class="task-name">{{ schedule.taskName }}</div>
-                <van-tag :type="getScheduleStatusType(schedule.status)" size="small">
-                  {{ getScheduleStatusText(schedule.status) }}
-                </van-tag>
-              </div>
-              <div class="schedule-action">
-                <van-icon name="arrow" />
+          <div class="calendar-body">
+            <!-- 星期标题 -->
+            <div class="weekdays">
+              <div class="weekday">日</div>
+              <div class="weekday">一</div>
+              <div class="weekday">二</div>
+              <div class="weekday">三</div>
+              <div class="weekday">四</div>
+              <div class="weekday">五</div>
+              <div class="weekday">六</div>
+            </div>
+            <!-- 日期格子 -->
+            <div class="days">
+              <div 
+                v-for="day in calendarDays" 
+                :key="day.date"
+                class="day"
+                :class="{
+                  'empty': !day.isCurrentMonth,
+                  'today': day.isToday,
+                  'selected': day.isSelected,
+                  'has-schedule': day.hasSchedule,
+                  'fully-booked': day.isFullyBooked
+                }"
+                @click="selectCalendarDay(day)"
+              >
+                <div class="day-number">{{ day.day }}</div>
+                <div v-if="day.hasSchedule" class="day-indicator"></div>
               </div>
             </div>
           </div>
         </div>
         
-        <!-- 暂无安排 -->
-        <van-empty 
-          v-else-if="selectedCalendarDate && dailySchedule.length === 0" 
-          description="当天暂无场地安排" 
-          image="search"
-        />
+        <!-- 弹出卡片展示排期情况 -->
+        <van-popup
+          v-model:show="showSchedulePopup"
+          position="bottom"
+          round
+          :style="{ height: '70%' }"
+        >
+          <div class="schedule-popup">
+            <div class="popup-header">
+              <h3>{{ formatSelectedDate(selectedCalendarDate) }} 场地安排</h3>
+              <van-icon name="cross" @click="closeSchedulePopup" class="close-icon" />
+            </div>
+            
+            <div v-if="dailySchedule.length > 0" class="popup-content">
+              <div class="schedule-list">
+                <div 
+                  v-for="schedule in dailySchedule" 
+                  :key="schedule.id"
+                  class="schedule-item"
+                  @click="goToTestSiteDetail(schedule.testSiteId)"
+                >
+                  <div class="schedule-time">{{ schedule.timeSlot }}</div>
+                  <div class="schedule-info">
+                    <div class="site-name">{{ schedule.testSiteName }}</div>
+                    <div class="task-name">{{ schedule.taskName }}</div>
+                    <van-tag :type="getScheduleStatusType(schedule.status)" size="small">
+                      {{ getScheduleStatusText(schedule.status) }}
+                    </van-tag>
+                  </div>
+                  <div class="schedule-action">
+                    <van-icon name="arrow" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <van-empty 
+              v-else 
+              description="当天暂无场地安排" 
+              image="search"
+              class="empty-schedule"
+            />
+          </div>
+        </van-popup>
       </van-cell-group>
     </div>
 
@@ -470,6 +540,7 @@ import { useTestSiteStore } from '../stores/testSite';
 import { useTestTaskStore } from '../stores/testTask';
 import { useMobileDashboardStore } from '../stores/dashboard';
 import { scheduleApi } from '@/api/schedule';
+
 import { showToast } from 'vant';
 import dayjs from 'dayjs';
 import WeatherDetail from '../components/WeatherDetail.vue';
@@ -513,6 +584,7 @@ const selectedCalendarDate = ref(new Date());
 const dailySchedule = ref([]);
 const minDate = new Date();
 const maxDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30天后
+const showSchedulePopup = ref(false);
 
 // 天气详情弹窗状态
 const showWeatherDetail = ref(false);
@@ -529,6 +601,12 @@ const userTestRegistrations = ref([]);
 
 // 直接从 store 获取响应式数据
 const dashboardStats = computed(() => dashboardStore.dashboardStats);
+const equipmentStats = computed(() => dashboardStore.equipmentStats);
+const testTaskStats = computed(() => dashboardStore.testTaskStats);
+const staffStats = computed(() => dashboardStore.staffStats);
+const bookingStats = computed(() => dashboardStore.bookingStats);
+const alertStats = computed(() => dashboardStore.alertStats);
+const systemStats = computed(() => dashboardStore.systemStats);
 const announcements = computed(() => dashboardStore.announcements);
 const weatherInfo = computed(() => dashboardStore.weatherInfo);
 const unreadNotificationCount = computed(() => dashboardStore.unreadNotificationCount);
@@ -605,10 +683,17 @@ onMounted(async () => {
     }
 
     try {
-      // 获取今日场地安排
-      await fetchDailySchedule(selectedCalendarDate.value);
+      // 生成日历天
+      generateCalendarDays();
+      
+      // 获取今日场地安排（使用try-catch包裹，避免影响其他初始化）
+      try {
+        await fetchDailySchedule(selectedCalendarDate.value);
+      } catch (error) {
+        console.error('获取场地安排失败:', error);
+      }
     } catch (error) {
-      console.error('获取场地安排失败:', error);
+      console.error('生成日历失败:', error);
     }
   } catch (err) {
     console.error('获取数据失败:', err);
@@ -942,6 +1027,136 @@ const getNotificationSummary = () => {
   return `共${total}条，${unread}条未读`;
 };
 
+// 月历相关状态
+const currentMonth = ref(new Date());
+const calendarDays = ref([]);
+const scheduleDataByDate = ref({});
+
+// 计算当前月份文本
+const currentMonthText = computed(() => {
+  const year = currentMonth.value.getFullYear();
+  const month = currentMonth.value.getMonth() + 1;
+  return `${year}年${month}月`;
+});
+
+// 生成本地日期字符串（YYYY-MM-DD）
+const getLocalDateString = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// 生成日历天
+const generateCalendarDays = () => {
+  const year = currentMonth.value.getFullYear();
+  const month = currentMonth.value.getMonth();
+  
+  // 获取当月第一天
+  const firstDay = new Date(year, month, 1);
+  // 获取当月最后一天
+  const lastDay = new Date(year, month + 1, 0);
+  // 获取当月第一天是星期几（0-6，0表示星期日）
+  const startDay = firstDay.getDay();
+  // 获取当月天数
+  const daysInMonth = lastDay.getDate();
+  
+  const days = [];
+  
+  // 添加上个月的填充天数
+  for (let i = startDay - 1; i >= 0; i--) {
+    const date = new Date(year, month, -i);
+    const dateStr = getLocalDateString(date);
+    days.push({
+      date: dateStr,
+      day: date.getDate(),
+      isCurrentMonth: false,
+      isToday: isTodayDate(date),
+      isSelected: isSelectedDate(date),
+      hasSchedule: hasScheduleForDate(dateStr),
+      isFullyBooked: isFullyBookedForDate(dateStr)
+    });
+  }
+  
+  // 添加当月的天数
+  for (let i = 1; i <= daysInMonth; i++) {
+    const date = new Date(year, month, i);
+    const dateStr = getLocalDateString(date);
+    days.push({
+      date: dateStr,
+      day: i,
+      isCurrentMonth: true,
+      isToday: isTodayDate(date),
+      isSelected: isSelectedDate(date),
+      hasSchedule: hasScheduleForDate(dateStr),
+      isFullyBooked: isFullyBookedForDate(dateStr)
+    });
+  }
+  
+  // 添加下个月的填充天数，使日历有6行7列
+  const remainingDays = 42 - days.length;
+  for (let i = 1; i <= remainingDays; i++) {
+    const date = new Date(year, month + 1, i);
+    const dateStr = getLocalDateString(date);
+    days.push({
+      date: dateStr,
+      day: date.getDate(),
+      isCurrentMonth: false,
+      isToday: isTodayDate(date),
+      isSelected: isSelectedDate(date),
+      hasSchedule: hasScheduleForDate(dateStr),
+      isFullyBooked: isFullyBookedForDate(dateStr)
+    });
+  }
+  
+  calendarDays.value = days;
+};
+
+// 检查是否是今天
+const isTodayDate = (date) => {
+  const today = new Date();
+  return date.toDateString() === today.toDateString();
+};
+
+// 检查是否是选中日期
+const isSelectedDate = (date) => {
+  if (!selectedCalendarDate.value) return false;
+  return date.toDateString() === new Date(selectedCalendarDate.value).toDateString();
+};
+
+// 检查日期是否有排期
+const hasScheduleForDate = (date) => {
+  return !!scheduleDataByDate.value[date];
+};
+
+// 检查日期是否全部预约
+const isFullyBookedForDate = (date) => {
+  const schedule = scheduleDataByDate.value[date];
+  return schedule && schedule.every(item => item.status !== 'AVAILABLE');
+};
+
+// 切换月份
+const changeMonth = (delta) => {
+  const newMonth = new Date(currentMonth.value);
+  newMonth.setMonth(newMonth.getMonth() + delta);
+  currentMonth.value = newMonth;
+  generateCalendarDays();
+};
+
+// 选择日历天
+const selectCalendarDay = async (day) => {
+  console.log('选择的日期:', day.date);
+  selectedCalendarDate.value = new Date(day.date);
+  generateCalendarDays();
+  await fetchDailySchedule(day.date); // 直接传递day.date字符串
+  showSchedulePopup.value = true;
+};
+
+// 关闭排期弹出卡片
+const closeSchedulePopup = () => {
+  showSchedulePopup.value = false;
+};
+
 // 日历相关函数
 const formatSelectedDate = (date) => {
   if (!date) return '请选择日期';
@@ -976,15 +1191,84 @@ const onCalendarDateSelect = async (date) => {
 // 获取指定日期的场地安排
 const fetchDailySchedule = async (date) => {
   try {
-    const formattedDate = dayjs(date).format('YYYY-MM-DD');
-    // 使用新的 schedule API 获取指定日期的场地安排
-    const scheduleData = await scheduleApi.getDailySchedule(formattedDate);
-    dailySchedule.value = scheduleData || [];
+    // 确保formattedDate是正确的日期字符串格式
+    const formattedDate = typeof date === 'string' ? date : dayjs(date).format('YYYY-MM-DD');
+    
+    // 使用场地排期 API 获取数据
+    const schedulingData = await scheduleApi.getGroundScheduling();
+    
+    if (schedulingData && schedulingData.data) {
+      // 处理返回的数据，提取指定日期的排期信息
+      const scheduleItems = [];
+      const newScheduleDataByDate = {};
+      
+      if (schedulingData.data.data && Array.isArray(schedulingData.data.data)) {
+        schedulingData.data.data.forEach(timeSlot => {
+          // 检查每个时间段的未来7天数据
+          const days = ['nextZero', 'nextOne', 'nextTwo', 'nextThree', 'nextFour', 'nextFive', 'nextSix'];
+          
+          days.forEach((key, index) => {
+            if (timeSlot[key]) {
+              const slotDate = timeSlot[key].day;
+              
+              // 确定状态
+              let status = 'AVAILABLE';
+              if (timeSlot[key].isClose) {
+                status = 'MAINTENANCE';
+              } else if (timeSlot[key].isAll) {
+                status = 'OCCUPIED';
+              } else if (timeSlot[key].bookingsCount > 0) {
+                status = 'SCHEDULED';
+              }
+              
+              // 添加到按日期组织的排期数据中
+              if (!newScheduleDataByDate[slotDate]) {
+                newScheduleDataByDate[slotDate] = [];
+              }
+              
+              newScheduleDataByDate[slotDate].push({
+                id: `${timeSlot.dateTime}-${slotDate}`,
+                timeSlot: timeSlot.dateTime,
+                testSiteId: 1, // 使用默认场地ID
+                testSiteName: '测试场地', // 可以根据实际数据替换
+                taskName: timeSlot[key].bookingsCount > 0 ? `已预约 ${timeSlot[key].bookingsCount} 个` : '暂无预约',
+                status: status,
+                free: timeSlot[key].free,
+                maxCapacity: timeSlot[key].maxCapacity
+              });
+              
+              // 只添加与选择日期匹配的排期
+              if (slotDate === formattedDate) {
+                scheduleItems.push({
+                  id: `${timeSlot.dateTime}-${slotDate}`,
+                  timeSlot: timeSlot.dateTime,
+                  testSiteId: 1, // 使用默认场地ID
+                  testSiteName: '测试场地', // 可以根据实际数据替换
+                  taskName: timeSlot[key].bookingsCount > 0 ? `已预约 ${timeSlot[key].bookingsCount} 个` : '暂无预约',
+                  status: status,
+                  free: timeSlot[key].free,
+                  maxCapacity: timeSlot[key].maxCapacity
+                });
+              }
+            }
+          });
+        });
+      }
+      
+      // 更新排期数据和日历
+      dailySchedule.value = scheduleItems;
+      scheduleDataByDate.value = newScheduleDataByDate;
+      generateCalendarDays(); // 重新生成日历以更新指示器
+    } else {
+      dailySchedule.value = [];
+      scheduleDataByDate.value = {};
+    }
   } catch (error) {
-    console.error('获取日程安排失败:', error);
+    console.error('获取场地排期失败:', error);
     // 如果API失败，使用空数组作为fallback
     dailySchedule.value = [];
-    showToast('获取日程安排失败');
+    scheduleDataByDate.value = {};
+    // 不显示Toast，避免频繁提示
   }
 };
 
@@ -1316,18 +1600,159 @@ const onWeatherDetailHide = () => {
   }
 }
 
-// 新增样式 - 日历相关
-.calendar-section {
+// 月历样式
+.month-calendar {
+  background-color: #fff;
+  border-radius: 12px;
   margin-bottom: 16px;
+  overflow: hidden;
   
-  .daily-schedule {
-    .schedule-header {
-      padding: 12px 16px;
-      background-color: #f7f8fa;
-      font-size: 14px;
+  .calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    
+    h3 {
+      margin: 0;
+      font-size: 16px;
       font-weight: 600;
       color: #323233;
     }
+    
+    .van-button {
+      font-size: 12px;
+    }
+  }
+  
+  .calendar-body {
+    padding: 16px;
+    
+    .weekdays {
+      display: flex;
+      margin-bottom: 12px;
+      
+      .weekday {
+        flex: 1;
+        text-align: center;
+        font-size: 12px;
+        color: #969799;
+        font-weight: 600;
+      }
+    }
+    
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      
+      .day {
+        position: relative;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        
+        &:hover {
+          background-color: #f7f8fa;
+        }
+        
+        &.empty {
+          color: #c8c9cc;
+          cursor: default;
+          
+          &:hover {
+            background-color: transparent;
+          }
+        }
+        
+        &.today {
+          background-color: #1989fa;
+          color: #fff;
+          font-weight: 600;
+        }
+        
+        &.selected {
+          background-color: #e8f4ff;
+          color: #1989fa;
+          font-weight: 600;
+        }
+        
+        &.has-schedule {
+          &::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            background-color: #1989fa;
+            border-radius: 50%;
+          }
+        }
+        
+        &.fully-booked {
+          &::after {
+            background-color: #ee0a24;
+          }
+        }
+        
+        .day-number {
+          z-index: 1;
+        }
+        
+        .day-indicator {
+          position: absolute;
+          bottom: 2px;
+          width: 3px;
+          height: 3px;
+          background-color: #1989fa;
+          border-radius: 50%;
+        }
+      }
+    }
+  }
+}
+
+// 排期弹出卡片样式
+.schedule-popup {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  .popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #323233;
+    }
+    
+    .close-icon {
+      font-size: 20px;
+      color: #969799;
+      cursor: pointer;
+      
+      &:hover {
+        color: #323233;
+      }
+    }
+  }
+  
+  .popup-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
     
     .schedule-list {
       .schedule-item {
@@ -1376,6 +1801,18 @@ const onWeatherDetailHide = () => {
       }
     }
   }
+  
+  .empty-schedule {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// 新增样式 - 日历相关
+.calendar-section {
+  margin-bottom: 16px;
 }
 
 // 推荐场地样式

@@ -1,5 +1,12 @@
 <template>
   <div class="maintenance-container">
+    <!-- 顶部导航栏 -->
+    <van-nav-bar
+      title="维修保养"
+      left-arrow
+      @click-left="onClickLeft"
+    />
+    
     <!-- 顶部搜索栏 -->
     <van-search
       v-model="searchText"
@@ -251,6 +258,11 @@ const onLoad = () => {
 // 跳转到设备申请页面
 const goToNewEquipmentApply = () => {
   router.push('/equipment/apply');
+};
+
+// 返回上一页
+const onClickLeft = () => {
+  router.back();
 };
 
 // 应用筛选

@@ -1,15 +1,8 @@
-import { generateDailySchedule } from '@/mock/schedule';
 import { artemisRequest } from './request';
-
-// 判断是否使用mock数据
-const useMock = false; // Changed to false to prefer real API
 
 // Remove hardcoded server/port defaults — frontend should not contain remote IPs/ports.
 export const test_management_server = import.meta.env.VITE_TEST_MANAGEMENT_SERVER || '';
 export const test_management_port = import.meta.env.VITE_TEST_MANAGEMENT_PORT || '';
-
-// 模拟延迟
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // 模拟响应格式
 const mockResponse = (data) => ({
@@ -20,75 +13,21 @@ const mockResponse = (data) => ({
   config: {}
 });
 
-// 模拟场地排期数据
-const mockSchedules = {
-  'TS001': {
-    name: '高速测试场',
-    'AM': { available: true },
-    'PM': { available: true },
-  },
-  'TS002': {
-    name: '城市道路测试场',
-    'AM': { available: false },
-    'PM': { available: true },
-  },
-  'TS003': {
-    name: '综合测试场',
-    'AM': { available: true },
-    'PM': { available: false },
-  }
-};
-
-// 模拟天气数据
-const mockWeather = {
-  'TS001': {
-    temperature: 25,
-    condition: '晴',
-    suitable: true,
-  },
-  'TS002': {
-    temperature: 15,
-    condition: '雨',
-    suitable: false,
-    warning: '当前降雨较大，可能影响测试进行'
-  },
-  'TS003': {
-    temperature: 30,
-    condition: '多云',
-    suitable: true,
-    warning: '气温较高，请注意防暑'
-  }
-};
-
 /**
  * 获取指定日期的场地安排
  * @param {string} date - 日期 (YYYY-MM-DD)
  * @returns {Promise} - 返回Promise对象
  */
 export async function getDailySchedule(date) {
-  if (useMock) {
-    await delay(300);
-    const scheduleData = generateDailySchedule(date);
-    return scheduleData;
-  }
+  const queryParams = new URLSearchParams();
+  queryParams.append('date', date);
 
-  try {
-    const queryParams = new URLSearchParams();
-    queryParams.append('date', date);
+  // Route via local /artemis proxy so upstream calls are forwarded through the dev proxy
+  const res = await artemisRequest(`/artemis/api/schedule/daily?${queryParams}`, { method: 'GET' });
+  const result = res?.data;
+  console.log('获取每日场地安排原始API响应:', JSON.stringify(result, null, 2));
 
-    // Route via local /artemis proxy so upstream calls are forwarded through the dev proxy
-    const res = await artemisRequest(`/artemis/api/schedule/daily?${queryParams}`, { method: 'GET' });
-    const result = res?.data;
-    console.log('获取每日场地安排原始API响应:', JSON.stringify(result, null, 2));
-
-    return mockResponse(result.data || result);
-  } catch (error) {
-    console.error('获取每日场地安排失败，使用mock数据:', error);
-    // Fallback to mock
-    await delay(300);
-    const scheduleData = generateDailySchedule(date);
-    return scheduleData;
-  }
+  return mockResponse(result.data || result);
 }
 
 /**
@@ -99,32 +38,16 @@ export async function getDailySchedule(date) {
  * @returns {Promise} - 返回Promise对象
  */
 export async function getSchedule(params) {
-  if (useMock) {
-    await delay(300);
-    const schedule = mockSchedules[params.testSiteId] || {
-      'AM': { available: true },
-      'PM': { available: true }
-    };
-    return mockResponse(schedule);
-  }
+  const queryParams = new URLSearchParams();
+  queryParams.append('testSiteId', params.testSiteId);
+  if (params.date) queryParams.append('date', params.date);
 
-  try {
-    const queryParams = new URLSearchParams();
-    queryParams.append('testSiteId', params.testSiteId);
-    if (params.date) queryParams.append('date', params.date);
+  const res = await artemisRequest(`/artemis/api/schedule/site?${queryParams}`, { method: 'GET' });
+  const result = res?.data;
+  console.log('获取场地排期原始API响应:', JSON.stringify(result, null, 2));
 
-    const res = await artemisRequest(`/artemis/api/schedule/site?${queryParams}`, { method: 'GET' });
-    const result = res?.data;
-    console.log('获取场地排期原始API响应:', JSON.stringify(result, null, 2));
-
-    const schedule = result.data || { 'AM': { available: true }, 'PM': { available: true } };
-    return mockResponse(schedule);
-  } catch (error) {
-    console.error('获取场地排期失败，使用mock数据:', error);
-    await delay(300);
-    const schedule = mockSchedules[params.testSiteId] || { 'AM': { available: true }, 'PM': { available: true } };
-    return mockResponse(schedule);
-  }
+  const schedule = result.data || { 'AM': { available: true }, 'PM': { available: true } };
+  return mockResponse(schedule);
 }
 
 /**
@@ -135,29 +58,16 @@ export async function getSchedule(params) {
  * @returns {Promise} - 返回Promise对象
  */
 export async function getWeather(params) {
-  if (useMock) {
-    await delay(300);
-    const weather = mockWeather[params.testSiteId] || { temperature: 20, condition: '晴', suitable: true };
-    return mockResponse(weather);
-  }
+  const queryParams = new URLSearchParams();
+  queryParams.append('testSiteId', params.testSiteId);
+  if (params.date) queryParams.append('date', params.date);
 
-  try {
-    const queryParams = new URLSearchParams();
-    queryParams.append('testSiteId', params.testSiteId);
-    if (params.date) queryParams.append('date', params.date);
+  const res = await artemisRequest(`/artemis/api/schedule/weather?${queryParams}`, { method: 'GET' });
+  const result = res?.data;
+  console.log('获取天气信息原始API响应:', JSON.stringify(result, null, 2));
 
-    const res = await artemisRequest(`/artemis/api/schedule/weather?${queryParams}`, { method: 'GET' });
-    const result = res?.data;
-    console.log('获取天气信息原始API响应:', JSON.stringify(result, null, 2));
-
-    const weather = result.data || { temperature: 20, condition: '晴', suitable: true };
-    return mockResponse(weather);
-  } catch (error) {
-    console.error('获取天气信息失败，使用mock数据:', error);
-    await delay(300);
-    const weather = mockWeather[params.testSiteId] || { temperature: 20, condition: '晴', suitable: true };
-    return mockResponse(weather);
-  }
+  const weather = result.data || { temperature: 20, condition: '晴', suitable: true };
+  return mockResponse(weather);
 }
 
 /**
@@ -166,27 +76,85 @@ export async function getWeather(params) {
  * @returns {Promise} - 返回Promise对象
  */
 export async function createBooking(data) {
-  if (useMock) {
-    await delay(500);
-    return mockResponse({ bookingId: 'BK' + Date.now(), ...data, status: 'PENDING' });
-  }
+  const res = await artemisRequest('/artemis/api/schedule/booking', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
 
+  const result = res?.data;
+  console.log('创建预约原始API响应:', JSON.stringify(result, null, 2));
+
+  const booking = result.data || { bookingId: 'BK' + Date.now(), ...data, status: 'PENDING' };
+  return mockResponse(booking);
+}
+
+/**
+ * 获取场地排期
+ * @param {Object} params - 查询参数
+ * @param {string} params.provingGroundId - 试验场ID，默认3
+ * @param {string} params.groundId - 场地ID，默认1
+ * @param {number} params.day - 查看排期天数，默认7
+ * @returns {Promise} - 返回Promise对象，结构 { data: { code, msg, data }, status, statusText, headers, config }
+ */
+export async function getGroundScheduling(params = {}) {
   try {
-    const res = await artemisRequest('/artemis/api/schedule/booking', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+    const path = `/artemis/api/v1/ground/scheduling`;
+    const queryParams = new URLSearchParams();
+    
+    // 设置默认值
+    if (params.provingGroundId !== undefined) {
+      queryParams.append('provingGroundId', params.provingGroundId);
+    } else {
+      queryParams.append('provingGroundId', 3);
+    }
+    
+    if (params.groundId !== undefined) {
+      queryParams.append('groundId', params.groundId);
+    } else {
+      queryParams.append('groundId', 1);
+    }
+    
+    if (params.day !== undefined) {
+      queryParams.append('day', params.day);
+    } else {
+      queryParams.append('day', 7);
+    }
+
+    const res = await artemisRequest(`${path}?${queryParams}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
     });
-
+    
     const result = res?.data;
-    console.log('创建预约原始API响应:', JSON.stringify(result, null, 2));
+    console.log('获取场地排期原始API响应:', JSON.stringify(result, null, 2));
+    
+    // 检查返回的数据结构
+    if (result && result.data && Array.isArray(result.data)) {
+      console.log('API返回的数据长度:', result.data.length);
+      if (result.data.length > 0) {
+        console.log('第一个时间段的日期数据:', {
+          nextZero: result.data[0].nextZero?.day,
+          nextOne: result.data[0].nextOne?.day,
+          nextTwo: result.data[0].nextTwo?.day,
+          nextThree: result.data[0].nextThree?.day,
+          nextFour: result.data[0].nextFour?.day,
+          nextFive: result.data[0].nextFive?.day,
+          nextSix: result.data[0].nextSix?.day
+        });
+      }
+    }
 
-    const booking = result.data || { bookingId: 'BK' + Date.now(), ...data, status: 'PENDING' };
-    return mockResponse(booking);
+    return {
+      data: result,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
   } catch (error) {
-    console.error('创建预约失败，使用mock数据:', error);
-    await delay(500);
-    return mockResponse({ bookingId: 'BK' + Date.now(), ...data, status: 'PENDING' });
+    console.error('获取场地排期失败:', error);
+    throw error;
   }
 }
 
@@ -195,5 +163,6 @@ export const scheduleApi = {
   getDailySchedule,
   getSchedule,
   getWeather,
-  createBooking
+  createBooking,
+  getGroundScheduling
 };

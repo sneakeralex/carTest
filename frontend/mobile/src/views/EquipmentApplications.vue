@@ -1,5 +1,12 @@
 <template>
   <div class="equipment-applications-container">
+    <!-- 顶部导航栏 -->
+    <van-nav-bar
+      title="设备领用"
+      left-arrow
+      @click-left="onClickLeft"
+    />
+    
     <!-- 顶部搜索栏 -->
     <van-search
       v-model="searchText"
@@ -239,6 +246,11 @@ const onLoad = () => {
 // 跳转到设备申请页面
 const goToNewEquipmentApply = () => {
   router.push('/equipment/apply');
+};
+
+// 返回上一页
+const onClickLeft = () => {
+  router.back();
 };
 
 // 应用筛选

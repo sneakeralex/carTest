@@ -5,6 +5,13 @@ import {
   getNotifications, 
   getQuickActions, 
   getWeatherInfo, 
+  getMobileDashboardStats,
+  getEquipmentStats,
+  getTestTaskStats,
+  getStaffStats,
+  getBookingStats,
+  getAlertStats,
+  getSystemStats,
   // getAnnouncements, 
   getUserProfileSummary,
   markNotificationAsRead,
@@ -13,6 +20,7 @@ import {
 } from '../api/dashboard';
 import { getBookings } from '../api/booking';
 import { getTestTasks } from '../api/testTask';
+import * as alertApi from '../api/alert';
 
 export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
   // 状态
@@ -23,13 +31,59 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
     pendingBookings: 0,
     testScore: 0,
     totalBookings: 0,
-    completedTests: 0
+    completedTests: 0,
+    activeAlerts: 0
+  });
+  const equipmentStats = ref({
+    total: 0,
+    available: 0,
+    inUse: 0,
+    maintenance: 0
+  });
+  const testTaskStats = ref({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    inProgress: 0,
+    completed: 0,
+    cancelled: 0
+  });
+  const staffStats = ref({
+    total: 0,
+    drivers: 0,
+    technicians: 0,
+    administrators: 0
+  });
+  const bookingStats = ref({
+    total: 0,
+    pending: 0,
+    confirmed: 0,
+    completed: 0,
+    cancelled: 0
+  });
+  const alertStats = ref({
+    total: 0,
+    active: 0,
+    handled: 0,
+    critical: 0,
+    warning: 0,
+    info: 0
+  });
+  const systemStats = ref({
+    totalVehicles: 0,
+    totalEquipment: 0,
+    totalStaff: 0,
+    totalBookings: 0,
+    totalTestTasks: 0,
+    activeAlerts: 0,
+    pendingApprovals: 0
   });
   const recentBookings = ref([]);
   const notifications = ref([]);
   const quickActions = ref([]);
   const weatherInfo = ref(null);
   const announcements = ref([]);
+  const alerts = ref([]);
   const userProfile = ref({});
   const unreadNotificationCount = ref(0);
   const loading = ref(false);
@@ -218,6 +272,97 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
     }
   };
 
+  // 获取告警信息列表
+  const fetchAlerts = async (params = {}) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await alertApi.getAlertList(params);
+      const data = response?.data?.content || response?.data || [];
+      alerts.value = data;
+      
+      // 更新告警统计
+      dashboardStats.value.activeAlerts = data.filter(alert => alert.status === 'active').length;
+      
+      return data;
+    } catch (err) {
+      error.value = err.response?.data?.message || '获取告警信息失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 获取告警详情
+  const fetchAlertById = async (id) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await alertApi.getAlertById(id);
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || '获取告警详情失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 处理告警
+  const handleAlert = async (id, data) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await alertApi.handleAlert(id, data);
+      
+      // 更新本地告警状态
+      const alertIndex = alerts.value.findIndex(alert => alert.id === id);
+      if (alertIndex !== -1) {
+        alerts.value[alertIndex] = { ...alerts.value[alertIndex], ...data };
+      }
+      
+      // 更新告警统计
+      dashboardStats.value.activeAlerts = alerts.value.filter(alert => alert.status === 'active').length;
+      
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || '处理告警失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 批量处理告警
+  const batchHandleAlerts = async (ids, data) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await alertApi.batchHandleAlerts(ids, data);
+      
+      // 更新本地告警状态
+      alerts.value.forEach(alert => {
+        if (ids.includes(alert.id)) {
+          Object.assign(alert, data);
+        }
+      });
+      
+      // 更新告警统计
+      dashboardStats.value.activeAlerts = alerts.value.filter(alert => alert.status === 'active').length;
+      
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || '批量处理告警失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   // 组装统计数据
   const assembleDashboardStats = async () => {
     try {
@@ -300,6 +445,108 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
     }
   };
 
+  // 获取设备统计
+  const fetchEquipmentStats = async () => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await getEquipmentStats();
+      equipmentStats.value = response.data;
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || '获取设备统计失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 获取测试任务统计
+  const fetchTestTaskStats = async () => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await getTestTaskStats();
+      testTaskStats.value = response.data;
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || '获取测试任务统计失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 获取人员统计
+  const fetchStaffStats = async () => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await getStaffStats();
+      staffStats.value = response.data;
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || '获取人员统计失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 获取预约统计
+  const fetchBookingStats = async () => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await getBookingStats();
+      bookingStats.value = response.data;
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || '获取预约统计失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 获取告警统计
+  const fetchAlertStats = async () => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await getAlertStats();
+      alertStats.value = response.data;
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || '获取告警统计失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 获取系统统计
+  const fetchSystemStats = async () => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await getSystemStats();
+      systemStats.value = response.data;
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || '获取系统统计失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   // 初始化仪表板数据
   const initializeDashboard = async () => {
     try {
@@ -308,7 +555,8 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
       try {
         await Promise.all([
           assembleDashboardStats(),
-          fetchRecentBookings(5)
+          fetchRecentBookings(5),
+          fetchSystemStats()
         ]);
       } catch (err) {
         console.error('核心数据加载失败:', err);
@@ -319,7 +567,12 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
       try {
         await Promise.all([
           fetchQuickActions(),
-          fetchUserProfile()
+          fetchUserProfile(),
+          fetchEquipmentStats(),
+          fetchTestTaskStats(),
+          fetchStaffStats(),
+          fetchBookingStats(),
+          fetchAlertStats()
         ]);
       } catch (err) {
         console.error('用户数据加载失败:', err);
@@ -346,11 +599,18 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
 
   return {
     dashboardStats,
+    equipmentStats,
+    testTaskStats,
+    staffStats,
+    bookingStats,
+    alertStats,
+    systemStats,
     recentBookings,
     notifications,
     quickActions,
     weatherInfo,
     announcements,
+    alerts,
     userProfile,
     unreadNotificationCount,
     loading,
@@ -365,6 +625,16 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
     markAsRead,
     markAllAsRead,
     fetchUnreadCount,
+    fetchAlerts,
+    fetchAlertById,
+    handleAlert,
+    batchHandleAlerts,
+    fetchEquipmentStats,
+    fetchTestTaskStats,
+    fetchStaffStats,
+    fetchBookingStats,
+    fetchAlertStats,
+    fetchSystemStats,
     initializeDashboard
   };
 });

@@ -1,5 +1,12 @@
 <template>
   <div class="test-sites-container">
+    <!-- 顶部导航栏 -->
+    <van-nav-bar
+      title="测试场预约"
+      left-arrow
+      @click-left="onClickLeft"
+    />
+    
     <!-- 搜索栏 -->
     <van-search
       v-model="searchKeyword"
@@ -230,6 +237,11 @@ const bookTestSite = (testSite) => {
     path: '/bookings/new',
     query: { testSiteId: testSite.siteId }
   });
+};
+
+// 返回上一页
+const onClickLeft = () => {
+  router.back();
 };
 
 // 监听筛选条件变化

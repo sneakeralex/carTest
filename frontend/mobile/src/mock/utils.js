@@ -27,10 +27,14 @@ export const mockResponse = (data) => ({
 
 // 验证token
 export const validateToken = () => {
-  const token = localStorage.getItem('token');
-  if (!token || !token.startsWith('Bearer mock_token_')) {
-    throw new Error('未授权访问');
+  // 检查是否在浏览器环境中
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const token = localStorage.getItem('token');
+    if (!token || !token.startsWith('Bearer mock_token_')) {
+      throw new Error('未授权访问');
+    }
   }
+  // 在Node.js环境中跳过验证
   return true;
 };
 

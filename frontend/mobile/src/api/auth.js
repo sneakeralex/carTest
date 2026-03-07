@@ -163,14 +163,6 @@ export async function register(userData) {
     payload.id = userData.id;
   }
 
-  // Don't log secrets in production. Keep a minimal debug-safe trace during development.
-  try {
-    // only log length to avoid accidental secret exposure
-    // console.debug && console.debug('register payload length:', JSON.stringify(payload || {}).length);
-  } catch (e) {
-    // ignore
-  }
-
   try {
     // Route both duplicate-check and save through the client-side artemisRequest helper
     // so the actual AK/SK signing happens on the server-side proxy.

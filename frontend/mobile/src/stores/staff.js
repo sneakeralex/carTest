@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { getStaffList, getStaffById, createStaff, updateStaff, deleteStaff, uploadStaffDocument, deleteStaffDocument } from '@/api/staff';
+import { getStaffList, getStaffById, createStaff, updateStaff, deleteStaff, uploadStaffDocument, deleteStaffDocument, getDriverList, getDriverById, createDriver, updateDriver, deleteDriver } from '@/api/staff';
 
 export const useStaffStore = defineStore('staff', {
   state: () => ({
@@ -201,6 +201,114 @@ export const useStaffStore = defineStore('staff', {
       } catch (error) {
         console.error('Store - Error deleting document:', error);
         throw error;
+      }
+    },
+
+    // 获取驾驶员列表
+    async fetchDriverList(params = {}) {
+      try {
+        console.log('Store - Fetching driver list from API...');
+        const response = await getDriverList(params);
+        const driverData = response.data || [];
+        
+        // 过滤出驾驶员数据并更新到staffList
+        const drivers = driverData.map(driver => ({
+          ...driver,
+          type: 'DRIVER'
+        }));
+        
+        // 替换现有驾驶员数据
+        this.staffList = this.staffList.filter(staff => staff.type !== 'DRIVER').concat(drivers);
+        
+        console.log('Store - Driver list fetched:', drivers.length, 'items');
+        return drivers;
+      } catch (error) {
+        console.error('Store - Error fetching driver list:', error);
+        throw new Error('获取驾驶员列表失败');
+      }
+    },
+
+    // 获取驾驶员详情
+    async getDriverDetail(driverId) {
+      try {
+        console.log('Store - Getting driver detail for ID:', driverId);
+        const response = await getDriverById(driverId);
+        const driver = response.data;
+        
+        console.log('Store - Found driver detail:', driver);
+        this.currentStaff = {...driver};  // 使用浅拷贝避免引用问题
+        return {...driver};  // 返回一个新对象避免引用问题
+      } catch (error) {
+        console.error('Store - Error getting driver detail:', error);
+        throw error;
+      }
+    },
+
+    // 添加驾驶员
+    async addDriver(driverData) {
+      try {
+        console.log('Store - Adding new driver:', driverData);
+        const response = await createDriver(driverData);
+        const newDriver = response.data;
+        
+        // 添加到列表
+        this.staffList.push(newDriver);
+        console.log('Store - Driver added successfully:', newDriver);
+        return newDriver;
+      } catch (error) {
+        console.error('Store - Error adding driver:', error);
+        throw new Error('添加驾驶员失败');
+      }
+    },
+
+    // 更新驾驶员
+    async updateDriver(driverData) {
+      try {
+        console.log('Store - Updating driver:', driverData);
+        const response = await updateDriver(driverData);
+        const updatedDriver = response.data;
+        
+        // 更新列表中的数据
+        const index = this.staffList.findIndex(staff => staff.userId === updatedDriver.userId);
+        if (index !== -1) {
+          this.staffList[index] = updatedDriver;
+        }
+        
+        // 更新当前人员
+        if (this.currentStaff && this.currentStaff.userId === updatedDriver.userId) {
+          this.currentStaff = updatedDriver;
+        }
+        
+        console.log('Store - Driver updated successfully:', updatedDriver);
+        return updatedDriver;
+      } catch (error) {
+        console.error('Store - Error updating driver:', error);
+        throw new Error('更新驾驶员失败');
+      }
+    },
+
+    // 删除驾驶员
+    async deleteDriver(driverId) {
+      try {
+        console.log('Store - Deleting driver:', driverId);
+        await deleteDriver(driverId);
+        
+        // 从列表中移除
+        const index = this.staffList.findIndex(staff => staff.userId === driverId);
+        if (index !== -1) {
+          this.staffList.splice(index, 1);
+        }
+        
+        // 清除当前人员
+        if (this.currentStaff && this.currentStaff.userId === driverId) {
+          this.currentStaff = null;
+        }
+        
+        console.log('Store - Driver deleted successfully');
+        return true;
+      } catch (error) {
+        console.error('Store - Error deleting driver:', error);
+        throw new Error('删除驾驶员失败');
       }
     }
   }

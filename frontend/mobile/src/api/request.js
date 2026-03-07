@@ -1,4 +1,13 @@
 import axios from 'axios';
+// 导入 node-fetch 以在 Node.js 环境中使用 fetch 函数
+if (typeof window === 'undefined' && typeof fetch === 'undefined') {
+  try {
+    const fetchModule = require('node-fetch');
+    globalThis.fetch = fetchModule.default || fetchModule;
+  } catch (error) {
+    console.error('Error loading node-fetch:', error);
+  }
+}
 // Removed static imports of browser-only modules to allow Node test scripts to import this file
 // import { showNotify } from 'vant';
 // import router from '../router/index.js';

@@ -34,26 +34,14 @@
           
           <van-field
             v-if="bookingDate"
-            v-model="selectedPeriodText"
+            v-model="selectedTimeRangeText"
             autocomplete="off"
             data-no-ext="true"
             readonly
-            label="开始时间"
-            placeholder="请选择开始时间"
+            label="时间范围"
+            placeholder="请选择开始和结束时间"
             is-link
             @click="showPeriodPicker = true"
-          />
-          
-          <van-field
-            v-if="bookingDate && selectedPeriod"
-            v-model="selectedEndTimeText"
-            autocomplete="off"
-            data-no-ext="true"
-            readonly
-            label="结束时间"
-            placeholder="请选择结束时间（可选）"
-            is-link
-            @click="showEndTimePicker = true"
           />
         </van-cell-group>
       </div>
@@ -344,40 +332,62 @@
       />
     </van-popup>
 
-    <!-- 开始时间选择器 -->
+    <!-- 时间范围选择器 -->
     <van-popup
       v-model:show="showPeriodPicker"
       position="bottom"
       round
+      :style="{ height: '80%' }"
     >
-      <van-time-picker
-        v-model="currentTime"
-        title="选择开始时间"
-        :min-hour="isToday ? minTime[0] : 8"
-        :min-minute="isToday ? minTime[1] : 0"
-        :max-hour="18"
-        @confirm="onTimeSelect"
-        @cancel="showPeriodPicker = false"
-        show-toolbar
-      />
-    </van-popup>
-
-    <!-- 结束时间选择器 -->
-    <van-popup
-      v-model:show="showEndTimePicker"
-      position="bottom"
-      round
-    >
-      <van-time-picker
-        v-model="endTimeArray"
-        title="选择结束时间（可选）"
-        :min-hour="startTime ? parseInt(startTime.split(':')[0]) + 1 : 9"
-        :min-minute="startTime && startTime.split(':')[0] === endTimeArray[0] ? parseInt(startTime.split(':')[1]) : 0"
-        :max-hour="20"
-        @confirm="onEndTimeSelect"
-        @cancel="showEndTimePicker = false"
-        show-toolbar
-      />
+      <div class="time-slot-picker">
+        <div class="picker-header">
+          <h3>选择时间范围</h3>
+          <div class="picker-actions">
+            <van-button @click="resetTimeRangeSelection">重置</van-button>
+            <van-button type="primary" @click="confirmTimeRangeSelection" :disabled="!hasValidTimeRange">确定</van-button>
+          </div>
+        </div>
+        
+        <div v-if="loadingTimeSlots" class="loading-container">
+          <van-loading type="spinner" color="#1989fa" />
+          <span>加载可用时间段...</span>
+        </div>
+        
+        <div v-else-if="availableTimeSlots.length === 0" class="empty-container">
+          <van-empty description="暂无可用时间段" image="search" />
+        </div>
+        
+        <div v-else class="time-slot-list">
+          <div class="selection-info" v-if="selectedStartTime">
+            <p>已选择开始时间: {{ selectedStartTime }}</p>
+            <p v-if="selectedEndTime">已选择结束时间: {{ selectedEndTime }}</p>
+            <p v-else>请选择结束时间</p>
+          </div>
+          
+          <div
+            v-for="(slot, index) in availableTimeSlots"
+            :key="index"
+            class="time-slot-item"
+            :class="{
+              'available': slot.isAvailable,
+              'unavailable': !slot.isAvailable,
+              'selected': slot.time === selectedStartTime || slot.time === selectedEndTime,
+              'start-time': slot.time === selectedStartTime,
+              'end-time': slot.time === selectedEndTime,
+              'in-range': isTimeSlotInRange(slot.time)
+            }"
+            @click="selectTimeRangeSlot(slot)"
+          >
+            <div class="time-slot-time">{{ slot.time }}</div>
+            <div v-if="!slot.isAvailable" class="time-slot-status">
+              <span v-if="slot.isClose">道路关闭</span>
+              <span v-else-if="slot.isAll">已包场</span>
+              <span v-else-if="slot.bookingsCount > 0">已预约</span>
+            </div>
+            <div v-else class="time-slot-status available">可预约</div>
+          </div>
+        </div>
+      </div>
     </van-popup>
 
     <!-- 试验类型选择器 -->
@@ -422,6 +432,7 @@ import { getTestSites } from '../api/testSite';
 import { getVinList, getBookingNo } from '../api/booking';
 import { getUserInfo } from '../utils/auth.js';
 import { artemisRequest } from '../api/request';
+import { scheduleApi } from '../api/schedule';
 
 // 状态
 const selectedDriver = ref(null);
@@ -437,7 +448,6 @@ const imagingRequirement = ref(false);
 const bookingDate = ref('');
 const selectedPeriod = ref(null);
 const selectedPeriodText = ref('');
-const selectedEndTime = ref(null);
 const selectedEndTimeText = ref('');
 const notes = ref('');
 const submitting = ref(false);
@@ -462,6 +472,12 @@ const showTestContentPicker = ref(false);
 const vinList = ref([]);
 const currentUser = ref(null);
 const currentStep = ref(0);
+
+// 时间范围选择状态
+const selectedStartTime = ref(null);
+const selectedEndTime = ref(null);
+const selectedTimeRangeText = ref('');
+const hasValidTimeRange = ref(false);
 
 // 预约编号相关
 const bookingNo = ref('');
@@ -509,6 +525,11 @@ const minTime = computed(() => {
 const currentTime = ref(['09', '00']); // 默认上午9点
 const endTimeArray = ref(['10', '00']); // 结束时间默认10点
 const startTime = computed(() => selectedPeriod.value); // 当前选择的开始时间
+
+// 可用时间段状态
+const availableTimeSlots = ref([]);
+const loadingTimeSlots = ref(false);
+const timeSlotsError = ref(null);
 
 // router 和 bookingStore
 const router = useRouter();
@@ -575,6 +596,79 @@ async function fetchGrounds(params = {}) {
   } catch (e) {
     console.error('获取场地列表失败:', e);
     grounds.value = [];
+  }
+}
+
+// 获取可用时间段
+async function fetchAvailableTimeSlots(date) {
+  if (!date) return;
+  
+  loadingTimeSlots.value = true;
+  timeSlotsError.value = null;
+  
+  try {
+    // 获取场地排期数据
+    const schedulingData = await scheduleApi.getGroundScheduling();
+    
+    if (schedulingData && schedulingData.data) {
+      const formattedDate = date;
+      const slots = [];
+      
+      if (schedulingData.data.data && Array.isArray(schedulingData.data.data)) {
+        schedulingData.data.data.forEach(timeSlot => {
+          // 检查每个时间段的未来7天数据
+          const days = ['nextZero', 'nextOne', 'nextTwo', 'nextThree', 'nextFour', 'nextFive', 'nextSix'];
+          
+          days.forEach((key, index) => {
+            if (timeSlot[key]) {
+              const slotDate = timeSlot[key].day;
+              
+              // 只添加与选择日期匹配的时间段
+              if (slotDate === formattedDate) {
+                // 确定状态
+                let isAvailable = true;
+                if (timeSlot[key].isClose || timeSlot[key].isAll || timeSlot[key].bookingsCount > 0) {
+                  isAvailable = false;
+                }
+                
+                // 检查是否是今天，如果是，过滤掉小于当前时间的时间点
+                const today = new Date().toISOString().split('T')[0];
+                if (formattedDate === today) {
+                  const currentTime = new Date();
+                  const slotHour = parseInt(timeSlot.dateTime.split(':')[0]);
+                  const slotMinute = parseInt(timeSlot.dateTime.split(':')[1]);
+                  const slotDateTime = new Date();
+                  slotDateTime.setHours(slotHour, slotMinute, 0, 0);
+                  
+                  // 如果时间槽小于当前时间，标记为不可用
+                  if (slotDateTime <= currentTime) {
+                    isAvailable = false;
+                  }
+                }
+                
+                // 创建时间段项
+                slots.push({
+                  time: timeSlot.dateTime,
+                  isAvailable: isAvailable,
+                  bookingsCount: timeSlot[key].bookingsCount,
+                  isClose: timeSlot[key].isClose,
+                  isAll: timeSlot[key].isAll
+                });
+              }
+            }
+          });
+        });
+      }
+      
+      availableTimeSlots.value = slots;
+      console.log('获取的可用时间段:', slots);
+    }
+  } catch (error) {
+    console.error('获取可用时间段失败:', error);
+    timeSlotsError.value = error.message;
+    availableTimeSlots.value = [];
+  } finally {
+    loadingTimeSlots.value = false;
   }
 }
 
@@ -658,7 +752,10 @@ const testTypeColumns = computed(() => {
 const fetchTestTypes = async (projectNo, vin) => {
   if (!projectNo || !vin) return;
   try {
-    const res = await artemisRequest(`/artemis/api/v1/booking/getTestType/${encodeURIComponent(projectNo)}/${encodeURIComponent(vin)}`, { method: 'GET' });
+    const res = await artemisRequest(`/artemis/api/v1/booking/getTestType/${encodeURIComponent(projectNo)}/${encodeURIComponent(vin)}`, 
+    { method: 'GET',
+      headers: { 'Content-Type': 'application/json','Accept': '*/*'  },
+     });
     const json = res?.data;
     if (json && (json.code === 200 || json.status === 200 || json.code === '0')) {
       testTypes.value = Array.isArray(json.data) ? json.data : (json.data?.content || []);
@@ -840,6 +937,9 @@ const onDateSelect = async (date) => {
     // 强制重新计算 canProceed
     const temp = canProceed.value;
     console.log('canProceed.value 重新计算:', temp);
+    
+    // 获取选中日期的可用时间段
+    await fetchAvailableTimeSlots(bookingDate.value);
   }
   showDatePicker.value = false;
   // 不清空时间字段，保留之前的选择
@@ -884,6 +984,76 @@ const onTimeSelect = (time) => {
     endTimeArray.value = [endHour.toString().padStart(2, '0'), minute.toString().padStart(2, '0')];
   }
   showPeriodPicker.value = false;
+};
+
+// 处理时间槽选择
+const selectTimeRangeSlot = (slot) => {
+  if (!slot.isAvailable) return;
+  
+  if (!selectedStartTime.value) {
+    // 第一次选择，设置为开始时间
+    selectedStartTime.value = slot.time;
+    selectedEndTime.value = null;
+    hasValidTimeRange.value = false;
+  } else if (!selectedEndTime.value) {
+    // 第二次选择，设置为结束时间
+    const startHour = parseInt(selectedStartTime.value.split(':')[0]);
+    const startMinute = parseInt(selectedStartTime.value.split(':')[1]);
+    const endHour = parseInt(slot.time.split(':')[0]);
+    const endMinute = parseInt(slot.time.split(':')[1]);
+    
+    // 确保结束时间晚于开始时间
+    if (endHour > startHour || (endHour === startHour && endMinute > startMinute)) {
+      selectedEndTime.value = slot.time;
+      hasValidTimeRange.value = true;
+    } else {
+      // 如果结束时间早于或等于开始时间，重新设置开始时间
+      selectedStartTime.value = slot.time;
+      selectedEndTime.value = null;
+      hasValidTimeRange.value = false;
+    }
+  } else {
+    // 已经选择了开始和结束时间，重新开始选择
+    selectedStartTime.value = slot.time;
+    selectedEndTime.value = null;
+    hasValidTimeRange.value = false;
+  }
+};
+
+// 重置时间范围选择
+const resetTimeRangeSelection = () => {
+  selectedStartTime.value = null;
+  selectedEndTime.value = null;
+  hasValidTimeRange.value = false;
+};
+
+// 确认时间范围选择
+const confirmTimeRangeSelection = () => {
+  if (selectedStartTime.value && selectedEndTime.value) {
+    selectedPeriod.value = selectedStartTime.value;
+    selectedPeriodText.value = selectedStartTime.value;
+    selectedEndTimeText.value = selectedEndTime.value;
+    selectedTimeRangeText.value = `${selectedStartTime.value} - ${selectedEndTime.value}`;
+    showPeriodPicker.value = false;
+  }
+};
+
+// 检查时间槽是否在选中范围内
+const isTimeSlotInRange = (time) => {
+  if (!selectedStartTime.value || !selectedEndTime.value) return false;
+  
+  const startHour = parseInt(selectedStartTime.value.split(':')[0]);
+  const startMinute = parseInt(selectedStartTime.value.split(':')[1]);
+  const endHour = parseInt(selectedEndTime.value.split(':')[0]);
+  const endMinute = parseInt(selectedEndTime.value.split(':')[1]);
+  const currentHour = parseInt(time.split(':')[0]);
+  const currentMinute = parseInt(time.split(':')[1]);
+  
+  const startTime = startHour * 60 + startMinute;
+  const endTime = endHour * 60 + endMinute;
+  const currentTime = currentHour * 60 + currentMinute;
+  
+  return currentTime > startTime && currentTime < endTime;
 };
 
 // 处理结束时间选择
@@ -958,12 +1128,13 @@ const generateBookingNo = async () => {
 
 // 步骤导航逻辑
 const canProceed = computed(() => {
-  const step0Valid = !!bookingDate.value && !!selectedPeriod.value; // 结束时间是可选的
+  const step0Valid = !!bookingDate.value && !!selectedPeriod.value && !!selectedEndTime.value; // 结束时间现在是必填的
   console.log('canProceed计算详情:');
   console.log('- currentStep:', currentStep.value);
   console.log('- bookingDate:', bookingDate.value);
   console.log('- selectedPeriod:', selectedPeriod.value);
-  console.log('- selectedPeriodText:', selectedPeriodText.value);
+  console.log('- selectedEndTime:', selectedEndTime.value);
+  console.log('- selectedTimeRangeText:', selectedTimeRangeText.value);
   console.log('- step0Valid:', step0Valid);
   
   switch (currentStep.value) {
@@ -1245,5 +1416,130 @@ onUnmounted(() => {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+// 时间槽选择器样式
+.time-slot-picker {
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.picker-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.picker-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  gap: 12px;
+}
+
+.empty-container {
+  padding: 40px 0;
+}
+
+.time-slot-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.time-slot-item {
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 1px solid #f0f0f0;
+}
+
+.time-slot-item.available {
+  background-color: #f7f8fa;
+  border-color: #e8f4ff;
+}
+
+.time-slot-item.available:hover {
+  background-color: #e8f4ff;
+  transform: translateY(-2px);
+}
+
+.time-slot-item.unavailable {
+  background-color: #fef0f0;
+  border-color: #ffccc7;
+  cursor: not-allowed;
+}
+
+.time-slot-item.selected {
+  background-color: #e8f4ff;
+  border-color: #1989fa;
+}
+
+.time-slot-item.start-time {
+  background-color: #d6efff;
+  border-color: #1989fa;
+  border-radius: 8px 8px 0 0;
+}
+
+.time-slot-item.end-time {
+  background-color: #d6efff;
+  border-color: #1989fa;
+  border-radius: 0 0 8px 8px;
+}
+
+.time-slot-item.in-range {
+  background-color: #f0f9ff;
+  border-color: #91d5ff;
+  border-radius: 0;
+}
+
+.time-slot-time {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.time-slot-status {
+  font-size: 12px;
+  color: #969799;
+}
+
+.time-slot-item.unavailable .time-slot-status {
+  color: #ee0a24;
+}
+
+.time-slot-item.available .time-slot-status.available {
+  color: #52c41a;
+}
+
+.selection-info {
+  background-color: #f7f8fa;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.selection-info p {
+  margin: 4px 0;
 }
 </style>

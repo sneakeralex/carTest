@@ -3,6 +3,8 @@
     <!-- 顶部导航栏 -->
     <van-nav-bar 
       title="我的车辆"
+      left-arrow
+      @click-left="onClickLeft"
       fixed
     >
       <template #right>
@@ -139,10 +141,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { showNotify } from 'vant';
 import { useVehicleStore } from '../stores/vehicle';
 import { getMobileVehicles, getVehicleTypes } from '../api/vehicle';
 
+const router = useRouter();
 const vehicleStore = useVehicleStore();
 
 // 搜索相关
@@ -259,6 +263,11 @@ const onRefresh = async () => {
   } finally {
     refreshing.value = false;
   }
+};
+
+// 返回上一页
+const onClickLeft = () => {
+  router.back();
 };
 
 // 加载更多

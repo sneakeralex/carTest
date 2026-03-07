@@ -1,5 +1,5 @@
 import { mockTestTasks, mockTestRegistrations, mockTestStats } from '../mock/testTask.js';
-import { artemisRequest } from './request';
+import { artemisRequest } from './request.js';
 
 // 模拟API响应延迟
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -709,5 +709,449 @@ export async function createTestTask(taskData) {
     };
     mockTestTasks.content.push(newTask);
     return mockResponse(newTask);
+  }
+}
+
+/**
+ * 获取试验任务列表
+ * @param {Object} params - 查询参数
+ * @param {string} params.testType - 测试类型
+ * @param {string} params.status - 状态
+ * @param {number} params.page - 页码
+ * @param {number} params.size - 每页数量
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getExperimentTasks(params = {}) {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params.testType) queryParams.append('testType', params.testType);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.page !== undefined) queryParams.append('page', params.page);
+    if (params.size) queryParams.append('size', params.size);
+
+    const res = await artemisRequest(`/artemis/api/v1/experiment-task/list?${queryParams}`, { method: 'GET' });
+
+    const result = res?.data;
+
+    console.log('获取试验任务列表原始API响应:', JSON.stringify(result, null, 2));
+
+    // Transform response to expected format
+    const tasks = (result.data?.list || result.data?.content || result.data || []).map(task => ({
+      taskId: task.taskId || task.id,
+      taskName: task.taskName || task.name,
+      description: task.description,
+      testType: task.testType,
+      experimentType: task.experimentType,
+      department: task.department,
+      difficulty: task.difficulty,
+      startDate: task.startDate,
+      endDate: task.endDate,
+      estimatedDuration: task.estimatedDuration,
+      testSite: task.testSite,
+      fee: task.fee,
+      status: task.status,
+      createdAt: task.createdAt || task.createTime,
+      updatedAt: task.updatedAt || task.updateTime,
+      // Keep original fields for compatibility
+      ...task
+    }));
+
+    return {
+      data: {
+        content: tasks,
+        pageable: {
+          pageNumber: result.data?.pageNo || result.data?.pageable?.pageNumber || params.page || 0,
+          pageSize: result.data?.pageSize || result.data?.pageable?.pageSize || params.size || 10,
+          total: result.data?.total || result.data?.pageable?.total || tasks.length
+        }
+      },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取试验任务列表失败:', error);
+    // Fallback to mock data
+    await delay(500);
+    return mockResponse(mockTestTasks);
+  }
+}
+
+/**
+ * 根据ID获取试验任务详情
+ * @param {string} taskId - 任务ID
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getExperimentTaskById(taskId) {
+  try {
+    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}`, { method: 'GET' });
+
+    const result = res?.data;
+
+    console.log('获取试验任务详情原始API响应:', JSON.stringify(result, null, 2));
+
+    // Transform response to expected format
+    const task = result.data || result;
+    const transformedTask = {
+      taskId: task.taskId || task.id,
+      taskName: task.taskName || task.name,
+      description: task.description,
+      testType: task.testType,
+      experimentType: task.experimentType,
+      department: task.department,
+      difficulty: task.difficulty,
+      startDate: task.startDate,
+      endDate: task.endDate,
+      estimatedDuration: task.estimatedDuration,
+      testSite: task.testSite,
+      fee: task.fee,
+      status: task.status,
+      contractInfo: task.contractInfo,
+      vehicles: task.vehicles,
+      equipment: task.equipment,
+      requirements: task.requirements,
+      notes: task.notes,
+      createdAt: task.createdAt || task.createTime,
+      updatedAt: task.updatedAt || task.updateTime,
+      // Keep original fields for compatibility
+      ...task
+    };
+
+    return {
+      data: transformedTask,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取试验任务详情失败:', error);
+    // Fallback to mock data
+    await delay(300);
+    const task = mockTestTasks.content.find(t => t.taskId === taskId);
+    if (!task) {
+      throw new Error('试验任务不存在');
+    }
+    return mockResponse(task);
+  }
+}
+
+/**
+ * 创建试验任务
+ * @param {Object} taskData - 任务数据
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function createExperimentTask(taskData) {
+  try {
+    const res = await artemisRequest('/artemis/api/v1/experiment-task', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(taskData)
+    });
+
+    const result = res?.data;
+
+    console.log('创建试验任务原始API响应:', JSON.stringify(result, null, 2));
+
+    // Transform response to expected format
+    const task = result.data || result;
+    const transformedTask = {
+      taskId: task.taskId || task.id,
+      taskName: task.taskName || task.name,
+      description: task.description,
+      testType: task.testType,
+      experimentType: task.experimentType,
+      department: task.department,
+      difficulty: task.difficulty,
+      startDate: task.startDate,
+      endDate: task.endDate,
+      estimatedDuration: task.estimatedDuration,
+      testSite: task.testSite,
+      fee: task.fee,
+      status: task.status || 'DRAFT',
+      createdAt: task.createdAt || task.createTime || new Date().toISOString(),
+      updatedAt: task.updatedAt || task.updateTime || new Date().toISOString(),
+      // Keep original fields for compatibility
+      ...task
+    };
+
+    return {
+      data: transformedTask,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('创建试验任务失败:', error);
+    // Fallback to mock data
+    await delay(800);
+    const newTask = {
+      taskId: String(mockTestTasks.content.length + 1),
+      ...taskData,
+      status: 'DRAFT',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    mockTestTasks.content.push(newTask);
+    return mockResponse(newTask);
+  }
+}
+
+/**
+ * 更新试验任务
+ * @param {string} taskId - 任务ID
+ * @param {Object} taskData - 任务数据
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function updateExperimentTask(taskId, taskData) {
+  try {
+    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(taskData)
+    });
+
+    const result = res?.data;
+
+    console.log('更新试验任务原始API响应:', JSON.stringify(result, null, 2));
+
+    // Transform response to expected format
+    const task = result.data || result;
+    const transformedTask = {
+      taskId: task.taskId || task.id,
+      taskName: task.taskName || task.name,
+      description: task.description,
+      testType: task.testType,
+      experimentType: task.experimentType,
+      department: task.department,
+      difficulty: task.difficulty,
+      startDate: task.startDate,
+      endDate: task.endDate,
+      estimatedDuration: task.estimatedDuration,
+      testSite: task.testSite,
+      fee: task.fee,
+      status: task.status,
+      updatedAt: task.updatedAt || task.updateTime || new Date().toISOString(),
+      // Keep original fields for compatibility
+      ...task
+    };
+
+    return {
+      data: transformedTask,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('更新试验任务失败:', error);
+    // Fallback to mock data
+    await delay(500);
+    const task = mockTestTasks.content.find(t => t.taskId === taskId);
+    if (!task) {
+      throw new Error('试验任务不存在');
+    }
+    Object.assign(task, taskData, { updatedAt: new Date().toISOString() });
+    return mockResponse(task);
+  }
+}
+
+/**
+ * 删除试验任务
+ * @param {string} taskId - 任务ID
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function deleteExperimentTask(taskId) {
+  try {
+    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}`, {
+      method: 'DELETE'
+    });
+
+    const result = res?.data;
+
+    console.log('删除试验任务原始API响应:', JSON.stringify(result, null, 2));
+
+    return {
+      data: { success: true },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('删除试验任务失败:', error);
+    // Fallback to mock data
+    await delay(500);
+    const index = mockTestTasks.content.findIndex(t => t.taskId === taskId);
+    if (index === -1) {
+      throw new Error('试验任务不存在');
+    }
+    mockTestTasks.content.splice(index, 1);
+    return mockResponse({ success: true });
+  }
+}
+
+/**
+ * 提交试验任务审核
+ * @param {string} taskId - 任务ID
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function submitExperimentTaskForApproval(taskId) {
+  try {
+    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}/submit`, {
+      method: 'PUT'
+    });
+
+    const result = res?.data;
+
+    console.log('提交试验任务审核原始API响应:', JSON.stringify(result, null, 2));
+
+    return {
+      data: { success: true },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('提交试验任务审核失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 审核试验任务
+ * @param {string} taskId - 任务ID
+ * @param {Object} approvalData - 审核数据
+ * @param {string} approvalData.status - 审核状态 (APPROVED/REJECTED)
+ * @param {string} [approvalData.remark] - 审核备注
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function approveExperimentTask(taskId, approvalData) {
+  try {
+    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}/approve`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(approvalData)
+    });
+
+    const result = res?.data;
+
+    console.log('审核试验任务原始API响应:', JSON.stringify(result, null, 2));
+
+    return {
+      data: { success: true },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('审核试验任务失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 开始试验任务
+ * @param {string} taskId - 任务ID
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function startExperimentTask(taskId) {
+  try {
+    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}/start`, {
+      method: 'PUT'
+    });
+
+    const result = res?.data;
+
+    console.log('开始试验任务原始API响应:', JSON.stringify(result, null, 2));
+
+    return {
+      data: { success: true },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('开始试验任务失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 完成试验任务
+ * @param {string} taskId - 任务ID
+ * @param {Object} completionData - 完成数据
+ * @param {string} completionData.result - 试验结果
+ * @param {string} [completionData.remark] - 备注
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function completeExperimentTask(taskId, completionData) {
+  try {
+    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}/complete`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(completionData)
+    });
+
+    const result = res?.data;
+
+    console.log('完成试验任务原始API响应:', JSON.stringify(result, null, 2));
+
+    return {
+      data: { success: true },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('完成试验任务失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 取消试验任务
+ * @param {string} taskId - 任务ID
+ * @param {string} [reason] - 取消原因
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function cancelExperimentTask(taskId, reason) {
+  try {
+    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}/cancel`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ reason })
+    });
+
+    const result = res?.data;
+
+    console.log('取消试验任务原始API响应:', JSON.stringify(result, null, 2));
+
+    return {
+      data: { success: true },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('取消试验任务失败:', error);
+    throw error;
   }
 }

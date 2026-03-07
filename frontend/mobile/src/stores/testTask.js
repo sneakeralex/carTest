@@ -13,7 +13,14 @@ import {
   getUserTestRegistrations,
   getTaskRegistrations,
   getTestStats,
-  createTestTask as createTestTaskApi
+  createTestTask as createTestTaskApi,
+  updateExperimentTask,
+  deleteExperimentTask,
+  submitExperimentTaskForApproval,
+  approveExperimentTask,
+  startExperimentTask,
+  completeExperimentTask,
+  cancelExperimentTask
 } from '../api/testTask';
 import { testRegistrationApi } from '../api/testRegistration';
 
@@ -230,6 +237,156 @@ export const useTestTaskStore = defineStore('testTask', () => {
     }
   };
 
+  // 更新试验任务
+  const updateTestTask = async (taskId, taskData) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await updateExperimentTask(taskId, taskData);
+      // 更新成功后，刷新当前任务详情
+      if (currentTestTask.value && currentTestTask.value.id === taskId) {
+        currentTestTask.value = response.data;
+      }
+      // 可选：刷新任务列表
+      // await fetchTestTasks();
+      return response;
+    } catch (err) {
+      error.value = err.response?.data?.message || '更新试验任务失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 删除试验任务
+  const deleteTestTask = async (taskId) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await deleteExperimentTask(taskId);
+      // 删除成功后，刷新任务列表
+      await fetchTestTasks();
+      return response;
+    } catch (err) {
+      error.value = err.response?.data?.message || '删除试验任务失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 提交试验任务审核
+  const submitTaskForApproval = async (taskId) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await submitExperimentTaskForApproval(taskId);
+      // 提交成功后，更新当前任务状态
+      if (currentTestTask.value && currentTestTask.value.id === taskId) {
+        currentTestTask.value.status = 'PENDING';
+      }
+      // 可选：刷新任务列表
+      // await fetchTestTasks();
+      return response;
+    } catch (err) {
+      error.value = err.response?.data?.message || '提交试验任务审核失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 审批试验任务
+  const approveTask = async (taskId, approvalData) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await approveExperimentTask(taskId, approvalData);
+      // 审批成功后，更新当前任务状态
+      if (currentTestTask.value && currentTestTask.value.id === taskId) {
+        currentTestTask.value.status = approvalData.approved ? 'APPROVED' : 'REJECTED';
+      }
+      // 可选：刷新任务列表
+      // await fetchTestTasks();
+      return response;
+    } catch (err) {
+      error.value = err.response?.data?.message || '审批试验任务失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 开始试验任务
+  const startTask = async (taskId) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await startExperimentTask(taskId);
+      // 开始成功后，更新当前任务状态
+      if (currentTestTask.value && currentTestTask.value.id === taskId) {
+        currentTestTask.value.status = 'IN_PROGRESS';
+      }
+      // 可选：刷新任务列表
+      // await fetchTestTasks();
+      return response;
+    } catch (err) {
+      error.value = err.response?.data?.message || '开始试验任务失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 完成试验任务
+  const completeTask = async (taskId, completionData) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await completeExperimentTask(taskId, completionData);
+      // 完成成功后，更新当前任务状态
+      if (currentTestTask.value && currentTestTask.value.id === taskId) {
+        currentTestTask.value.status = 'COMPLETED';
+      }
+      // 可选：刷新任务列表
+      // await fetchTestTasks();
+      return response;
+    } catch (err) {
+      error.value = err.response?.data?.message || '完成试验任务失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 取消试验任务
+  const cancelTask = async (taskId, cancelReason) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await cancelExperimentTask(taskId, { cancelReason });
+      // 取消成功后，更新当前任务状态
+      if (currentTestTask.value && currentTestTask.value.id === taskId) {
+        currentTestTask.value.status = 'CANCELLED';
+      }
+      // 可选：刷新任务列表
+      // await fetchTestTasks();
+      return response;
+    } catch (err) {
+      error.value = err.response?.data?.message || '取消试验任务失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     // 状态
     testTasks,
@@ -247,6 +404,13 @@ export const useTestTaskStore = defineStore('testTask', () => {
     fetchTestTasks,
     fetchTestTaskById,
     fetchUserTestRegistrations,
-    createTestTask
+    createTestTask,
+    updateTestTask,
+    deleteTestTask,
+    submitTaskForApproval,
+    approveTask,
+    startTask,
+    completeTask,
+    cancelTask
   };
 });

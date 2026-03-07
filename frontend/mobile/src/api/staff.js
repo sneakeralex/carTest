@@ -371,3 +371,306 @@ export async function deleteStaffDocument(staffId, type) {
     throw error; // Remove mock fallback
   }
 }
+
+/**
+ * 获取驾驶员列表
+ * @param {Object} params - 查询参数
+ * @param {number} params.pageNum - 页码，默认为1
+ * @param {number} params.pageSize - 每页数量，默认为20
+ * @param {string} [params.status] - 状态
+ * @param {string} [params.keyword] - 搜索关键词
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getDriverList(params = {}) {
+  const pageNum = params.pageNum || 1;
+  const pageSize = params.pageSize || 20;
+
+  try {
+    const res = await artemisRequest('/artemis/api/v1/driver/list', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      },
+      body: JSON.stringify({ pageSize, pageNum, status: params.status, keyword: params.keyword })
+    });
+
+    const result = res?.data;
+
+    console.log('驾驶员列表原始API响应:', JSON.stringify(result, null, 2));
+
+    if (result.code !== '0') {
+      throw new Error(result.msg || '获取驾驶员列表失败');
+    }
+
+    // Transform the response to match the expected format
+    const transformedDrivers = result.data.list.map(driver => ({
+      userId: driver.id,
+      name: driver.driverName,
+      type: 'DRIVER',
+      phone: driver.phone,
+      gender: driver.gender,
+      genderText: driver.genderName,
+      position: '驾驶员',
+      department: driver.enterpriseName,
+      employeeId: driver.id,
+      driverLicense: driver.driverLicense,
+      driverLicenseExpiry: driver.driverLicenseExpiry,
+      driverLicenseType: driver.driverLicenseType,
+      drivingExperience: driver.drivingExperience,
+      status: driver.status,
+      address: driver.address,
+      remarks: driver.remarks,
+      createdAt: driver.createTime,
+      updatedAt: driver.updateTime,
+      // Keep original fields for compatibility
+      ...driver
+    }));
+
+    return {
+      data: transformedDrivers,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取驾驶员列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取驾驶员详情
+ * @param {string} driverId - 驾驶员ID
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getDriverById(driverId) {
+  try {
+    const res = await artemisRequest(`/artemis/api/v1/driver/${driverId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*' }
+    });
+
+    const result = res?.data;
+
+    console.log('驾驶员详情原始API响应:', JSON.stringify(result, null, 2));
+    
+    // Transform the response to match the expected format
+    const driver = result.data || result;
+    const transformedDriver = {
+      userId: driver.id,
+      name: driver.driverName,
+      type: 'DRIVER',
+      phone: driver.phone,
+      gender: driver.gender,
+      genderText: driver.genderName,
+      position: '驾驶员',
+      department: driver.enterpriseName,
+      employeeId: driver.id,
+      driverLicense: driver.driverLicense,
+      driverLicenseExpiry: driver.driverLicenseExpiry,
+      driverLicenseType: driver.driverLicenseType,
+      drivingExperience: driver.drivingExperience,
+      status: driver.status,
+      address: driver.address,
+      remarks: driver.remarks,
+      createdAt: driver.createTime,
+      updatedAt: driver.updateTime,
+      // Keep original fields for compatibility
+      ...driver
+    };
+
+    return {
+      data: transformedDriver,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取驾驶员详情失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 创建设驾驶员
+ * @param {Object} driverData - 驾驶员数据
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function createDriver(driverData) {
+  try {
+    // Transform data to match API expectations
+    const requestData = {
+      driverName: driverData.name,
+      phone: driverData.phone,
+      gender: driverData.gender,
+      driverLicense: driverData.driverLicense,
+      driverLicenseExpiry: driverData.driverLicenseExpiry,
+      driverLicenseType: driverData.driverLicenseType,
+      drivingExperience: driverData.drivingExperience,
+      status: driverData.status || 'ACTIVE',
+      address: driverData.address,
+      remarks: driverData.remarks,
+      // Add any other required fields
+      ...driverData
+    };
+
+    const res = await artemisRequest('/artemis/api/v1/driver', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      },
+      body: JSON.stringify(requestData)
+    });
+
+    const result = res?.data;
+
+    console.log('创建设驾驶员原始API响应:', JSON.stringify(result, null, 2));
+    
+    // Transform the response to match the expected format
+    const driver = result.data || result;
+    const transformedDriver = {
+      userId: driver.id,
+      name: driver.driverName,
+      type: 'DRIVER',
+      phone: driver.phone,
+      gender: driver.gender,
+      genderText: driver.genderName,
+      position: '驾驶员',
+      department: driver.enterpriseName,
+      employeeId: driver.id,
+      driverLicense: driver.driverLicense,
+      driverLicenseExpiry: driver.driverLicenseExpiry,
+      driverLicenseType: driver.driverLicenseType,
+      drivingExperience: driver.drivingExperience,
+      status: driver.status,
+      address: driver.address,
+      remarks: driver.remarks,
+      createdAt: driver.createTime,
+      updatedAt: driver.updateTime,
+      // Keep original fields for compatibility
+      ...driver
+    };
+
+    return {
+      data: transformedDriver,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('创建设驾驶员失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 更新驾驶员信息
+ * @param {Object} driverData - 驾驶员数据
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function updateDriver(driverData) {
+  try {
+    // Transform data to match API expectations
+    const requestData = {
+      id: driverData.userId,
+      driverName: driverData.name,
+      phone: driverData.phone,
+      gender: driverData.gender,
+      driverLicense: driverData.driverLicense,
+      driverLicenseExpiry: driverData.driverLicenseExpiry,
+      driverLicenseType: driverData.driverLicenseType,
+      drivingExperience: driverData.drivingExperience,
+      status: driverData.status,
+      address: driverData.address,
+      remarks: driverData.remarks,
+      // Add any other required fields
+      ...driverData
+    };
+
+    const res = await artemisRequest('/artemis/api/v1/driver', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      },
+      body: JSON.stringify(requestData)
+    });
+
+    const result = res?.data;
+
+    console.log('更新驾驶员原始API响应:', JSON.stringify(result, null, 2));
+    
+    // Transform the response to match the expected format
+    const driver = result.data || result;
+    const transformedDriver = {
+      userId: driver.id,
+      name: driver.driverName,
+      type: 'DRIVER',
+      phone: driver.phone,
+      gender: driver.gender,
+      genderText: driver.genderName,
+      position: '驾驶员',
+      department: driver.enterpriseName,
+      employeeId: driver.id,
+      driverLicense: driver.driverLicense,
+      driverLicenseExpiry: driver.driverLicenseExpiry,
+      driverLicenseType: driver.driverLicenseType,
+      drivingExperience: driver.drivingExperience,
+      status: driver.status,
+      address: driver.address,
+      remarks: driver.remarks,
+      createdAt: driver.createTime,
+      updatedAt: driver.updateTime,
+      // Keep original fields for compatibility
+      ...driver
+    };
+
+    return {
+      data: transformedDriver,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('更新驾驶员信息失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 删除驾驶员
+ * @param {string} driverId - 驾驶员ID
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function deleteDriver(driverId) {
+  try {
+    const res = await artemisRequest(`/artemis/api/v1/driver/${driverId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      }
+    });
+
+    const result = res?.data;
+
+    console.log('删除驾驶员原始API响应:', JSON.stringify(result, null, 2));
+
+    return {
+      data: { success: true },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('删除驾驶员失败:', error);
+    throw error;
+  }
+}

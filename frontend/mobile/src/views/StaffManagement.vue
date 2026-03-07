@@ -223,10 +223,21 @@ const staffList = ref([]);    // 初始化数据
 const initializeData = async () => {
   try {
     loading.value = true;
-    const data = await staffStore.fetchStaffList();
-    console.log('Fetched staff list:', data);
-    staffList.value = data || [];
-    if (!data || data.length === 0) {
+    
+    // 并行加载人员和驾驶员列表
+    const [staffData, driverData] = await Promise.all([
+      staffStore.fetchStaffList(),
+      staffStore.fetchDriverList()
+    ]);
+    
+    console.log('Fetched staff list:', staffData);
+    console.log('Fetched driver list:', driverData);
+    
+    // 合并数据
+    const allData = [...(staffData || []), ...(driverData || [])];
+    staffList.value = allData;
+    
+    if (!allData || allData.length === 0) {
       showToast({
         type: 'fail',
         message: '暂无人员数据'
@@ -351,7 +362,11 @@ const deleteStaff = async (staff) => {
       showCancelButton: true
     });
     
-    await staffStore.deleteStaff(staff.userId);
+    if (staff.type === 'DRIVER') {
+      await staffStore.deleteDriver(staff.userId);
+    } else {
+      await staffStore.deleteStaff(staff.userId);
+    }
     showToast({
       type: 'success',
       message: '删除成功'
@@ -372,16 +387,27 @@ const onSubmitStaff = async (values) => {
   try {
     submitting.value = true;
     if (isEditing.value) {
-      await staffStore.updateStaff({
-        userId: staffForm.value.userId,
-        ...values
-      });
+      if (values.type === 'DRIVER') {
+        await staffStore.updateDriver({
+          userId: staffForm.value.userId,
+          ...values
+        });
+      } else {
+        await staffStore.updateStaff({
+          userId: staffForm.value.userId,
+          ...values
+        });
+      }
       showToast({
         type: 'success',
         message: '更新成功'
       });
     } else {
-      await staffStore.addStaff(values);
+      if (values.type === 'DRIVER') {
+        await staffStore.addDriver(values);
+      } else {
+        await staffStore.addStaff(values);
+      }
       showToast({
         type: 'success',
         message: '添加成功'

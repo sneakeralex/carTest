@@ -102,6 +102,34 @@
         </van-button>
       </div>
 
+      <!-- 告警信息显示 -->
+      <div v-if="notification.category === 'alert'" class="alert-section">
+        <van-cell-group title="告警信息">
+          <van-cell title="告警类型" :value="notification.alertType" />
+          <van-cell title="设备名称" :value="notification.deviceName || '未知'" v-if="notification.deviceName" />
+          <van-cell title="场地名称" :value="notification.siteName || '未知'" v-if="notification.siteName" />
+          <van-cell title="告警状态">
+            <template #value>
+              <van-tag :type="notification.status === 'active' ? 'danger' : 'success'" plain round>
+                {{ notification.status === 'active' ? '未处理' : '已处理' }}
+              </van-tag>
+            </template>
+          </van-cell>
+        </van-cell-group>
+      </div>
+
+      <!-- 告警处理操作 -->
+      <div v-if="notification.category === 'alert' && notification.status === 'active'" class="action-buttons">
+        <van-button
+          type="primary"
+          block
+          @click="handleAlert"
+          class="action-button"
+        >
+          处理告警
+        </van-button>
+      </div>
+
       <!-- 相关链接 -->
       <div class="related-links">
         <van-cell-group title="相关操作">
@@ -189,7 +217,8 @@ const getNotificationIcon = (type) => {
     'SITE_NOTIFICATION': 'location-o',
     'EQUIPMENT_REMINDER': 'tool-o',
     'APPOINTMENT': 'calendar-o',
-    'TEST': 'experiment'
+    'TEST': 'experiment',
+    'ALERT': 'warning-o'
   };
   return iconMap[type] || 'bell';
 };
@@ -372,6 +401,24 @@ const viewRelatedDetail = () => {
 // 跳转到通知设置
 const goToNotificationSettings = () => {
   router.push('/profile/notifications');
+};
+
+// 处理告警
+const handleAlert = async () => {
+  try {
+    await dashboardStore.handleAlert(notification.value.id, {
+      status: 'resolved',
+      handler: userProfile.value.name || '未知用户',
+      remark: '已处理告警'
+    });
+    
+    // 更新本地状态
+    notification.value.status = 'resolved';
+    showToast('告警处理成功');
+  } catch (error) {
+    console.error('处理告警失败:', error);
+    showToast('处理告警失败');
+  }
 };
 </script>
 

@@ -90,13 +90,14 @@
 
       <!-- 操作按钮 -->
       <div class="action-buttons">
+        <!-- 报名按钮 -->
         <van-button
           v-if="!isRegistered"
           type="primary"
           size="large"
           block
           @click="registerTask"
-          :disabled="testTask.status !== 'ACTIVE'"
+          :disabled="testTask.status !== 'APPROVED'"
         >
           报名参加
         </van-button>
@@ -109,6 +110,27 @@
         >
           已报名
         </van-button>
+        
+        <!-- 任务操作按钮组 -->
+        <div class="task-actions" v-if="testTask.status === 'DRAFT'">
+          <van-button type="primary" @click="submitForApproval">提交审核</van-button>
+          <van-button type="danger" @click="deleteTask">删除任务</van-button>
+        </div>
+        
+        <div class="task-actions" v-else-if="testTask.status === 'PENDING'">
+          <van-button type="success" @click="approveTask(true)">通过</van-button>
+          <van-button type="danger" @click="approveTask(false)">拒绝</van-button>
+        </div>
+        
+        <div class="task-actions" v-else-if="testTask.status === 'APPROVED'">
+          <van-button type="primary" @click="startTask">开始任务</van-button>
+          <van-button type="danger" @click="cancelTask">取消任务</van-button>
+        </div>
+        
+        <div class="task-actions" v-else-if="testTask.status === 'IN_PROGRESS'">
+          <van-button type="success" @click="completeTask">完成任务</van-button>
+          <van-button type="danger" @click="cancelTask">取消任务</van-button>
+        </div>
       </div>
     </div>
 
@@ -196,6 +218,131 @@ const registerTask = async () => {
   }
 };
 
+// 提交审核
+const submitForApproval = async () => {
+  try {
+    await showConfirmDialog({
+      title: '提交审核',
+      message: '确定要提交该测试任务进行审核吗？',
+    });
+
+    await testTaskStore.submitTaskForApproval(testTask.value.id || testTask.value.taskId);
+    showToast('提交成功');
+    // 重新获取任务详情
+    await fetchTestTaskDetail();
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('提交审核失败:', error);
+      showToast('提交审核失败，请稍后重试');
+    }
+  }
+};
+
+// 删除任务
+const deleteTask = async () => {
+  try {
+    await showConfirmDialog({
+      title: '确认删除',
+      message: `确定要删除测试任务"${testTask.value.taskName}"吗？`,
+    });
+
+    await testTaskStore.deleteTestTask(testTask.value.id || testTask.value.taskId);
+    showToast('删除成功');
+    // 跳回任务列表
+    router.push('/test-tasks');
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除任务失败:', error);
+      showToast('删除任务失败，请稍后重试');
+    }
+  }
+};
+
+// 审批任务
+const approveTask = async (approved) => {
+  try {
+    await showConfirmDialog({
+      title: approved ? '通过审核' : '拒绝审核',
+      message: approved ? '确定要通过该测试任务吗？' : '确定要拒绝该测试任务吗？',
+    });
+
+    await testTaskStore.approveTask(testTask.value.id || testTask.value.taskId, {
+      approved,
+      approvalComments: approved ? '审核通过' : '审核拒绝'
+    });
+    showToast(approved ? '通过成功' : '拒绝成功');
+    // 重新获取任务详情
+    await fetchTestTaskDetail();
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('审批失败:', error);
+      showToast('审批失败，请稍后重试');
+    }
+  }
+};
+
+// 开始任务
+const startTask = async () => {
+  try {
+    await showConfirmDialog({
+      title: '开始任务',
+      message: '确定要开始该测试任务吗？',
+    });
+
+    await testTaskStore.startTask(testTask.value.id || testTask.value.taskId);
+    showToast('开始成功');
+    // 重新获取任务详情
+    await fetchTestTaskDetail();
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('开始任务失败:', error);
+      showToast('开始任务失败，请稍后重试');
+    }
+  }
+};
+
+// 完成任务
+const completeTask = async () => {
+  try {
+    await showConfirmDialog({
+      title: '完成任务',
+      message: '确定要完成该测试任务吗？',
+    });
+
+    await testTaskStore.completeTask(testTask.value.id || testTask.value.taskId, {
+      completionNotes: '任务已完成'
+    });
+    showToast('完成成功');
+    // 重新获取任务详情
+    await fetchTestTaskDetail();
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('完成任务失败:', error);
+      showToast('完成任务失败，请稍后重试');
+    }
+  }
+};
+
+// 取消任务
+const cancelTask = async () => {
+  try {
+    await showConfirmDialog({
+      title: '取消任务',
+      message: '确定要取消该测试任务吗？',
+    });
+
+    await testTaskStore.cancelTask(testTask.value.id || testTask.value.taskId, '用户取消');
+    showToast('取消成功');
+    // 重新获取任务详情
+    await fetchTestTaskDetail();
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('取消任务失败:', error);
+      showToast('取消任务失败，请稍后重试');
+    }
+  }
+};
+
 // 组件挂载时获取数据
 onMounted(() => {
   fetchTestTaskDetail();
@@ -241,5 +388,15 @@ onMounted(() => {
 
 .van-cell-group {
   margin-bottom: 12px;
+}
+
+.task-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  
+  .van-button {
+    flex: 1;
+  }
 }
 </style>

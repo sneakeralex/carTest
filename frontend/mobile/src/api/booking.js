@@ -569,61 +569,22 @@ export async function getBookingNo(prefix) {
  * @returns {Promise} - 返回Promise对象
  */
 export async function getTestItems() {
-  try {
-    const url = `${test_management_base_url}/api/v1/ground/testItem`;
-    console.log('获取项目列表请求URL:', url);
+  const url = `${test_management_base_url}/api/v1/ground/testItem`;
+  console.log('获取项目列表请求URL:', url);
 
-    const res = await artemisRequest(`/artemis/api/v1/ground/testItem`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
-    const result = res?.data;
-    console.log('项目列表原始API响应:', JSON.stringify(result, null, 2));
+  const res = await artemisRequest(`/artemis/api/v1/ground/testItem`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
+  const result = res?.data;
+  console.log('项目列表原始API响应:', JSON.stringify(result, null, 2));
 
-    if (result.code !== '0' && result.code !== 200) {
-      console.warn('API返回错误码，使用fallback数据:', result.msg);
-      // 使用fallback数据而不是抛出错误
-      return getFallbackTestItems();
-    }
-
-    // Transform the response to match the expected format
-    const testItems = result?.data || result || [];
-    
-    // 如果数据为空或格式不正确，使用fallback数据
-    if (!Array.isArray(testItems) || testItems.length === 0) {
-      console.warn('API返回空数据或格式不正确，使用fallback数据');
-      return getFallbackTestItems();
-    }
-
-    return {
-      data: testItems,
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {}
-    };
-  } catch (error) {
-    console.error('获取项目列表失败，使用fallback数据:', error);
-    // 使用fallback数据而不是抛出错误
-    return getFallbackTestItems();
+  if (result.code !== '0' && result.code !== 200) {
+    throw new Error(result.msg || '获取项目列表失败');
   }
-}
 
-/**
- * 获取fallback测试项目数据
- * @returns {Object} - 返回包含fallback数据的响应格式
- */
-function getFallbackTestItems() {
-  const fallbackItems = [
-    { id: 1, name: '碰撞测试', testType: 'CRASH_TEST' },
-    { id: 2, name: '制动测试', testType: 'BRAKE_TEST' },
-    { id: 3, name: '性能测试', testType: 'PERFORMANCE_TEST' },
-    { id: 4, name: '噪声测试', testType: 'NOISE_TEST' },
-    { id: 5, name: '排放测试', testType: 'EMISSION_TEST' },
-    { id: 6, name: '自动驾驶测试', testType: 'AUTONOMOUS_DRIVING' },
-    { id: 7, name: '电池测试', testType: 'EV_BATTERY_TEST' },
-    { id: 8, name: '充电测试', testType: 'CHARGING_TEST' }
-  ];
-  
+  // Transform the response to match the expected format
+  const testItems = result?.data || result || [];
+
   return {
-    data: fallbackItems,
+    data: testItems,
     status: 200,
     statusText: 'OK',
     headers: {},

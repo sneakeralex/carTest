@@ -1,4 +1,4 @@
-import { get } from 'vant/lib/utils/basic.js';
+// 移除vant依赖，避免在Node.js环境中运行时的模块导入问题
 import { 
   mockDashboardStats, 
   mockRecentBookings, 
@@ -7,10 +7,8 @@ import {
   mockWeatherInfo
 } from '../mock/dashboard.js';
 import { delay, mockResponse, validateToken, MockApiError } from '../mock/utils.js';
-import { useBookingStore } from '../stores/booking';
-import { artemisRequest } from './request';
+import { artemisRequest } from './request.js';
 
-const bookingStore = useBookingStore();
 /**
  * 获取移动端仪表板统计信息
  * @returns {Promise} - 返回Promise对象
@@ -71,14 +69,14 @@ export async function getMobileDashboardStats() {
  */
 export async function getRecentBookings(limit = 5) {
   try {
-    // 调用 booking.js 中的 getBookings 方法
-    const bookingsData = await bookingStore.fetchBookings({   
-      pageNum: 1,
-      pageSize: limit
-    });
+    // 直接调用API获取预约列表
+    const res = await artemisRequest(`/artemis/api/v1/booking/list?pageNum=1&pageSize=${limit}`, { method: 'GET' });
+    const result = res?.data;
+    
+    console.log('获取最近预约原始API响应:', JSON.stringify(result, null, 2));
 
     // Transform response to expected format based on actual API response
-    const bookings = (bookingsData || []).map(booking => ({
+    const bookings = (result.data?.list || result.data?.content || result.data || []).map(booking => ({
       id: booking.id || booking.bookingId,
       bookingId: booking.id || booking.bookingId,
       // 场地相关字段 - 使用实际API字段
@@ -391,5 +389,333 @@ export async function getUnreadNotificationCount() {
       throw error;
     }
     throw new MockApiError(error.message || '获取未读通知数量失败');
+  }
+}
+
+/**
+ * 获取设备统计信息
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getEquipmentStats() {
+  try {
+    const res = await artemisRequest('/artemis/api/v1/equipment/stats', { method: 'GET' });
+    const result = res?.data;
+    console.log('获取设备统计原始API响应:', JSON.stringify(result, null, 2));
+
+    if (result.code !== '0' && result.code !== 200) {
+      throw new Error(result.msg || '获取设备统计失败');
+    }
+
+    // Transform response to expected format
+    const stats = result.data || result;
+    const transformedStats = {
+      total: stats.total || 0,
+      available: stats.available || 0,
+      inUse: stats.inUse || 0,
+      maintenance: stats.maintenance || 0,
+      ...stats // Keep original fields
+    };
+
+    return {
+      data: transformedStats,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取设备统计失败:', error);
+    // Fallback to mock data
+    try {
+      // 直接返回mock数据，避免在Node.js环境中使用localStorage
+      await delay(500);
+      return mockResponse({
+        total: 150,
+        available: 120,
+        inUse: 25,
+        maintenance: 5
+      });
+    } catch (mockError) {
+      if (mockError instanceof MockApiError) {
+        throw mockError;
+      }
+      throw new MockApiError(mockError.message || '获取设备统计失败');
+    }
+  }
+}
+
+/**
+ * 获取测试任务统计信息
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getTestTaskStats() {
+  try {
+    const res = await artemisRequest('/artemis/api/v1/test-task/stats', { method: 'GET' });
+    const result = res?.data;
+    console.log('获取测试任务统计原始API响应:', JSON.stringify(result, null, 2));
+
+    if (result.code !== '0' && result.code !== 200) {
+      throw new Error(result.msg || '获取测试任务统计失败');
+    }
+
+    // Transform response to expected format
+    const stats = result.data || result;
+    const transformedStats = {
+      total: stats.total || 0,
+      pending: stats.pending || 0,
+      approved: stats.approved || 0,
+      inProgress: stats.inProgress || 0,
+      completed: stats.completed || 0,
+      cancelled: stats.cancelled || 0,
+      ...stats // Keep original fields
+    };
+
+    return {
+      data: transformedStats,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取测试任务统计失败:', error);
+    // Fallback to mock data
+    try {
+      validateToken();
+      await delay(500);
+      return mockResponse({
+        total: 80,
+        pending: 15,
+        approved: 20,
+        inProgress: 25,
+        completed: 15,
+        cancelled: 5
+      });
+    } catch (mockError) {
+      if (mockError instanceof MockApiError) {
+        throw mockError;
+      }
+      throw new MockApiError(mockError.message || '获取测试任务统计失败');
+    }
+  }
+}
+
+/**
+ * 获取人员统计信息
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getStaffStats() {
+  try {
+    const res = await artemisRequest('/artemis/api/v1/staff/stats', { method: 'GET' });
+    const result = res?.data;
+    console.log('获取人员统计原始API响应:', JSON.stringify(result, null, 2));
+
+    if (result.code !== '0' && result.code !== 200) {
+      throw new Error(result.msg || '获取人员统计失败');
+    }
+
+    // Transform response to expected format
+    const stats = result.data || result;
+    const transformedStats = {
+      total: stats.total || 0,
+      drivers: stats.drivers || 0,
+      technicians: stats.technicians || 0,
+      administrators: stats.administrators || 0,
+      ...stats // Keep original fields
+    };
+
+    return {
+      data: transformedStats,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取人员统计失败:', error);
+    // Fallback to mock data
+    try {
+      validateToken();
+      await delay(500);
+      return mockResponse({
+        total: 50,
+        drivers: 25,
+        technicians: 15,
+        administrators: 10
+      });
+    } catch (mockError) {
+      if (mockError instanceof MockApiError) {
+        throw mockError;
+      }
+      throw new MockApiError(mockError.message || '获取人员统计失败');
+    }
+  }
+}
+
+/**
+ * 获取预约统计信息
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getBookingStats() {
+  try {
+    const res = await artemisRequest('/artemis/api/v1/booking/stats', { method: 'GET' });
+    const result = res?.data;
+    console.log('获取预约统计原始API响应:', JSON.stringify(result, null, 2));
+
+    if (result.code !== '0' && result.code !== 200) {
+      throw new Error(result.msg || '获取预约统计失败');
+    }
+
+    // Transform response to expected format
+    const stats = result.data || result;
+    const transformedStats = {
+      total: stats.total || 0,
+      pending: stats.pending || 0,
+      confirmed: stats.confirmed || 0,
+      completed: stats.completed || 0,
+      cancelled: stats.cancelled || 0,
+      ...stats // Keep original fields
+    };
+
+    return {
+      data: transformedStats,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取预约统计失败:', error);
+    // Fallback to mock data
+    try {
+      validateToken();
+      await delay(500);
+      return mockResponse({
+        total: 200,
+        pending: 30,
+        confirmed: 120,
+        completed: 40,
+        cancelled: 10
+      });
+    } catch (mockError) {
+      if (mockError instanceof MockApiError) {
+        throw mockError;
+      }
+      throw new MockApiError(mockError.message || '获取预约统计失败');
+    }
+  }
+}
+
+/**
+ * 获取告警统计信息
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getAlertStats() {
+  try {
+    const res = await artemisRequest('/artemis/api/v1/alert/stats', { method: 'GET' });
+    const result = res?.data;
+    console.log('获取告警统计原始API响应:', JSON.stringify(result, null, 2));
+
+    if (result.code !== '0' && result.code !== 200) {
+      throw new Error(result.msg || '获取告警统计失败');
+    }
+
+    // Transform response to expected format
+    const stats = result.data || result;
+    const transformedStats = {
+      total: stats.total || 0,
+      active: stats.active || 0,
+      handled: stats.handled || 0,
+      critical: stats.critical || 0,
+      warning: stats.warning || 0,
+      info: stats.info || 0,
+      ...stats // Keep original fields
+    };
+
+    return {
+      data: transformedStats,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取告警统计失败:', error);
+    // Fallback to mock data
+    try {
+      validateToken();
+      await delay(500);
+      return mockResponse({
+        total: 50,
+        active: 10,
+        handled: 40,
+        critical: 2,
+        warning: 5,
+        info: 3
+      });
+    } catch (mockError) {
+      if (mockError instanceof MockApiError) {
+        throw mockError;
+      }
+      throw new MockApiError(mockError.message || '获取告警统计失败');
+    }
+  }
+}
+
+/**
+ * 获取系统整体统计信息
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getSystemStats() {
+  try {
+    const res = await artemisRequest('/artemis/api/v1/system/stats', { method: 'GET' });
+    const result = res?.data;
+    console.log('获取系统统计原始API响应:', JSON.stringify(result, null, 2));
+
+    if (result.code !== '0' && result.code !== 200) {
+      throw new Error(result.msg || '获取系统统计失败');
+    }
+
+    // Transform response to expected format
+    const stats = result.data || result;
+    const transformedStats = {
+      totalVehicles: stats.totalVehicles || 0,
+      totalEquipment: stats.totalEquipment || 0,
+      totalStaff: stats.totalStaff || 0,
+      totalBookings: stats.totalBookings || 0,
+      totalTestTasks: stats.totalTestTasks || 0,
+      activeAlerts: stats.activeAlerts || 0,
+      pendingApprovals: stats.pendingApprovals || 0,
+      ...stats // Keep original fields
+    };
+
+    return {
+      data: transformedStats,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取系统统计失败:', error);
+    // Fallback to mock data
+    try {
+      validateToken();
+      await delay(500);
+      return mockResponse({
+        totalVehicles: 100,
+        totalEquipment: 150,
+        totalStaff: 50,
+        totalBookings: 200,
+        totalTestTasks: 80,
+        activeAlerts: 10,
+        pendingApprovals: 15
+      });
+    } catch (mockError) {
+      if (mockError instanceof MockApiError) {
+        throw mockError;
+      }
+      throw new MockApiError(mockError.message || '获取系统统计失败');
+    }
   }
 }
