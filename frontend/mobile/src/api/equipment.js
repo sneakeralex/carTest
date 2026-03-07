@@ -86,7 +86,10 @@ const mockResponse = (data) => ({
   config: {}
 });
 
-import { artemisRequest } from './request';
+import { artemisRequest } from './request.js';
+
+// 新的可租用设备清单接口地址
+const RENTABLE_EQUIPMENT_API = '/artemis/api/device/list';
 
 /**
  * 获取设备列表
@@ -595,5 +598,67 @@ export async function cancelEquipmentRequest(id, data) {
     if (index === -1) throw new Error('申请记录不存在');
     mockEquipmentApplications[index] = { ...mockEquipmentApplications[index], status: 'CANCELLED', cancelRemark: data.cancelRemark || '', updateTime: new Date().toISOString() };
     return mockResponse(mockEquipmentApplications[index]);
+  }
+}
+
+/**
+ * 获取可租用设备清单
+ * @param {Object} params - 查询参数
+ * @param {string} params.pageSize - 页长
+ * @param {string} params.pageNum - 页码
+ * @param {string} [params.deviceNo] - 设备编号
+ * @param {string} [params.deviceName] - 设备名称
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getRentableEquipmentList(params = {}) {
+  try {
+    // 构建查询参数
+    const queryParams = new URLSearchParams();
+    queryParams.append('pageSize', params.pageSize || '20');
+    queryParams.append('pageNum', params.pageNum || '1');
+    
+    if (params.deviceNo) {
+      queryParams.append('deviceNo', params.deviceNo);
+    }
+    
+    if (params.deviceName) {
+      queryParams.append('deviceName', params.deviceName);
+    }
+    
+    const url = `${RENTABLE_EQUIPMENT_API}?${queryParams.toString()}`;
+    
+    const res = await artemisRequest(url, {
+      method: 'GET',
+      headers: { 'Accept': '*/*' }
+    });
+    
+    const result = res?.data || {};
+    
+    // 转换响应格式以匹配项目的标准格式
+    const transformedEquipments = (result.data || []).map(device => ({
+      equipmentId: device.id || device.deviceId,
+      equipmentNo: device.deviceNo || device.deviceCode,
+      equipmentName: device.deviceName || device.name,
+      ...device
+    }));
+    
+    return {
+      data: {
+        content: transformedEquipments,
+        pageable: {
+          pageNumber: parseInt(params.pageNum || '1') - 1,
+          pageSize: parseInt(params.pageSize || '20'),
+          total: result.total || 0
+        }
+      },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    // 异常处理
+    console.error('获取可租用设备清单失败:', error);
+    throw error;
   }
 }

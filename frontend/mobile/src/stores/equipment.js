@@ -200,6 +200,53 @@ export const useEquipmentStore = defineStore('equipment', () => {
     }
   };
 
+  // 获取可租用设备列表
+  const fetchRentableEquipments = async (params = {}) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const queryParams = {
+        pageNum: params.page || pagination.value.page,
+        pageSize: params.pageSize || pagination.value.pageSize,
+        deviceNo: params.deviceNo,
+        deviceName: params.deviceName
+      };
+
+      const response = await equipmentApi.getRentableEquipmentList(queryParams);
+      
+      let data;
+      let records;
+      
+      if (Array.isArray(response)) {
+        records = response;
+        data = { records, total: records.length };
+      } else if (Array.isArray(response.data)) {
+        records = response.data;
+        data = { records, total: records.length };
+      } else {
+        records = response?.data?.records || response?.data?.data || response?.data?.content || [];
+        const total = response?.data?.total || response?.data?.totalElements || records.length;
+        data = { records, total };
+      }
+
+      // 更新分页信息
+      pagination.value = {
+        page: params.page || pagination.value.page,
+        pageSize: params.pageSize || pagination.value.pageSize,
+        total: data.total
+      };
+
+      equipments.value = data.records;
+      return data;
+    } catch (err) {
+      error.value = err.response?.data?.message || '获取可租用设备列表失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     // 状态
     equipments,
@@ -218,6 +265,7 @@ export const useEquipmentStore = defineStore('equipment', () => {
     applyEquipment,
     updateApplicationStatus,
     approveEquipmentRequest,
-    cancelEquipmentRequest
+    cancelEquipmentRequest,
+    fetchRentableEquipments
   };
 });

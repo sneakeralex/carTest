@@ -10,17 +10,30 @@
     />
 
     <!-- 顶部搜索 -->
-    <van-search
-      v-model="searchText"
-      placeholder="搜索设备名称或编号"
-      shape="round"
-      background="#f7f8fa"
-      @search="onSearch"
-    >
-      <template #right-icon>
-        <van-icon name="filter-o" @click="showFilter = true" />
-      </template>
-    </van-search>
+    <div class="search-container">
+      <van-search
+        v-model="searchText"
+        placeholder="搜索设备名称或编号"
+        shape="round"
+        background="#f7f8fa"
+        @search="onSearch"
+      >
+        <template #right-icon>
+          <van-icon name="filter-o" @click="showFilter = true" />
+        </template>
+      </van-search>
+      <!-- 可租用设备切换 -->
+      <van-switch
+        v-model="showRentable"
+        active-color="#1989fa"
+        inactive-color="#e4e7ed"
+        @change="onToggleRentable"
+      >
+        <template #node>
+          <span class="switch-label">{{ showRentable ? '可租用设备' : '全部设备' }}</span>
+        </template>
+      </van-switch>
+    </div>
 
     <!-- 设备列表 -->
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh" success-text="刷新成功">
@@ -53,9 +66,14 @@
             @click="showEquipmentDetail(equipment)"
           >
             <template #value>
-              <van-tag :type="getStatusType(equipment.status)" plain round>
-                {{ getStatusText(equipment.status) }}
-              </van-tag>
+              <div class="equipment-tags">
+                <van-tag :type="getStatusType(equipment.status)" plain round>
+                  {{ getStatusText(equipment.status) }}
+                </van-tag>
+                <van-tag v-if="showRentable || equipment.rentable" type="success" plain round class="rentable-tag">
+                  可租用
+                </van-tag>
+              </div>
             </template>
           </van-cell>
         </van-cell-group>
@@ -164,6 +182,7 @@ const searchText = ref(localStorage.getItem('equipment_search') || '');
 const showFilter = ref(false);
 const filterStatus = ref(localStorage.getItem('equipment_status') || '');
 const filterType = ref(localStorage.getItem('equipment_type') || '');
+const showRentable = ref(false);
 
 // 设备类型列表
 const equipmentTypes = [
@@ -226,13 +245,26 @@ const fetchEquipments = async () => {
   error.value = null;
   
   try {
-    const data = await equipmentStore.fetchEquipments({
-      page: currentPage.value,
-      pageSize: pageSize,
-      status: filterStatus.value,
-      type: filterType.value,
-      keyword: searchText.value
-    });
+    let data;
+    
+    if (showRentable.value) {
+      // 获取可租用设备
+      data = await equipmentStore.fetchRentableEquipments({
+        page: currentPage.value,
+        pageSize: pageSize,
+        deviceNo: searchText.value,
+        deviceName: searchText.value
+      });
+    } else {
+      // 获取全部设备
+      data = await equipmentStore.fetchEquipments({
+        page: currentPage.value,
+        pageSize: pageSize,
+        status: filterStatus.value,
+        type: filterType.value,
+        keyword: searchText.value
+      });
+    }
     
     const records = data?.records || [];
     
@@ -272,6 +304,12 @@ const resetFilter = () => {
   filterStatus.value = '';
   filterType.value = '';
   showFilter.value = false;
+  currentPage.value = 1;
+  fetchEquipments();
+};
+
+// 切换可租用设备
+const onToggleRentable = () => {
   currentPage.value = 1;
   fetchEquipments();
 };
@@ -327,6 +365,35 @@ onMounted(fetchEquipments);
   min-height: 100vh;
   background-color: #f7f8fa;
   padding: 46px 0 20px;
+}
+
+.search-container {
+  padding: 10px 16px;
+  background-color: #f7f8fa;
+  position: sticky;
+  top: 46px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  
+  .van-search {
+    margin-bottom: 10px;
+  }
+  
+  .switch-label {
+    font-size: 14px;
+    color: #333;
+    margin-right: 10px;
+  }
+}
+
+.equipment-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .rentable-tag {
+    margin-left: 4px;
+  }
 }
 
 .filter-content {
