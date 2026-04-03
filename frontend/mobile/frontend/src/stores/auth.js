@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { login as loginApi, register as registerApi, getUserInfo as getUserInfoApi } from '../api/auth.js';
+import { login as loginApi, register as registerApi, getUserInfo as getUserInfoApi, sendVerificationCode as sendVerificationCodeApi, loginWithVerificationCode as loginWithVerificationCodeApi } from '../api/auth.js';
 import router from '../router/index.js';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -65,12 +65,31 @@ export const useAuthStore = defineStore('auth', () => {
   };
 
   // 方法
-  const login = async (username, password) => {
+  const login = async (username, password, verificationCode) => {
     loading.value = true;
     error.value = null;
     
     try {
-      const response = await loginApi(username, password);
+      // 验证验证码
+      if (verificationCode) {
+        // 调用验证码验证API
+        console.log('验证验证码:', verificationCode);
+        const verifyResponse = await fetch('http://localhost:8000/sms/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ phone: username, code: verificationCode })
+        });
+        
+        const verifyResult = await verifyResponse.json();
+        if (verifyResult.code !== 0 || !verifyResult.data?.isValid) {
+          throw new Error('验证码验证失败');
+        }
+        console.log('验证码验证成功');
+      }
+      
+      const response = await loginApi(username, password, verificationCode);
       // 支持后端返回 { message, user }（token 可选）
       const responseData = response?.data || response;
       const upstreamUser = responseData?.user || responseData?.data?.user;
@@ -195,6 +214,76 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
+  // 发送验证码
+  const sendVerificationCode = async (phoneNumber) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await sendVerificationCodeApi(phoneNumber);
+      return response;
+    } catch (err) {
+      console.error('发送验证码失败:', err);
+      const friendly = mapError(err);
+      error.value = friendly.message || '发送验证码失败';
+      throw friendly;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 验证码登录
+  const loginWithVerificationCode = async (phoneNumber, verificationCode) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await loginWithVerificationCodeApi(phoneNumber, verificationCode);
+      // 支持后端返回 { message, user }（token 可选）
+      const responseData = response?.data || response;
+      const upstreamUser = responseData?.user || responseData?.data?.user;
+      const upstreamToken = responseData?.token || response?.data?.token || '';
+      if (!upstreamUser) {
+        throw new Error('登录接口返回数据格式不正确');
+      }
+
+      // Map upstream fields to store's expected shape
+      const mappedUser = {
+        userId: upstreamUser.userId || upstreamUser.id || upstreamUser.userId,
+        username: upstreamUser.username || upstreamUser.staffName || upstreamUser.name || upstreamUser.displayName,
+        name: upstreamUser.staffName || upstreamUser.name || upstreamUser.displayName || upstreamUser.username,
+        phone: upstreamUser.phone,
+        email: upstreamUser.email,
+        avatar: upstreamUser.avatar,
+        role: upstreamUser.role || 'USER',
+        department: upstreamUser.department,
+        // keep original payload
+        ...upstreamUser
+      };
+
+      // 保存token（如果有）和用户信息
+      user.value = mappedUser;
+      // If backend did not return a token, generate a local session token so
+      // the router's auth guard recognizes the user as authenticated.
+      const sessionToken = upstreamToken || token.value || ('local-session-' + Date.now());
+      token.value = sessionToken;
+      
+      // 存储到localStorage
+      localStorage.setItem('token', token.value);
+      localStorage.setItem('user', JSON.stringify(user.value));
+      
+      await router.push('/');
+      return response;
+    } catch (err) {
+      console.error('登录失败:', err);
+      const friendly = mapError(err);
+      error.value = friendly.message || '登录失败，请检查验证码';
+      throw friendly;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     token,
     user,
@@ -207,6 +296,8 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     logout,
-    getUserInfo
+    getUserInfo,
+    sendVerificationCode,
+    loginWithVerificationCode
   };
 });

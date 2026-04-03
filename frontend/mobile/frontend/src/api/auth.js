@@ -100,15 +100,21 @@ export async function changePassword(passwordData) {
  * 用户登录
  * @param {string} phoneNumber - 手机号
  * @param {string} password - 密码
+ * @param {string} verificationCode - 验证码
  * @returns {Promise} - 返回Promise对象
  */
-export async function login(phoneNumber, password) {
+export async function login(phoneNumber, password, verificationCode) {
   // 验证手机号格式
   if (!/^1[3-9]\d{9}$/.test(phoneNumber)) {
     throw new Error('请输入正确的手机号');
   }
 
   const payload = { phone: phoneNumber, password };
+  
+  // 如果提供了验证码，添加到 payload 中
+  if (verificationCode) {
+    payload.verificationCode = verificationCode;
+  }
 
   try {
     // Use artemisRequest to route through local proxy and include JSON content-type
@@ -349,6 +355,91 @@ export async function getAccessToken(userCode = 'admin', service = '', language 
     // Fallback to mock token
     await delay(300);
     return mockResponse({ token: 'mock-token-' + Date.now() });
+  }
+}
+
+/**
+ * 发送验证码
+ * @param {string} phoneNumber - 手机号
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function sendVerificationCode(phoneNumber) {
+  // 验证手机号格式
+  if (!/^1[3-9]\d{9}$/.test(phoneNumber)) {
+    throw new Error('请输入正确的手机号');
+  }
+
+  try {
+    const res = await artemisRequest('/artemis/api/v1/send-sms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: phoneNumber, type: 'LOGIN' })
+    });
+
+    const result = res?.data || res;
+    if (result.code !== 200 && result.code !== '0') {
+      throw new Error(result.msg || '发送验证码失败');
+    }
+
+    return {
+      data: { success: true },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('发送验证码失败:', error);
+    // Fallback to mock implementation
+    await delay(500);
+    console.log('模拟发送验证码到:', phoneNumber);
+    console.log('模拟验证码:', '123456');
+    return mockResponse({ success: true });
+  }
+}
+
+/**
+ * 验证码登录
+ * @param {string} phoneNumber - 手机号
+ * @param {string} verificationCode - 验证码
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function loginWithVerificationCode(phoneNumber, verificationCode) {
+  // 验证手机号格式
+  if (!/^1[3-9]\d{9}$/.test(phoneNumber)) {
+    throw new Error('请输入正确的手机号');
+  }
+
+  // 验证验证码格式
+  if (!/^\d{6}$/.test(verificationCode)) {
+    throw new Error('请输入6位数字验证码');
+  }
+
+  try {
+    const res = await artemisRequest('/artemis/api/v1/login/sms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: phoneNumber, code: verificationCode })
+    });
+
+    const body = res?.data || res;
+    if (!body) throw new Error('空响应');
+    if (body.error) throw new Error(body.error);
+    // If upstream doesn't return a user, treat as credential error
+    if (!body.user) throw new Error('验证码错误，请再试');
+
+    return { data: body, status: 200 };
+  } catch (err) {
+    // Map common upstream 404/Not Found or 401 Unauthorized to credential error so UI shows friendly message
+    const status = err?.meta?.status || err?.status || null;
+    const msg = (err && err.message) ? String(err.message) : '';
+
+    if (status === 404 || status === 401 || /401|404|Unauthorized|Not Found|未找到|找不到|未授权/.test(msg)) {
+      throw new Error('验证码错误，请再试');
+    }
+
+    // For other errors, propagate a readable message
+    throw new Error(msg || '登录失败，请重试');
   }
 }
 

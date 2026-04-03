@@ -11,11 +11,22 @@
           :rules="[{ required: true, message: '请输入手机号' }, { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' }]" />
         <van-field v-model="password" type="password" name="password" label="密码" placeholder="请输入密码（默认手机号后四位）"
           :rules="[{ required: true, message: '请输入密码' }]" />
+        <van-field v-model="verificationCode" name="verificationCode" label="验证码" placeholder="请输入验证码"
+          :rules="[{ required: true, message: '请输入验证码' }]">
+          <template #button>
+            <van-button size="small" :disabled="countdown > 0" @click="sendVerificationCode">
+              {{ countdown > 0 ? `${countdown}秒后重新发送` : '发送验证码' }}
+            </van-button>
+          </template>
+        </van-field>
       </van-cell-group>
 
       <div class="form-actions">
         <van-button round block type="primary" native-type="submit" :loading="loading">
           登录
+        </van-button>
+        <van-button round block type="info" style="margin-top: 12px" @click="loginWithVerificationCode" :loading="loading">
+          验证码登录
         </van-button>
 
         <div class="register-link" v-if="false">
@@ -39,6 +50,8 @@ const authStore = useAuthStore();
 // 表单数据
 const phoneNumber = ref('');
 const password = ref('');
+const verificationCode = ref('');
+const countdown = ref(0);
 const loading = ref(false);
 
 // 判断微信环境方法有重复
@@ -130,17 +143,82 @@ onMounted(async () => {
   }
 });
 
-// 提交表单
-const onSubmit = async () => {
+// 发送验证码
+const sendVerificationCode = async () => {
+  if (!phoneNumber.value || !/^1[3-9]\d{9}$/.test(phoneNumber.value)) {
+    showNotify({ type: 'danger', message: '请输入正确的手机号' });
+    return;
+  }
+
+  try {
+    await authStore.sendVerificationCode(phoneNumber.value);
+    showNotify({ type: 'success', message: '验证码已发送' });
+    
+    // 开始倒计时
+    countdown.value = 60;
+    const timer = setInterval(() => {
+      countdown.value--;
+      if (countdown.value <= 0) {
+        clearInterval(timer);
+      }
+    }, 1000);
+  } catch (error) {
+    let msg = '';
+    if (!error) msg = '发送验证码失败';
+    else if (typeof error === 'string') msg = error;
+    else if (error.message) msg = error.message;
+    else msg = String(error);
+
+    showNotify({ type: 'danger', message: msg });
+  }
+};
+
+// 验证码登录
+const loginWithVerificationCode = async () => {
+  if (!phoneNumber.value || !/^1[3-9]\d{9}$/.test(phoneNumber.value)) {
+    showNotify({ type: 'danger', message: '请输入正确的手机号' });
+    return;
+  }
+
+  if (!verificationCode.value) {
+    showNotify({ type: 'danger', message: '请输入验证码' });
+    return;
+  }
+
   loading.value = true;
 
   try {
-    await authStore.login(phoneNumber.value, password.value);
+    await authStore.loginWithVerificationCode(phoneNumber.value, verificationCode.value);
+    showNotify({ type: 'success', message: '登录成功' });
+  } catch (error) {
+    let msg = '';
+    if (!error) msg = '登录失败，请检查验证码';
+    else if (typeof error === 'string') msg = error;
+    else if (error.message) msg = error.message;
+    else msg = String(error);
+
+    showNotify({ type: 'danger', message: msg });
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 提交表单
+const onSubmit = async () => {
+  if (!verificationCode.value) {
+    showNotify({ type: 'danger', message: '请输入验证码' });
+    return;
+  }
+
+  loading.value = true;
+
+  try {
+    await authStore.login(phoneNumber.value, password.value, verificationCode.value);
     showNotify({ type: 'success', message: '登录成功' });
   } catch (error) {
     // Ensure we pass a string message to showNotify
     let msg = '';
-    if (!error) msg = '登录失败，请检查手机号和密码';
+    if (!error) msg = '登录失败，请检查手机号、密码和验证码';
     else if (typeof error === 'string') msg = error;
     else if (error.message) msg = error.message;
     else msg = String(error);
