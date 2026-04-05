@@ -54,8 +54,16 @@
               <div class="action-buttons">
                 <van-button 
                   size="small" 
+                  type="success" 
+                  @click.stop="viewTaskDetail(task)"
+                >
+                  详情
+                </van-button>
+                <van-button 
+                  size="small" 
                   type="primary" 
                   @click.stop="editTask(task)"
+                  style="margin-left: 8px;"
                 >
                   编辑
                 </van-button>
@@ -209,6 +217,15 @@ const deleteTaskItem = async (task) => {
       showToast('删除失败，请稍后重试');
     }
   }
+};
+
+// 查看任务详情
+const viewTaskDetail = (task) => {
+  const taskData = encodeURIComponent(JSON.stringify(task));
+  router.push({ 
+    name: 'NewTestTask', 
+    params: { taskData } 
+  });
 };
 
 // 跳转到测试任务详情

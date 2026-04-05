@@ -1408,3 +1408,35 @@ export async function deleteTask(ids) {
     throw error;
   }
 }
+
+/**
+ * 获取任务单详情
+ * @param {string} taskId - 任务单ID
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getTaskDetail(taskId) {
+  try {
+    const res = await artemisRequest(`${TEST_TASK_API.TASK_DETAIL}/${taskId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      }
+    });
+
+    const result = res?.data;
+
+    console.log('获取任务单详情原始API响应:', JSON.stringify(result, null, 2));
+
+    return {
+      data: result,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取任务单详情失败:', error);
+    throw error;
+  }
+}

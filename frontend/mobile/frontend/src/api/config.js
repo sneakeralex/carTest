@@ -159,11 +159,11 @@ export const BOOKING_API = {
 
 export const TEST_TASK_API = {
   /** 测试任务列表 */
-  LIST: `${ARTEMIS_PREFIX}/api/v1/test-task/list`,
+  LIST: `${ARTEMIS_PREFIX}/api/v1/task/list`,
   /** 测试任务详情 */
-  DETAIL: `${ARTEMIS_PREFIX}/api/v1/test-task`,
+  DETAIL: `${ARTEMIS_PREFIX}/api/v1/testTask`,
   /** 创建测试任务 */
-  CREATE: `${ARTEMIS_PREFIX}/api/v1/test-task`,
+  CREATE: `${ARTEMIS_PREFIX}/api/v1/task`,
   /** 测试注册列表 */
   REGISTRATION_LIST: `${ARTEMIS_PREFIX}/api/v1/test-registration/list`,
   /** 测试注册详情 */
@@ -184,36 +184,18 @@ export const TEST_TASK_API = {
   REGISTRATION_TASK: `${ARTEMIS_PREFIX}/api/v1/test-registration/task`,
   /** 测试统计 */
   STATS: `${ARTEMIS_PREFIX}/api/v1/test/stats`,
-  /** 实验任务列表 */
-  EXPERIMENT_TASK_LIST: `${ARTEMIS_PREFIX}/api/v1/experiment-task/list`,
-  /** 实验任务详情 */
-  EXPERIMENT_TASK_DETAIL: `${ARTEMIS_PREFIX}/api/v1/experiment-task`,
-  /** 创建实验任务 */
-  EXPERIMENT_TASK_CREATE: `${ARTEMIS_PREFIX}/api/v1/experiment-task`,
-  /** 更新实验任务 */
-  EXPERIMENT_TASK_UPDATE: `${ARTEMIS_PREFIX}/api/v1/experiment-task`,
-  /** 删除实验任务 */
-  EXPERIMENT_TASK_DELETE: `${ARTEMIS_PREFIX}/api/v1/experiment-task`,
-  /** 提交实验任务 */
-  EXPERIMENT_TASK_SUBMIT: `${ARTEMIS_PREFIX}/api/v1/experiment-task`,
-  /** 审批实验任务 */
-  EXPERIMENT_TASK_APPROVE: `${ARTEMIS_PREFIX}/api/v1/experiment-task`,
-  /** 开始实验任务 */
-  EXPERIMENT_TASK_START: `${ARTEMIS_PREFIX}/api/v1/experiment-task`,
-  /** 完成实验任务 */
-  EXPERIMENT_TASK_COMPLETE: `${ARTEMIS_PREFIX}/api/v1/experiment-task`,
-  /** 取消实验任务 */
-  EXPERIMENT_TASK_CANCEL: `${ARTEMIS_PREFIX}/api/v1/experiment-task`,
   /** 获取任务单号 */
   GET_TASK_NO: `${ARTEMIS_PREFIX}/api/v1/task/getTaskManagementNo`,
   /** 根据委托单编号获取任务单号 */
   GET_TASK_NO_BY_CONTRACT: `${ARTEMIS_PREFIX}/api/v1/task/getTaskManagementNo`,
   /** 任务单查询 */
   TASK_LIST: `${ARTEMIS_PREFIX}/api/v1/task/list`,
+  /** 任务单详情 */
+  TASK_DETAIL: `${ARTEMIS_PREFIX}/api/v1/testTask`,
   /** 创建任务单 */
   CREATE_TASK: `${ARTEMIS_PREFIX}/api/v1/task`,
   /** 更新任务单 */
-  UPDATE_TASK: `${ARTEMIS_PREFIX}/api/v1/task`,
+  UPDATE_TASK: `${ARTEMIS_PREFIX}/api/v1/taskEdit`,
   /** 删除任务单 */
   DELETE_TASK: `${ARTEMIS_PREFIX}/api/v1/taskDel`,
 };
