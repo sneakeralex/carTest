@@ -62,7 +62,7 @@ const routes = [
         component: () => import('../views/TestTasks.vue'),
         meta: { requiresAuth: true }
       },
-      {
+      { 
         path: 'test-tasks/new',
         name: 'NewTestTask',
         component: () => import('../views/NewTestTask.vue'),

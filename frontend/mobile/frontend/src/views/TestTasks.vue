@@ -1,29 +1,12 @@
 <template>
   <div class="test-tasks-container">
     <!-- 导航栏 -->
-    <van-nav-bar title="测试任务">
+    <van-nav-bar title="实验任务单">
       <template #right>
         <van-icon name="plus" @click="$router.push('/test-tasks/new')" style="font-size: 20px;" />
       </template>
     </van-nav-bar>
 
-    <!-- 搜索栏 -->
-    <van-search
-      v-model="searchKeyword"
-      placeholder="搜索测试任务"
-      @search="onSearch"
-      @clear="onClear"
-    />
-    
-    <!-- 筛选条件 -->
-    <div class="filter-bar">
-      <van-dropdown-menu>
-        <van-dropdown-item v-model="selectedTaskType" :options="taskTypeOptions" @change="onFilterChange" />
-        <van-dropdown-item v-model="selectedDifficulty" :options="difficultyOptions" @change="onFilterChange" />
-        <van-dropdown-item v-model="selectedStatus" :options="statusOptions" @change="onFilterChange" />
-      </van-dropdown-menu>
-    </div>
-    
     <!-- 测试任务列表 -->
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
       <van-list
@@ -35,65 +18,51 @@
         <div class="test-task-list">
           <van-card
             v-for="task in testTasks"
-            :key="task.taskId"
-            :title="task.taskName"
-            :desc="task.description"
+            :key="task.id"
+            :title="task.taskNo"
+            :desc="task.delegatingEntityNm"
             class="test-task-card"
-            @click="goToTestTaskDetail(task.taskId)"
+            @click="goToTestTaskDetail(task)"
           >
-            <template #thumb>
-              <div class="task-icon">
-                <van-icon :name="getTaskIcon(task.taskType)" size="40" />
-              </div>
-            </template>
             <template #tags>
               <van-tag 
-                :type="getDifficultyType(task.difficulty)" 
+                :type="getStatusType(task.status)" 
                 size="small"
               >
-                {{ getDifficultyText(task.difficulty) }}
-              </van-tag>
-              <van-tag 
-                plain 
-                type="primary" 
-                size="small"
-                style="margin-left: 4px;"
-              >
-                {{ task.taskType }}
+                {{ getStatusText(task.status) }}
               </van-tag>
             </template>
             <template #footer>
               <div class="task-info">
                 <div class="info-row">
+                  <van-icon name="calendar-o" />
+                  <span>开始: {{ task.plannedStartDate }}</span>
+                </div>
+                <div class="info-row">
                   <van-icon name="clock-o" />
-                  <span>时长: {{ task.duration }}分钟</span>
+                  <span>结束: {{ task.plannedEndDate }}</span>
                 </div>
                 <div class="info-row">
-                  <van-icon name="star-o" />
-                  <span>满分: {{ task.maxScore }}分</span>
+                  <van-icon name="user-o" />
+                  <span>创建人: {{ task.username }}</span>
                 </div>
                 <div class="info-row">
-                  <van-icon name="passed" />
-                  <span>及格: {{ task.passScore }}分</span>
-                </div>
-                <div class="info-row">
-                  <van-icon name="status" />
-                  <span>状态: {{ getStatusText(task.status) }}</span>
+                  <van-icon name="phone-o" />
+                  <span>联系方式: {{ task.userPhone }}</span>
                 </div>
               </div>
               <div class="action-buttons">
                 <van-button 
                   size="small" 
                   type="primary" 
-                  @click.stop="registerTask(task)"
-                  :disabled="task.status !== 'APPROVED'"
+                  @click.stop="editTask(task)"
                 >
-                  {{ task.status === 'APPROVED' ? '立即报名' : '不可报名' }}
+                  编辑
                 </van-button>
                 <van-button 
                   size="small" 
                   type="danger" 
-                  @click.stop="deleteTask(task)"
+                  @click.stop="deleteTaskItem(task)"
                   style="margin-left: 8px;"
                 >
                   删除
@@ -106,30 +75,7 @@
     </van-pull-refresh>
     
     <!-- 空状态 -->
-    <van-empty v-if="!loading && testTasks.length === 0" description="暂无测试任务" />
-    
-    <!-- 报名弹窗 -->
-    <van-popup v-model:show="showRegisterPopup" position="bottom" round>
-      <div class="register-popup">
-        <div class="popup-header">
-          <h3>报名测试任务</h3>
-        </div>
-        <div class="popup-content">
-          <van-field
-            v-model="registerForm.notes"
-            label="备注"
-            type="textarea"
-            placeholder="请输入备注信息（可选）"
-            rows="3"
-          />
-        </div>
-        <div class="popup-footer">
-          <van-button block type="primary" @click="confirmRegister">
-            确认报名
-          </van-button>
-        </div>
-      </div>
-    </van-popup>
+    <van-empty v-if="!loading && testTasks.length === 0" description="暂无实验任务单" />
   </div>
 </template>
 
@@ -137,96 +83,58 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { getItem } from '../utils/storage.js';
-import { useTestTaskStore } from '../stores/testTask';
+import { getTaskList, deleteTask as deleteTaskApi } from '../api/testTask';
 import { showToast, showConfirmDialog } from 'vant';
 
 const router = useRouter();
-const testTaskStore = useTestTaskStore();
 
 // 响应式数据
-const searchKeyword = ref('');
 const testTasks = ref([]);
 const loading = ref(false);
 const finished = ref(false);
 const refreshing = ref(false);
-const showRegisterPopup = ref(false);
-
-// 筛选条件
-const selectedTaskType = ref('');
-const selectedDifficulty = ref('');
-const selectedStatus = ref('');
-
-// 筛选选项
-const taskTypeOptions = ref([
-  { text: '全部类型', value: '' },
-  { text: '性能测试', value: '性能测试' },
-  { text: '安全测试', value: '安全测试' },
-  { text: '环保测试', value: '环保测试' }
-]);
-
-const difficultyOptions = ref([
-  { text: '全部难度', value: '' },
-  { text: '简单', value: 'EASY' },
-  { text: '中等', value: 'MEDIUM' },
-  { text: '困难', value: 'HARD' }
-]);
-
-const statusOptions = ref([
-  { text: '全部状态', value: '' },
-  { text: '草稿', value: 'DRAFT' },
-  { text: '待审核', value: 'PENDING' },
-  { text: '已审核', value: 'APPROVED' },
-  { text: '进行中', value: 'IN_PROGRESS' },
-  { text: '已完成', value: 'COMPLETED' },
-  { text: '已取消', value: 'CANCELLED' }
-]);
-
-// 报名表单
-const registerForm = reactive({
-  taskId: '',
-  notes: ''
-});
 
 // 分页参数
 const pagination = reactive({
-  page: 0,
-  size: 10
+  pageNum: 1,
+  pageSize: 20
 });
 
 // 获取测试任务列表
 const fetchTestTasks = async (isRefresh = false) => {
   if (isRefresh) {
-    pagination.page = 0;
+    pagination.pageNum = 1;
     finished.value = false;
   }
   
   try {
+    const userInfo = getItem('user', {});
+    const userIdValue = userInfo?.userId || userInfo?.id;
+    
     const params = {
-      page: pagination.page,
-      size: pagination.size,
-      keyword: searchKeyword.value,
-      taskType: selectedTaskType.value,
-      difficulty: selectedDifficulty.value,
-      status: selectedStatus.value
+      pageNum: pagination.pageNum,
+      pageSize: pagination.pageSize,
+      userId: userIdValue
     };
     
-    const response = await testTaskStore.fetchTestTasks(params);
+    const response = await getTaskList(params);
     
     if (isRefresh) {
-      testTasks.value = response.content || [];
+      testTasks.value = response.data?.content || [];
     } else {
-      testTasks.value.push(...(response.content || []));
+      testTasks.value.push(...(response.data?.content || []));
     }
     
     // 检查是否还有更多数据
-    if (!response.content || response.content.length < pagination.size) {
+    const total = response.data?.total || 0;
+    if (testTasks.value.length >= total) {
       finished.value = true;
     } else {
-      pagination.page++;
+      pagination.pageNum++;
     }
   } catch (error) {
-    console.error('获取测试任务列表失败:', error);
-    showToast('获取测试任务列表失败');
+    console.error('获取实验任务单列表失败:', error);
+    showToast('获取实验任务单列表失败');
   }
 };
 
@@ -250,76 +158,48 @@ const onLoad = async () => {
   loading.value = false;
 };
 
-// 搜索
-const onSearch = () => {
-  fetchTestTasks(true);
-};
-
-// 清空搜索
-const onClear = () => {
-  searchKeyword.value = '';
-  fetchTestTasks(true);
-};
-
-// 筛选条件变化
-const onFilterChange = () => {
-  fetchTestTasks(true);
-};
-
-// 获取任务图标
-const getTaskIcon = (taskType) => {
-  const iconMap = {
-    '性能测试': 'fire-o',
-    '安全测试': 'shield-o',
-    '环保测试': 'leaf-o'
-  };
-  return iconMap[taskType] || 'medal-o';
-};
-
-// 获取难度类型
-const getDifficultyType = (difficulty) => {
+// 获取状态类型
+const getStatusType = (status) => {
   const typeMap = {
-    'EASY': 'success',
-    'MEDIUM': 'warning',
-    'HARD': 'danger'
+    '1': 'primary',
+    '2': 'success',
+    '3': 'warning',
+    '4': 'danger'
   };
-  return typeMap[difficulty] || 'default';
-};
-
-// 获取难度文本
-const getDifficultyText = (difficulty) => {
-  const textMap = {
-    'EASY': '简单',
-    'MEDIUM': '中等',
-    'HARD': '困难'
-  };
-  return textMap[difficulty] || difficulty;
+  return typeMap[status] || 'default';
 };
 
 // 获取状态文本
 const getStatusText = (status) => {
   const textMap = {
-    'DRAFT': '草稿',
-    'PENDING': '待审核',
-    'APPROVED': '已审核',
-    'IN_PROGRESS': '进行中',
-    'COMPLETED': '已完成',
-    'CANCELLED': '已取消'
+    '1': '草稿',
+    '2': '待审核',
+    '3': '进行中',
+    '4': '已完成'
   };
   return textMap[status] || status;
 };
 
+// 编辑任务
+const editTask = (task) => {
+  const taskData = encodeURIComponent(JSON.stringify(task));
+  router.push({ 
+    name: 'NewTestTask', 
+    params: { taskData } 
+  });
+};
+
 // 删除任务
-const deleteTask = async (task) => {
+const deleteTaskItem = async (task) => {
   try {
     await showConfirmDialog({
       title: '确认删除',
-      message: `确定要删除测试任务"${task.taskName}"吗？`,
+      message: `确定要删除实验任务单"${task.taskNo}"吗？`,
       confirmButtonText: '确定',
       cancelButtonText: '取消'
     });
     
-    await testTaskStore.deleteTestTask(task.id || task.taskId);
+    await deleteTaskApi(task.id);
     showToast('删除成功');
     // 刷新列表
     fetchTestTasks(true);
@@ -332,38 +212,13 @@ const deleteTask = async (task) => {
 };
 
 // 跳转到测试任务详情
-const goToTestTaskDetail = (taskId) => {
-  router.push(`/test-tasks/${taskId}`);
-};
-
-// 报名测试任务
-const registerTask = (task) => {
-  registerForm.taskId = task.taskId;
-  registerForm.notes = '';
-  showRegisterPopup.value = true;
-};
-
-// 确认报名
-const confirmRegister = async () => {
-  try {
-    const userInfo = getItem('user', {});
-    
-    const registrationData = {
-      taskId: registerForm.taskId,
-      userId: userInfo.userId,
-      notes: registerForm.notes
-    };
-    
-    await testTaskStore.addTestRegistration(registrationData);
-    showToast('报名成功');
-    showRegisterPopup.value = false;
-    
-    // 跳转到我的报名页面
-    router.push('/my-registrations');
-  } catch (error) {
-    console.error('报名失败:', error);
-    showToast('报名失败，请稍后重试');
-  }
+const goToTestTaskDetail = (task) => {
+  // 目前先跳转到编辑页面
+  const taskData = encodeURIComponent(JSON.stringify(task));
+  router.push({ 
+    name: 'NewTestTask', 
+    params: { taskData } 
+  });
 };
 </script>
 
@@ -371,11 +226,6 @@ const confirmRegister = async () => {
 .test-tasks-container {
   background-color: #f7f8fa;
   min-height: 100vh;
-}
-
-.filter-bar {
-  background-color: #fff;
-  border-bottom: 1px solid #ebedf0;
 }
 
 .test-task-list {
@@ -386,17 +236,6 @@ const confirmRegister = async () => {
   margin-bottom: 16px;
   border-radius: 12px;
   overflow: hidden;
-  
-  .task-icon {
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #f7f8fa;
-    border-radius: 8px;
-    color: #1989fa;
-  }
   
   .task-info {
     margin-top: 8px;
@@ -417,25 +256,6 @@ const confirmRegister = async () => {
   .action-buttons {
     margin-top: 12px;
     text-align: right;
-  }
-}
-
-.register-popup {
-  padding: 20px;
-  
-  .popup-header {
-    text-align: center;
-    margin-bottom: 20px;
-    
-    h3 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-    }
-  }
-  
-  .popup-content {
-    margin-bottom: 20px;
   }
 }
 </style>

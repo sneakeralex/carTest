@@ -29,16 +29,11 @@ export async function getBookings(params = {}) {
     if (params.pageSize) queryParams.append('pageSize', params.pageSize);
 
     const queryString = queryParams.toString();
-    const url = `${test_management_base_url}/api/v1/booking/list${queryString ? '?' + queryString : ''}`;
-    console.log('获取预约列表请求URL:', url);
 
     // Use artemisRequest via proxy
     const proxiedPath = `${BOOKING_API.LIST}${queryString ? '?' + queryString : ''}`;
     const res = await artemisRequest(proxiedPath, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
     const result = res?.data;
-    console.log('预约列表原始API响应:', JSON.stringify(result, null, 2));
-    console.log('API响应码:', result.code);
-    console.log('响应码类型:', typeof result.code);
 
     if (result.code !== '0' && result.code !== 200 && result.code !== '200') {
       console.error('API响应码检查失败:', { 
@@ -118,9 +113,6 @@ export async function createBooking(bookingData) {
       remark: bookingData.remark
     };
 
-    const url = `${test_management_base_url}/api/v1/booking/add`;
-    console.log('创建预约请求URL:', url, '数据:', JSON.stringify(requestData, null, 2));
-
     const res = await artemisRequest(BOOKING_API.ADD, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -128,7 +120,6 @@ export async function createBooking(bookingData) {
     });
 
     const result = res?.data;
-    console.log('创建预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
       throw new Error(result.msg || '创建预约失败');
@@ -166,12 +157,8 @@ export async function createBooking(bookingData) {
  */
 export async function getBookingById(id) {
   try {
-    const url = `${test_management_base_url}/api/v1/booking/detail/${id}`;
-    console.log('获取预约详情请求URL:', url);
-
     const res = await artemisRequest(`${BOOKING_API.DETAIL}/${id}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
     const result = res?.data;
-    console.log('预约详情原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
       throw new Error(result.msg || '获取预约详情失败');
@@ -221,9 +208,6 @@ export async function updateBooking(bookingData) {
       ...bookingData
     };
 
-    const url = `${test_management_base_url}/api/v1/booking/update`;
-    console.log('更新预约请求URL:', url, '数据:', JSON.stringify(requestData, null, 2));
-
     const res = await artemisRequest(BOOKING_API.UPDATE, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -231,7 +215,6 @@ export async function updateBooking(bookingData) {
     });
 
     const result = res?.data;
-    console.log('更新预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
       throw new Error(result.msg || '更新预约失败');
@@ -269,12 +252,8 @@ export async function updateBooking(bookingData) {
  */
 export async function cancelBooking(id) {
   try {
-    const url = `${test_management_base_url}/api/v1/booking/cancel/${id}`;
-    console.log('取消预约请求URL:', url);
-
     const res = await artemisRequest(`${BOOKING_API.CANCEL}/${id}`, { method: 'PUT', body: JSON.stringify({}) });
     const result = res?.data;
-    console.log('取消预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
       throw new Error(result.msg || '取消预约失败');
@@ -307,12 +286,9 @@ export async function getAvailableTimeSlots(params = {}) {
     if (params.endTime) queryParams.append('endTime', params.endTime);
 
     const queryString = queryParams.toString();
-    const url = `${test_management_base_url}/api/v1/booking/available-slots${queryString ? '?' + queryString : ''}`;
-    console.log('获取可用时间段请求URL:', url);
-
+    
     const res = await artemisRequest(`${BOOKING_API.AVAILABLE_SLOTS}${queryString ? '?' + queryString : ''}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
     const result = res?.data;
-    console.log('可用时间段原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
       throw new Error(result.msg || '获取可用时间段失败');
@@ -336,16 +312,13 @@ export async function getAvailableTimeSlots(params = {}) {
  */
 export async function approveBooking(id, data) {
   try {
-    const url = `${test_management_base_url}/api/v1/booking/approve/${id}`;
-    console.log('批准预约请求URL:', url, '数据:', JSON.stringify(data, null, 2));
-
     const res = await artemisRequest(`${BOOKING_API.APPROVE}/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
+
     const result = res?.data;
-    console.log('批准预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
       throw new Error(result.msg || '批准预约失败');
@@ -382,16 +355,13 @@ export async function rescheduleBooking(rescheduleData) {
       ...rescheduleData
     };
 
-    const url = `${test_management_base_url}/api/v1/booking/reschedule/${rescheduleData.id}`;
-    console.log('重新安排预约请求URL:', url, '数据:', JSON.stringify(requestData, null, 2));
-
     const res = await artemisRequest(`${BOOKING_API.RESCHEDULE}/${rescheduleData.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestData)
     });
+
     const result = res?.data;
-    console.log('重新安排预约原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
       throw new Error(result.msg || '重新安排预约失败');
@@ -430,16 +400,14 @@ export async function rescheduleBooking(rescheduleData) {
 export async function getGroundList(params = {}) {
   try {
     const queryParams = new URLSearchParams();
-    if (params.pageNum) queryParams.append('pageNum', params.pageNum);
-    if (params.pageSize) queryParams.append('pageSize', params.pageSize);
+    if (params.provingGroundId) queryParams.append('provingGroundId', params.provingGroundId);
+    // if (params.pageNum) queryParams.append('pageNum', params.pageNum);
+    // if (params.pageSize) queryParams.append('pageSize', params.pageSize);
 
     const queryString = queryParams.toString();
-    const url = `${test_management_base_url}/ground/list${queryString ? '?' + queryString : ''}`;
-    console.log('获取场地列表请求URL:', url);
-
+    
     const res = await artemisRequest(`${BOOKING_API.GROUND_LIST}${queryString ? '?' + queryString : ''}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
     const result = res?.data;
-    console.log('场地列表原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
       throw new Error(result.msg || '获取场地列表失败');
@@ -476,12 +444,8 @@ export async function getGroundList(params = {}) {
  */
 export async function getVinList(corpId) {
   try {
-    const url = `${test_management_base_url}/api/v1/booking/getVinList/${corpId}`;
-    console.log('获取VIN列表请求URL:', url);
-
     const res = await artemisRequest(`${BOOKING_API.GET_VIN_LIST}/${corpId}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
     const result = res?.data;
-    console.log('VIN列表原始API响应:', JSON.stringify(result, null, 2));
 
     if (result.code !== '0' && result.code !== 200) {
       throw new Error(result.msg || '获取VIN列表失败');
@@ -514,9 +478,6 @@ export async function getBookingNo(prefix) {
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const url = `${test_management_base_url}/api/v1/booking/getBookingNo/${prefix}`;
-      console.log(`获取预约编号请求URL: ${url} (尝试 ${attempt}/${maxRetries})`);
-
       // Use artemisRequest with a timeout via Promise.race
       const timeoutMs = 10000;
       const requestPromise = artemisRequest(`${BOOKING_API.GET_BOOKING_NO}/${prefix}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
@@ -524,8 +485,6 @@ export async function getBookingNo(prefix) {
 
       const res = await Promise.race([requestPromise, timeoutPromise]);
       const result = res?.data;
-
-      console.log('预约编号原始API响应:', JSON.stringify(result, null, 2));
 
       if (result.code !== '0' && result.code !== 200) {
         throw new Error(result.msg || '获取预约编号失败');
@@ -542,8 +501,6 @@ export async function getBookingNo(prefix) {
         config: {}
       };
     } catch (error) {
-      console.error(`获取预约编号失败 (尝试 ${attempt}/${maxRetries}):`, error);
-      
       // 如果是最后一次尝试，直接抛出错误
       if (attempt === maxRetries) {
         // 增强错误信息
@@ -558,7 +515,6 @@ export async function getBookingNo(prefix) {
       
       // 如果不是最后一次尝试，等待后重试
       if (attempt < maxRetries) {
-        console.log(`等待 ${retryDelay}ms 后重试...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
     }
@@ -570,12 +526,8 @@ export async function getBookingNo(prefix) {
  * @returns {Promise} - 返回Promise对象
  */
 export async function getTestItems() {
-  const url = `${test_management_base_url}/api/v1/ground/testItem`;
-  console.log('获取项目列表请求URL:', url);
-
   const res = await artemisRequest(BOOKING_API.TEST_ITEM, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
   const result = res?.data;
-  console.log('项目列表原始API响应:', JSON.stringify(result, null, 2));
 
   if (result.code !== '0' && result.code !== 200) {
     throw new Error(result.msg || '获取项目列表失败');

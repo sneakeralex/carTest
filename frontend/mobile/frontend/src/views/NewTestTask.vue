@@ -1,725 +1,936 @@
 <template>
-  <div class="new-test-task">
+  <div class="new-task">
     <van-nav-bar
-      title="创建测试任务"
+      :title="isEditMode ? '编辑实验任务' : '新增实验任务'"
       left-arrow
       @click-left="$router.back()"
     />
 
-    <van-form @submit="onSubmit">
-      <!-- 基本信息 -->
-      <van-cell-group inset title="基本信息">
-        <van-field
-          v-model="formData.taskName"
-          name="taskName"
-          label="任务名称"
-          placeholder="请输入任务名称"
-          :rules="[{ required: true, message: '请输入任务名称' }]"
-        />
-        <van-field
-          v-model="formData.description"
-          name="description"
-          label="任务描述"
-          type="textarea"
-          rows="3"
-          placeholder="请输入任务描述"
-        />
-        <van-field
-          v-model="formData.department"
-          name="department"
-          label="任务单位"
-          placeholder="请输入任务单位"
-          :rules="[{ required: true, message: '请输入任务单位' }]"
-        />
-        <van-field
-          v-model="formData.testType"
-          name="testType"
-          label="测试类型"
-          :placeholder="formData.testType || '请选择测试类型'"
-          readonly
-          is-link
-          @click="showTestTypePopup = true"
-          :rules="[{ required: true, message: '请选择测试类型' }]"
-        >
-          <template #input>
-            <span>{{ formData.testType ? getTestTypeText(formData.testType) : '请选择测试类型' }}</span>
-          </template>
-        </van-field>
-        <van-field
-          v-model="formData.experimentType"
-          name="experimentType"
-          label="试验类型"
-          :placeholder="formData.experimentType || '请选择试验类型'"
-          readonly
-          is-link
-          @click="showExperimentTypePopup = true"
-          :rules="[{ required: true, message: '请选择试验类型' }]"
-        >
-          <template #input>
-            <span>{{ formData.experimentType ? getTestTypeText(formData.experimentType) : '请选择试验类型' }}</span>
-          </template>
-        </van-field>
-        <van-field
-          v-model="formData.difficulty"
-          name="difficulty"
-          label="难度等级"
-          :placeholder="formData.difficulty || '请选择难度等级'"
-          readonly
-          is-link
-          @click="showDifficultyPopup = true"
-          :rules="[{ required: true, message: '请选择难度等级' }]"
-        >
-          <template #input>
-            <span>{{ formData.difficulty ? getDifficultyText(formData.difficulty) : '请选择难度等级' }}</span>
-          </template>
-        </van-field>
-      </van-cell-group>
+    <!-- 步骤指示器 -->
+    <van-steps :active="currentStep" class="step-indicator">
+      <van-step>基本信息</van-step>
+      <van-step>委托信息</van-step>
+      <van-step>时间安排</van-step>
+      <van-step>测试车辆</van-step>
+      <van-step>实验内容</van-step>
+      <van-step>确认提交</van-step>
+    </van-steps>
 
-      <!-- 时间信息 -->
-      <van-cell-group inset title="时间信息">
-        <van-cell title="测试时间" is-link @click="showDatePicker = true">
-          <template #value>
-            <span v-if="formData.startDate && formData.endDate">
-              {{ formData.startDate }} 至 {{ formData.endDate }}
-            </span>
-            <span v-else>请选择测试时间</span>
-          </template>
-        </van-cell>
-      </van-cell-group>
-
-      <!-- 车辆信息 -->
-      <van-cell-group inset title="车辆信息">
-        <van-field
-          v-model="selectedVehiclesText"
-          name="vehicles"
-          label="测试车辆"
-          placeholder="请选择测试车辆"
-          readonly
-          is-link
-          @click="showVehicleSelector = true"
-          :rules="[{ required: true, message: '请至少选择一辆测试车辆' }]"
-        />
-      </van-cell-group>
-
-      <!-- 试验内容 -->
-      <van-cell-group inset title="试验内容">
-        <template v-for="(vehicle, index) in selectedVehicles" :key="vehicle.id">
-          <div class="vehicle-test-content">
-            <van-cell :title="vehicle.name" />
-            <van-field
-              v-model="vehicleTestContents[vehicle.id]"
-              type="textarea"
-              rows="3"
-              :placeholder="'请输入' + vehicle.name + '的试验内容'"
-              :rules="[{ required: true, message: '请输入试验内容' }]"
-            />
-          </div>
-        </template>
-      </van-cell-group>
-
-      <!-- 基础配置 -->
-      <van-cell-group inset title="基础配置">
-        <van-field
-          v-model="formData.testSite"
-          name="testSite"
-          label="测试地点"
-          placeholder="请选择测试地点"
-          readonly
-          is-link
-          :rules="[{ required: true, message: '请选择测试地点' }]"
-          @click="showTestSitePopup = true"
-        />
-        <van-field
-          v-model="formData.maxParticipants"
-          name="maxParticipants"
-          label="最大参与人数"
-          type="digit"
-          placeholder="请输入最大参与人数"
-          :rules="[{ required: true, message: '请输入最大参与人数' }]"
-        />
-        <van-field
-          v-model="formData.estimatedDuration"
-          name="estimatedDuration"
-          label="预计时长"
-          type="digit"
-          placeholder="请输入预计时长（小时）"
-          :rules="[{ required: true, message: '请输入预计时长' }]"
-        />
-      </van-cell-group>
-
-      <!-- 合同信息 -->
-      <van-cell-group inset title="合同信息">
-        <van-field
-          v-model="formData.contractInfo.contractNumber"
-          name="contractNumber"
-          label="合同编号"
-          placeholder="请输入合同编号"
-        />
-        <van-field
-          v-model="formData.contractInfo.client"
-          name="client"
-          label="委托方"
-          placeholder="请输入委托方"
-        />
-        <van-field
-          v-model="formData.fee"
-          name="fee"
-          label="费用"
-          type="digit"
-          placeholder="请输入费用（元）"
-        />
-      </van-cell-group>
-
-      <!-- 设备要求 -->
-      <van-cell-group inset title="设备要求">
-        <template v-for="(equipment, index) in formData.equipment" :key="index">
+    <!-- 步骤内容 -->
+    <div class="step-content">
+      <!-- 步骤1: 基本信息 -->
+      <div v-if="currentStep === 0" class="step-section">
+        <van-cell-group inset title="基本信息">
           <van-field
-            v-model="formData.equipment[index]"
-            :label="'设备' + (index + 1)"
-            placeholder="请输入设备要求"
-            :rules="[{ required: true, message: '请输入设备要求' }]"
-          >
-            <template #right-icon>
-              <van-icon 
-                name="cross" 
-                @click="removeEquipment(index)"
-                style="cursor: pointer;"
-              />
-            </template>
-          </van-field>
-        </template>
-        <div style="padding: 10px 16px;">
-          <van-button 
-            size="small" 
-            type="primary" 
-            plain 
-            block 
-            @click="addEquipment"
-          >
-            添加设备要求
-          </van-button>
-        </div>
-      </van-cell-group>
-
-      <!-- 任务要求 -->
-      <van-cell-group inset title="任务要求">
-        <template v-for="(requirement, index) in formData.requirements" :key="index">
+            v-model="taskNo"
+            autocomplete="off"
+            data-no-ext="true"
+            readonly
+            label="任务单号"
+            placeholder="点击生成任务单号"
+            is-link
+            @click="generateTaskNo"
+          />
           <van-field
-            v-model="formData.requirements[index]"
-            :label="'要求' + (index + 1)"
-            type="textarea"
-            rows="2"
-            placeholder="请输入任务要求"
-            :rules="[{ required: true, message: '请输入任务要求' }]"
-          >
-            <template #right-icon>
-              <van-icon 
-                name="cross" 
-                @click="removeRequirement(index)"
-                style="cursor: pointer;"
-              />
-            </template>
-          </van-field>
-        </template>
-        <div style="padding: 10px 16px;">
-          <van-button 
-            size="small" 
-            type="primary" 
-            plain 
-            block 
-            @click="addRequirement"
-          >
-            添加任务要求
-          </van-button>
-        </div>
-      </van-cell-group>
-
-      <!-- 备注说明 -->
-      <van-cell-group inset title="备注说明">
-        <template v-for="(note, index) in formData.notes" :key="index">
+            v-model="username"
+            autocomplete="off"
+            data-no-ext="true"
+            label="创建人姓名"
+            placeholder="请输入创建人姓名"
+          />
           <van-field
-            v-model="formData.notes[index]"
-            :label="'备注' + (index + 1)"
-            type="textarea"
-            rows="2"
-            placeholder="请输入备注说明"
-          >
-            <template #right-icon>
-              <van-icon 
-                name="cross" 
-                @click="removeNote(index)"
-                style="cursor: pointer;"
-              />
-            </template>
-          </van-field>
-        </template>
-        <div style="padding: 10px 16px;">
-          <van-button 
-            size="small" 
-            type="primary" 
-            plain 
-            block 
-            @click="addNote"
-          >
-            添加备注说明
-          </van-button>
-        </div>
-      </van-cell-group>
-
-      <div style="margin: 16px;">
-        <van-button round block type="primary" native-type="submit" :loading="submitting">
-          提交
-        </van-button>
+            v-model="userPhone"
+            autocomplete="off"
+            data-no-ext="true"
+            label="创建人联系方式"
+            placeholder="请输入创建人联系方式"
+          />
+        </van-cell-group>
       </div>
-    </van-form>
 
-    <!-- 测试类型选择弹窗 -->
-    <van-popup v-model:show="showTestTypePopup" position="bottom">
-      <van-picker
-        :columns="testTypeOptions"
-        @confirm="onTestTypeConfirm"
-        @cancel="showTestTypePopup = false"
-        show-toolbar
-        title="选择测试类型"
-      />
-    </van-popup>
+      <!-- 步骤2: 委托信息 -->
+      <div v-if="currentStep === 1" class="step-section">
+        <van-cell-group inset title="委托信息">
+          <van-field
+            v-model="delegatingEntityNm"
+            autocomplete="off"
+            data-no-ext="true"
+            label="委托企业名称"
+            placeholder="请输入委托企业名称"
+          />
+          <van-field
+            v-model="delegationNo"
+            autocomplete="off"
+            data-no-ext="true"
+            label="委托单编号"
+            placeholder="请输入委托单编号"
+          />
+        </van-cell-group>
+      </div>
 
-    <!-- 试验类型选择弹窗 -->
-    <van-popup v-model:show="showExperimentTypePopup" position="bottom">
-      <van-picker
-        :columns="experimentTypeOptions"
-        @confirm="onExperimentTypeConfirm"
-        @cancel="showExperimentTypePopup = false"
-        show-toolbar
-        title="选择试验类型"
-      />
-    </van-popup>
+      <!-- 步骤3: 时间安排 -->
+      <div v-if="currentStep === 2" class="step-section">
+        <van-cell-group inset title="时间安排">
+          <van-field
+            v-model="plannedStartDate"
+            autocomplete="off"
+            data-no-ext="true"
+            readonly
+            label="计划开始时间"
+            placeholder="请选择计划开始时间"
+            is-link
+            @click="showStartDatePicker = true"
+          />
+          <van-field
+            v-model="plannedEndDate"
+            autocomplete="off"
+            data-no-ext="true"
+            readonly
+            label="计划结束时间"
+            placeholder="请选择计划结束时间"
+            is-link
+            @click="showEndDatePicker = true"
+          />
+        </van-cell-group>
+      </div>
 
-    <!-- 难度等级选择弹窗 -->
-    <van-popup v-model:show="showDifficultyPopup" position="bottom">
-      <van-picker
-        :columns="difficultyOptions"
-        @confirm="onDifficultyConfirm"
-        @cancel="showDifficultyPopup = false"
-        show-toolbar
-        title="选择难度等级"
-      />
-    </van-popup>
+      <!-- 步骤4: 测试车辆 -->
+      <div v-if="currentStep === 3" class="step-section">
+        <van-cell-group inset title="测试车辆">
+          <van-cell title="车辆信息" :value="testVehicles.length > 0 ? '已添加 ' + testVehicles.length + ' 辆' : '未添加'" is-link @click="showVehicleDialog = true" />
+          <van-field
+            v-model="testVehicleCount"
+            autocomplete="off"
+            data-no-ext="true"
+            label="测试车辆数量"
+            type="number"
+            placeholder="请输入测试车辆数量"
+          />
+          <van-field
+            v-model="participantCount"
+            autocomplete="off"
+            data-no-ext="true"
+            label="参与人数"
+            type="number"
+            placeholder="请输入参与人数"
+          />
+        </van-cell-group>
+      </div>
 
-    <!-- 日期选择弹窗 -->
-    <van-popup v-model:show="showDatePicker" position="bottom" style="height: 70%">
-      <van-calendar
-        type="range"
+      <!-- 步骤5: 实验内容 -->
+      <div v-if="currentStep === 4" class="step-section">
+        <van-cell-group inset title="实验内容">
+          <van-cell title="实验内容" :value="testVehicles.some(v => v.testContents.length > 0) ? '已添加实验内容' : '未添加'" is-link @click="showTestContentDialog = true" />
+          <van-field
+            v-model="remark"
+            autocomplete="off"
+            data-no-ext="true"
+            label="备注"
+            type="textarea"
+            placeholder="请输入备注信息（选填）"
+            rows="2"
+            autosize
+          />
+        </van-cell-group>
+      </div>
+
+      <!-- 步骤6: 确认提交 -->
+      <div v-if="currentStep === 5" class="step-section">
+        <van-cell-group inset title="任务信息确认">
+          <van-cell title="任务单号" :value="taskNo" />
+          <van-cell title="创建人姓名" :value="username" />
+          <van-cell title="创建人联系方式" :value="userPhone" />
+          <van-cell title="委托企业名称" :value="delegatingEntityNm" />
+          <van-cell title="委托单编号" :value="delegationNo" />
+          <van-cell title="计划开始时间" :value="plannedStartDate" />
+          <van-cell title="计划结束时间" :value="plannedEndDate" />
+          <van-cell title="测试车辆数量" :value="testVehicleCount" />
+          <van-cell title="参与人数" :value="participantCount" />
+          <van-cell title="测试车辆" :value="testVehicles.length > 0 ? '已添加' : '未添加'" />
+          <van-cell title="实验内容" :value="testVehicles.some(v => v.testContents.length > 0) ? '已添加' : '未添加'" />
+          <van-cell title="备注" :value="remark || '无'" />
+        </van-cell-group>
+      </div>
+    </div>
+
+    <!-- 步骤导航按钮 -->
+    <div class="step-navigation">
+      <van-button 
+        v-if="currentStep > 0" 
+        @click="prevStep" 
+        plain 
+        type="primary"
+        style="margin-right: 10px;"
+      >
+        上一步
+      </van-button>
+      <van-button 
+        v-if="currentStep < 5" 
+        @click="nextStep" 
+        type="primary"
+        :disabled="!canProceed"
+      >
+        下一步
+      </van-button>
+      <van-button 
+        v-if="currentStep === 5" 
+        @click="onSubmit" 
+        type="primary" 
+        :loading="submitting"
+        :disabled="!canSubmit"
+      >
+        提交任务
+      </van-button>
+    </div>
+
+    <!-- 开始日期选择器 -->
+    <van-popup
+      v-model:show="showStartDatePicker"
+      position="bottom"
+      round
+    >
+      <van-date-picker
+        :model-value="currentStartDate"
+        type="date"
+        title="选择计划开始时间"
         :min-date="minDate"
-        :max-date="maxDate"
-        @confirm="onDateConfirm"
-        @close="showDatePicker = false"
-        title="选择测试时间"
-        :show-confirm="true"
+        @confirm="onStartDateSelect"
+        @cancel="showStartDatePicker = false"
       />
     </van-popup>
 
-    <!-- 车辆选择弹窗 -->
-    <van-popup v-model:show="showVehicleSelector" position="bottom" style="height: 70%">
-      <van-nav-bar
-        title="选择测试车辆"
-        left-text="取消"
-        right-text="确定"
-        @click-left="showVehicleSelector = false"
-        @click-right="onVehicleConfirm"
+    <!-- 结束日期选择器 -->
+    <van-popup
+      v-model:show="showEndDatePicker"
+      position="bottom"
+      round
+    >
+      <van-date-picker
+        :model-value="currentEndDate"
+        type="date"
+        title="选择计划结束时间"
+        :min-date="plannedStartDate ? new Date(plannedStartDate) : minDate"
+        @confirm="onEndDateSelect"
+        @cancel="showEndDatePicker = false"
       />
-      <div class="vehicle-selector">
-        <van-checkbox-group v-model="selectedVehicleIds">
-          <van-cell-group>
-            <van-cell
-              v-for="vehicle in availableVehicles"
-              :key="vehicle.id"
-              :title="vehicle.name"
-              clickable
-              @click="toggleVehicle(vehicle.id)"
-            >
-              <template #right-icon>
-                <van-checkbox
-                  :name="vehicle.id"
-                  @click.stop
-                />
-              </template>
-            </van-cell>
-          </van-cell-group>
-        </van-checkbox-group>
+    </van-popup>
+
+    <!-- 车辆信息对话框 -->
+    <van-popup
+      v-model:show="showVehicleDialog"
+      position="right"
+      :style="{ width: '80%' }"
+    >
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <h3>测试车辆信息</h3>
+          <van-icon name="close" @click="showVehicleDialog = false" />
+        </div>
+        <div class="dialog-body">
+          <van-field
+            v-model="newVehicle.vin"
+            autocomplete="off"
+            data-no-ext="true"
+            label="车辆VIN"
+            placeholder="请输入车辆VIN"
+          />
+          <van-field
+            v-model="newVehicle.vehicleColor"
+            autocomplete="off"
+            data-no-ext="true"
+            label="车辆颜色"
+            placeholder="请输入车辆颜色"
+          />
+          <van-button type="primary" @click="addVehicle">添加车辆</van-button>
+          <div class="vehicle-list">
+            <div v-for="(vehicle, index) in testVehicles" :key="index" class="vehicle-item">
+              <div class="vehicle-info">
+                <div>车辆VIN: {{ vehicle.vin }}</div>
+                <div>颜色: {{ vehicle.vehicleColor || '未设置' }}</div>
+                <div>实验内容: {{ vehicle.testContents.length }} 项</div>
+              </div>
+              <div class="vehicle-actions">
+                <van-button size="small" @click="editVehicle(index)">编辑</van-button>
+                <van-button size="small" type="danger" @click="removeVehicle(index)">删除</van-button>
+                <van-button size="small" type="primary" @click="addTestContent(index)">添加实验内容</van-button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </van-popup>
 
-    <!-- 测试场地选择弹窗 -->
-    <van-popup v-model:show="showTestSitePopup" position="bottom">
-      <van-picker
-        :columns="availableTestSites"
-        @confirm="onTestSiteConfirm"
-        @cancel="showTestSitePopup = false"
-        show-toolbar
-        title="选择测试场地"
-      />
+    <!-- 实验内容对话框 -->
+    <van-popup
+      v-model:show="showTestContentDialog"
+      position="right"
+      :style="{ width: '80%' }"
+    >
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <h3>实验内容</h3>
+          <van-icon name="close" @click="showTestContentDialog = false" />
+        </div>
+        <div class="dialog-body">
+          <div v-for="(vehicle, vehicleIndex) in testVehicles" :key="vehicleIndex" class="vehicle-section">
+            <h4>车辆 {{ vehicleIndex + 1 }}: {{ vehicle.vin }}</h4>
+            <div v-for="(content, contentIndex) in vehicle.testContents" :key="contentIndex" class="test-content-item">
+              <div class="content-info">
+                <div>场地分区: {{ content.provingGroundNm }}</div>
+                <div>场地: {{ content.groundNm }}</div>
+                <div>实验类型: {{ content.testTypeId === '1' ? '自驾试验' : 'V2X试验' }}</div>
+                <div>计费类型: {{ content.billingTypeId === '1' ? '分时' : content.billingTypeId === '3' ? '包场' : '按天' }}</div>
+                <div>实验内容: {{ content.testItemName }}</div>
+              </div>
+              <van-button size="small" type="danger" @click="removeTestContent(vehicleIndex, contentIndex)">删除</van-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </van-popup>
+
+    <!-- 添加实验内容对话框 -->
+    <van-popup
+      v-model:show="showAddTestContentDialog"
+      position="bottom"
+      round
+      :style="{ height: '80%' }"
+    >
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <h3>添加实验内容</h3>
+          <van-icon name="close" @click="showAddTestContentDialog = false" />
+        </div>
+        <div class="dialog-body">
+          <van-field
+            v-model="newTestContent.provingGroundId"
+            autocomplete="off"
+            data-no-ext="true"
+            label="场地分区ID"
+            placeholder="请输入场地分区ID"
+          />
+          <van-field
+            v-model="newTestContent.provingGroundNm"
+            autocomplete="off"
+            data-no-ext="true"
+            label="场地分区名称"
+            placeholder="请输入场地分区名称"
+          />
+          <van-field
+            v-model="newTestContent.groundId"
+            autocomplete="off"
+            data-no-ext="true"
+            label="场地ID"
+            placeholder="请输入场地ID"
+          />
+          <van-field
+            v-model="newTestContent.groundNm"
+            autocomplete="off"
+            data-no-ext="true"
+            label="场地名称"
+            placeholder="请输入场地名称"
+          />
+          <van-field
+            v-model="newTestContent.testTypeId"
+            autocomplete="off"
+            data-no-ext="true"
+            label="实验类型"
+            placeholder="1-自驾试验/7-V2X试验"
+          />
+          <van-field
+            v-model="newTestContent.billingTypeId"
+            autocomplete="off"
+            data-no-ext="true"
+            label="计费类型"
+            placeholder="1-分时/3-包场/4-按天"
+          />
+          <van-field
+            v-model="newTestContent.testItemName"
+            autocomplete="off"
+            data-no-ext="true"
+            label="实验内容"
+            placeholder="请输入实验内容"
+          />
+          <van-button type="primary" @click="confirmAddTestContent">添加实验内容</van-button>
+        </div>
+      </div>
     </van-popup>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useVehicleStore } from '@/stores/vehicle';
-import { useTestTaskStore } from '@/stores/testTask';
-import { useTestSiteStore } from '@/stores/testSite';
+import { useRouter, useRoute } from 'vue-router';
 import { showToast } from 'vant';
-import { formatDate } from '../utils/dateFormatter';
-import { getTestTypeText, getDifficultyText } from '../utils/typeFormatter';
+import { useTestTaskStore } from '../stores/testTask';
+import { getTaskManagementNo, getTaskManagementNoByContract, createTask, updateTask } from '../api/testTask';
+import { TEST_TASK_API } from '../api/config';
+import { getItem } from '../utils/storage.js';
+import { artemisRequest } from '../api/request';
 
+// 路由
 const router = useRouter();
-const vehicleStore = useVehicleStore();
-const testTaskStore = useTestTaskStore();
-const testSiteStore = useTestSiteStore();
+const route = useRoute();
 
-// 表单数据
-const formData = ref({
-  taskName: '',
-  description: '',
-  department: '',
-  testType: '',
-  experimentType: '',
-  difficulty: '',
-  startDate: '',
-  endDate: '',
-  testSite: '',  // 存储选中的测试场地名称
-  testSiteId: '', // 存储选中的测试场地ID
-  maxParticipants: '',
-  requirements: [], // 改为数组以存储多个要求
-  fee: 0,
-  estimatedDuration: '',
-  equipment: [], // 设备要求列表
-  notes: [], // 备注说明列表
-  contractInfo: {
-    contractNumber: '', // 合同编号
-    client: '' // 委托方
-  }
-});
-
-// 状态变量
+// 状态
+const isEditMode = ref(false);
+const taskNo = ref('');
+const delegatingEntityId = ref('1');
+const delegatingEntityNm = ref('');
+const productionUnitId = ref('0');
+const productionUnitNm = ref('');
+const delegationNo = ref('');
+const username = ref('');
+const userId = ref('');
+const userPhone = ref('');
+const plannedStartDate = ref('');
+const plannedEndDate = ref('');
+const testVehicleCount = ref('0');
+const participantCount = ref('0');
+const accommodationStatus = ref('0');
+const status = ref('1');
+const diningStatus = ref('0');
+const driverRental = ref('0');
+const laborEmployment = ref('0');
+const equipmentRental = ref('0');
+const confidentialWorkshopRental = ref('0');
+const imagingRequirement = ref('0');
+const remark = ref('');
+const testVehicles = ref([]);
 const submitting = ref(false);
-const showTestTypePopup = ref(false);
-const showExperimentTypePopup = ref(false);
-const showDifficultyPopup = ref(false);
-const showDatePicker = ref(false);
-const showVehicleSelector = ref(false);
-const showTestSitePopup = ref(false);
-const selectedVehicleIds = ref([]);
-const vehicleTestContents = ref({}); // 存储每个车辆的试验内容
+const generatingTaskNo = ref(false);
 
-// 添加/删除设备要求
-const addEquipment = () => {
-  formData.value.equipment.push('');
-};
+// 步骤状态
+const currentStep = ref(0);
 
-const removeEquipment = (index) => {
-  formData.value.equipment.splice(index, 1);
-};
-
-// 添加/删除任务要求
-const addRequirement = () => {
-  formData.value.requirements.push('');
-};
-
-const removeRequirement = (index) => {
-  formData.value.requirements.splice(index, 1);
-};
-
-// 添加/删除备注说明
-const addNote = () => {
-  formData.value.notes.push('');
-};
-
-const removeNote = (index) => {
-  formData.value.notes.splice(index, 1);
-};
-
-// 测试场地列表
-const availableTestSites = ref([]);
-
-// 测试类型选项 - 修正为Vant4.x格式
-const testTypes = ['CRASH_TEST', 'DURABILITY_TEST', 'PERFORMANCE_TEST', 'NOISE_TEST', 'BRAKE_TEST'];
-const testTypeOptions = testTypes.map(type => ({
-  text: getTestTypeText(type),
-  value: type
-}));
-
-// 试验类型选项
-const experimentTypes = [...testTypes]; // 目前使用相同的类型列表
-const experimentTypeOptions = experimentTypes.map(type => ({
-  text: getTestTypeText(type),
-  value: type
-}));
-
-// 难度等级选项
-const difficultyLevels = ['EASY', 'MEDIUM', 'HARD'];
-const difficultyOptions = difficultyLevels.map(level => ({
-  text: getDifficultyText(level),
-  value: level
-}));
-
-// 日期选择器配置
-const currentDate = new Date();
+// 日期选择器状态
+const showStartDatePicker = ref(false);
+const showEndDatePicker = ref(false);
+const currentStartDate = ref([]);
+const currentEndDate = ref([]);
 const minDate = new Date();
-const maxDate = new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), currentDate.getDate());
 
-// 加载可用车辆列表
-const availableVehicles = ref([]);
-const loadVehicles = async () => {
+// 对话框状态
+const showVehicleDialog = ref(false);
+const showTestContentDialog = ref(false);
+const showAddTestContentDialog = ref(false);
+
+// 新车辆信息
+const newVehicle = ref({
+  vin: '',
+  vehicleColor: '',
+  maxMass: 0,
+  topSpeed: 0,
+  passengerCapacity: 0,
+  refueled: 0,
+  charged: 0,
+  testContents: []
+});
+
+// 新实验内容
+const newTestContent = ref({
+  provingGroundId: '3',
+  provingGroundNm: '三期',
+  groundId: '1',
+  groundNm: '直线性能路',
+  testTypeId: '7',
+  billingTypeId: '1',
+  testItemName: '',
+  plannedQuantity: 0,
+  nightTesting: 0,
+  remark: ''
+});
+
+// 当前编辑的车辆索引
+const currentVehicleIndex = ref(-1);
+
+// testTaskStore
+const testTaskStore = useTestTaskStore();
+
+// 生成任务单号
+const generateTaskNo = async () => {
+  if (taskNo.value) return taskNo.value;
+  
   try {
-    await vehicleStore.fetchVehicles();
-    availableVehicles.value = vehicleStore.vehicles.map(v => ({
-      id: v.vehicleId,
-      name: `${v.brand} ${v.model}`,
-      type: v.type
-    }));
-  } catch (error) {
-    console.error('加载车辆列表失败:', error);
-    showToast('加载车辆列表失败');
-  }
-};
-
-// 已选择的车辆列表
-const selectedVehicles = computed(() => {
-  return availableVehicles.value.filter(v => selectedVehicleIds.value.includes(v.id))
-    .map(v => ({
-      ...v,
-      testContent: vehicleTestContents.value[v.id] || ''
-    }));
-});
-
-// 已选择的车辆文本显示
-const selectedVehiclesText = computed(() => {
-  if (selectedVehicles.value.length === 0) return '';
-  return selectedVehicles.value.map(v => v.name).join('、');
-});
-
-// 测试类型选择确认
-const onTestTypeConfirm = ({ selectedValues, selectedOptions }) => {
-  console.log('测试类型选择的值:', { selectedValues, selectedOptions });
-  // 获取选中的值
-  const selectedValue = selectedValues[0];
-  formData.value.testType = selectedValue;
-  showTestTypePopup.value = false;
-};
-
-// 试验类型选择确认
-const onExperimentTypeConfirm = ({ selectedValues, selectedOptions }) => {
-  console.log('试验类型选择的值:', { selectedValues, selectedOptions });
-  const selectedValue = selectedValues[0];
-  formData.value.experimentType = selectedValue;
-  showExperimentTypePopup.value = false;
-};
-
-// 难度等级选择确认
-const onDifficultyConfirm = ({ selectedValues, selectedOptions }) => {
-  console.log('难度等级选择的值:', { selectedValues, selectedOptions });
-  const selectedValue = selectedValues[0];
-  formData.value.difficulty = selectedValue;
-  showDifficultyPopup.value = false;
-};
-
-// 日期选择确认
-const onDateConfirm = ({ selectedValues }) => {
-  console.log('日期选择的值:', selectedValues);
-  
-  // 检查值是否有效
-  if (!selectedValues) {
-    console.warn('日期选择值为空');
-    showToast('请选择有效日期');
-    return;
-  }
-  
-  // van-calendar range 模式返回 [startDate, endDate] 数组
-  if (Array.isArray(selectedValues)) {
-    if (selectedValues.length === 2 && selectedValues[0] && selectedValues[1]) {
-      // 日期范围选择
-      const [start, end] = selectedValues;
-      formData.value.startDate = formatDate(start);
-      formData.value.endDate = formatDate(end);
-    } else if (selectedValues.length === 1 && selectedValues[0]) {
-      // 单日期在数组中
-      formData.value.startDate = formatDate(selectedValues[0]);
-      formData.value.endDate = formatDate(selectedValues[0]);
-    } else {
-      console.warn('日期数组格式不正确:', selectedValues);
-      showToast('日期选择格式错误');
-      return;
+    generatingTaskNo.value = true;
+    console.log('开始生成任务单号...');
+    
+    // 检查网络连接状态
+    if (!navigator.onLine) {
+      throw new Error('网络连接不可用');
     }
-  } else if (selectedValues instanceof Date || (typeof selectedValues === 'object' && selectedValues.getTime)) {
-    // 单个日期对象
-    formData.value.startDate = formatDate(selectedValues);
-    formData.value.endDate = formatDate(selectedValues);
-  } else {
-    console.warn('未知的日期格式:', selectedValues);
-    showToast('日期格式不支持');
+    
+    // 如果有委托单编号，使用委托单编号生成任务单号
+    if (delegationNo.value) {
+      const response = await getTaskManagementNoByContract(delegationNo.value);
+      taskNo.value = response.data;
+    } else {
+      // 否则生成普通任务单号
+      const response = await getTaskManagementNo();
+      taskNo.value = response.data;
+    }
+    
+    console.log('任务单号生成成功:', taskNo.value);
+    showToast({ type: 'success', message: '任务单号生成成功' });
+    return taskNo.value;
+  } catch (error) {
+    console.error('获取任务单号失败:', error);
+    
+    // 根据错误类型显示不同的提示
+    let errorMessage = '获取任务单号失败，已生成本地编号';
+    if (error.message.includes('网络连接不可用')) {
+      errorMessage = '网络连接不可用，已生成本地编号';
+    } else if (error.message.includes('Failed to fetch')) {
+      errorMessage = '网络请求失败，已生成本地编号';
+    }
+    
+    showToast({ 
+      type: 'warning', 
+      message: errorMessage,
+      duration: 3000
+    });
+    
+    // 生成本地任务单号
+    const localTaskNo = `DQ-GT-LOCAL-${Date.now()}`;
+    taskNo.value = localTaskNo;
+    console.log('使用本地生成的任务单号:', localTaskNo);
+    return localTaskNo;
+  } finally {
+    generatingTaskNo.value = false;
+  }
+};
+
+// 步骤导航逻辑
+const canProceed = computed(() => {
+  switch (currentStep.value) {
+    case 0: return !!username.value && !!userPhone.value;
+    case 1: return !!delegatingEntityNm.value && !!delegationNo.value;
+    case 2: return !!plannedStartDate.value && !!plannedEndDate.value;
+    case 3: return testVehicles.value.length > 0 && !!testVehicleCount.value && !!participantCount.value;
+    case 4: return testVehicles.some(v => v.testContents.length > 0);
+    case 5: return true;
+    default: return false;
+  }
+});
+
+// 提交按钮的验证逻辑
+const canSubmit = computed(() => {
+  // 检查所有必填字段是否完整
+  const allFieldsValid = 
+    !!taskNo.value &&
+    !!delegatingEntityNm.value &&
+    !!delegationNo.value &&
+    !!username.value &&
+    !!userPhone.value &&
+    !!plannedStartDate.value &&
+    !!plannedEndDate.value &&
+    !!testVehicleCount.value &&
+    !!participantCount.value &&
+    testVehicles.value.length > 0 &&
+    testVehicles.some(v => v.testContents.length > 0);
+
+  return allFieldsValid && !generatingTaskNo.value;
+});
+
+const nextStep = async () => {
+  if (currentStep.value < 5 && canProceed.value) {
+    currentStep.value++;
+    
+    // 如果进入步骤6（确认提交）且不是编辑模式，则生成任务单号
+    if (currentStep.value === 5 && !isEditMode.value) {
+      await generateTaskNo();
+    }
+  }
+};
+
+const prevStep = () => {
+  if (currentStep.value > 0) {
+    currentStep.value--;
+  }
+};
+
+// 处理开始日期选择
+const onStartDateSelect = (date) => {
+  let dateArray = date;
+  if (date && typeof date === 'object' && date.selectedValues) {
+    dateArray = date.selectedValues;
+  }
+  
+  if (Array.isArray(dateArray) && dateArray.length === 3) {
+    const [year, month, day] = dateArray;
+    const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    plannedStartDate.value = formattedDate;
+    currentStartDate.value = dateArray;
+  }
+  showStartDatePicker.value = false;
+};
+
+// 处理结束日期选择
+const onEndDateSelect = (date) => {
+  let dateArray = date;
+  if (date && typeof date === 'object' && date.selectedValues) {
+    dateArray = date.selectedValues;
+  }
+  
+  if (Array.isArray(dateArray) && dateArray.length === 3) {
+    const [year, month, day] = dateArray;
+    const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    plannedEndDate.value = formattedDate;
+    currentEndDate.value = dateArray;
+  }
+  showEndDatePicker.value = false;
+};
+
+// 添加车辆
+const addVehicle = () => {
+  if (!newVehicle.value.vin) {
+    showToast({ type: 'fail', message: '请输入车辆VIN' });
     return;
   }
   
-  // 验证日期是否有效
-  if (!formData.value.startDate || formData.value.startDate.includes('NaN')) {
-    console.warn('日期格式化失败');
-    showToast('日期格式无效');
-    formData.value.startDate = '';
-    formData.value.endDate = '';
+  testVehicles.value.push({
+    ...newVehicle.value,
+    testContents: []
+  });
+  
+  // 重置新车辆信息
+  newVehicle.value = {
+    vin: '',
+    vehicleColor: '',
+    maxMass: 0,
+    topSpeed: 0,
+    passengerCapacity: 0,
+    refueled: 0,
+    charged: 0,
+    testContents: []
+  };
+  
+  showToast({ type: 'success', message: '车辆添加成功' });
+};
+
+// 编辑车辆
+const editVehicle = (index) => {
+  currentVehicleIndex.value = index;
+  newVehicle.value = { ...testVehicles.value[index] };
+  // 这里可以添加编辑逻辑
+};
+
+// 删除车辆
+const removeVehicle = (index) => {
+  testVehicles.value.splice(index, 1);
+  showToast({ type: 'success', message: '车辆删除成功' });
+};
+
+// 添加实验内容
+const addTestContent = (vehicleIndex) => {
+  currentVehicleIndex.value = vehicleIndex;
+  showAddTestContentDialog.value = true;
+};
+
+// 确认添加实验内容
+const confirmAddTestContent = () => {
+  if (!newTestContent.value.provingGroundId || !newTestContent.value.provingGroundNm || 
+      !newTestContent.value.groundId || !newTestContent.value.groundNm || !newTestContent.value.testTypeId || 
+      !newTestContent.value.billingTypeId || !newTestContent.value.testItemName) {
+    showToast({ type: 'fail', message: '请填写所有必填字段' });
     return;
   }
   
-  showDatePicker.value = false;
+  if (currentVehicleIndex.value >= 0 && currentVehicleIndex.value < testVehicles.value.length) {
+    testVehicles.value[currentVehicleIndex.value].testContents.push({ ...newTestContent.value });
+    showToast({ type: 'success', message: '实验内容添加成功' });
+    showAddTestContentDialog.value = false;
+    
+    // 重置新实验内容
+    newTestContent.value = {
+      provingGroundId: '3',
+      provingGroundNm: '三期',
+      groundId: '1',
+      groundNm: '直线性能路',
+      testTypeId: '7',
+      billingTypeId: '1',
+      testItemName: '',
+      plannedQuantity: 0,
+      nightTesting: 0,
+      remark: ''
+    };
+  }
 };
 
-// 车辆选择确认
-const onVehicleConfirm = () => {
-  showVehicleSelector.value = false;
-};
-
-// 切换车辆选择
-const toggleVehicle = (vehicleId) => {
-  const index = selectedVehicleIds.value.indexOf(vehicleId);
-  if (index > -1) {
-    // 移除车辆时也清理其试验内容
-    selectedVehicleIds.value.splice(index, 1);
-    delete vehicleTestContents.value[vehicleId];
-  } else {
-    selectedVehicleIds.value.push(vehicleId);
-    // 添加车辆时初始化试验内容
-    vehicleTestContents.value[vehicleId] = '';
+// 删除实验内容
+const removeTestContent = (vehicleIndex, contentIndex) => {
+  if (vehicleIndex >= 0 && vehicleIndex < testVehicles.value.length &&
+      contentIndex >= 0 && contentIndex < testVehicles.value[vehicleIndex].testContents.length) {
+    testVehicles.value[vehicleIndex].testContents.splice(contentIndex, 1);
+    showToast({ type: 'success', message: '实验内容删除成功' });
   }
 };
 
 // 表单提交
 const onSubmit = async () => {
-  // 检查所有选中的车辆是否都填写了试验内容
-  const missingContent = selectedVehicleIds.value.some(vehicleId => {
-    const content = vehicleTestContents.value[vehicleId];
-    return !content || !content.trim();
-  });
-  
-  if (missingContent) {
-    showToast('请填写所有车辆的试验内容');
-    return;
-  }
-
   try {
     submitting.value = true;
-    
+
+    // 从用户信息获取用户ID
+    const userInfo = getItem('user', {});
+    const userIdValue = userInfo?.userId || userInfo?.id || '1';
+
     const taskData = {
-      title: formData.value.taskName,
-      taskName: formData.value.taskName,
-      description: formData.value.description,
-      department: formData.value.department,
-      testType: formData.value.testType,
-      experimentType: formData.value.experimentType,
-      difficulty: formData.value.difficulty,
-      startDate: formData.value.startDate,
-      endDate: formData.value.endDate,
-      testSite: formData.value.testSite,
-      testSiteId: formData.value.testSiteId,
-      maxParticipants: formData.value.maxParticipants,
-      requirements: formData.value.requirements.filter(r => r.trim()),
-      fee: formData.value.fee,
-      estimatedDuration: formData.value.estimatedDuration,
-      location: formData.value.testSite,
-      vehicles: selectedVehicleIds.value.map(vehicleId => {
-        const vehicle = availableVehicles.value.find(v => v.id === vehicleId);
-        return {
-          vehicleId: vehicle.id,
-          name: vehicle.name,
-          testContent: vehicleTestContents.value[vehicleId] || ''
-        };
-      }),
-      status: 'PENDING',
-      equipment: formData.value.equipment.filter(e => e.trim()),
-      notes: formData.value.notes.filter(n => n.trim()),
-      contractInfo: {
-        contractNumber: formData.value.contractInfo.contractNumber,
-        client: formData.value.contractInfo.client
-      }
+      taskNo: taskNo.value,
+      delegatingEntityId: delegatingEntityId.value,
+      delegatingEntityNm: delegatingEntityNm.value,
+      productionUnitId: productionUnitId.value,
+      productionUnitNm: productionUnitNm.value,
+      delegationNo: delegationNo.value,
+      username: username.value,
+      userId: userIdValue,
+      userPhone: userPhone.value,
+      plannedStartDate: plannedStartDate.value,
+      plannedEndDate: plannedEndDate.value,
+      testVehicleCount: parseInt(testVehicleCount.value) || 0,
+      participantCount: parseInt(participantCount.value) || 0,
+      accommodationStatus: accommodationStatus.value,
+      status: status.value,
+      diningStatus: diningStatus.value,
+      driverRental: driverRental.value,
+      laborEmployment: laborEmployment.value,
+      equipmentRental: equipmentRental.value,
+      confidentialWorkshopRental: confidentialWorkshopRental.value,
+      imagingRequirement: imagingRequirement.value,
+      remark: remark.value,
+      testVehicles: testVehicles.value
     };
 
-    await testTaskStore.createTestTask(taskData);
-    showToast('创建成功');
-    router.push('/test-tasks');
+    console.log('提交的任务数据:', JSON.stringify(taskData, null, 2));
+
+    let result;
+    if (isEditMode.value) {
+      // 编辑模式，调用更新API
+      const res = await updateTask(taskData);
+      result = res.data;
+    } else {
+      // 创建模式，调用创建API
+      const res = await createTask(taskData);
+      result = res.data;
+    }
+
+    if (result && (result.code === 200 || result.status === 200 || result.code === '0')) {
+      showToast({ type: 'success', message: isEditMode.value ? '任务更新成功' : '任务提交成功' });
+      router.push('/test-tasks');
+    } else {
+      throw new Error(result?.msg || (isEditMode.value ? '任务更新失败' : '任务提交失败'));
+    }
   } catch (error) {
-    console.error('创建测试任务失败:', error);
-    showToast('创建失败：' + error);
+    showToast({ type: 'fail', message: error.message || (isEditMode.value ? '任务更新失败' : '任务提交失败') });
   } finally {
     submitting.value = false;
   }
 };
 
-// 加载测试场地列表
-const loadTestSites = async () => {
-  try {
-    await testSiteStore.fetchTestSites();
-    // 为 Vant 4.x Picker 生成正确的数据格式
-    availableTestSites.value = testSiteStore.testSites
-      .filter(site => site.status === 'AVAILABLE')
-      .map(site => ({
-        text: site.siteName,
-        value: site.siteId
-      }));
-  } catch (error) {
-    console.error('加载测试场地列表失败:', error);
-    showToast('加载测试场地列表失败');
+// 填充表单数据
+const fillFormData = (taskData) => {
+  if (!taskData) return;
+  
+  isEditMode.value = true;
+  taskNo.value = taskData.taskNo || '';
+  delegatingEntityId.value = taskData.delegatingEntityId || '1';
+  delegatingEntityNm.value = taskData.delegatingEntityNm || '';
+  productionUnitId.value = taskData.productionUnitId || '0';
+  productionUnitNm.value = taskData.productionUnitNm || '';
+  delegationNo.value = taskData.delegationNo || '';
+  username.value = taskData.username || '';
+  userId.value = taskData.userId || '';
+  userPhone.value = taskData.userPhone || '';
+  plannedStartDate.value = taskData.plannedStartDate || '';
+  plannedEndDate.value = taskData.plannedEndDate || '';
+  testVehicleCount.value = taskData.testVehicleCount?.toString() || '0';
+  participantCount.value = taskData.participantCount?.toString() || '0';
+  accommodationStatus.value = taskData.accommodationStatus?.toString() || '0';
+  status.value = taskData.status?.toString() || '1';
+  diningStatus.value = taskData.diningStatus?.toString() || '0';
+  driverRental.value = taskData.driverRental?.toString() || '0';
+  laborEmployment.value = taskData.laborEmployment?.toString() || '0';
+  equipmentRental.value = taskData.equipmentRental?.toString() || '0';
+  confidentialWorkshopRental.value = taskData.confidentialWorkshopRental?.toString() || '0';
+  imagingRequirement.value = taskData.imagingRequirement?.toString() || '0';
+  remark.value = taskData.remark || '';
+  
+  // 处理测试车辆数据
+  if (taskData.testVehicles && Array.isArray(taskData.testVehicles)) {
+    testVehicles.value = taskData.testVehicles.map(vehicle => ({
+      vin: vehicle.vin || '',
+      vehicleColor: vehicle.vehicleColor || '',
+      maxMass: vehicle.maxMass || 0,
+      topSpeed: vehicle.topSpeed || 0,
+      passengerCapacity: vehicle.passengerCapacity || 0,
+      refueled: vehicle.refueled || 0,
+      charged: vehicle.charged || 0,
+      testContents: (vehicle.testContents || []).map(content => ({
+        provingGroundId: content.provingGroundId || '',
+        provingGroundNm: content.provingGroundNm || '',
+        groundId: content.groundId || '',
+        groundNm: content.groundNm || '',
+        testTypeId: content.testTypeId || '',
+        billingTypeId: content.billingTypeId || 1,
+        testItemName: content.testItemName || '',
+        plannedQuantity: content.plannedQuantity || 0,
+        nightTesting: content.nightTesting || 0,
+        remark: content.remark || ''
+      }))
+    }));
   }
-};
-
-// 测试场地选择确认
-const onTestSiteConfirm = ({ selectedValues, selectedOptions }) => {
-  console.log('测试场地选择的值:', { selectedValues, selectedOptions });
-  
-  // selectedValues[0] 是用户选择的值（siteId）
-  const selectedValue = selectedValues[0];
-  
-  // 在 availableTestSites 中找到对应的站点
-  const site = availableTestSites.value.find(site => site.value === selectedValue);
-  
-  if (site) {
-    formData.value.testSite = site.text;     // 站点名称
-    formData.value.testSiteId = site.value;  // 站点ID
-  } else {
-    console.warn('未找到选中的测试场地:', selectedValue);
-    showToast('选择的测试场地无效');
-  }
-  
-  showTestSitePopup.value = false;
 };
 
 // 初始化
-onMounted(() => {
-  loadVehicles();
-  loadTestSites();
+onMounted(async () => {
+  try {
+    showToast({
+      type: 'loading',
+      message: '正在加载数据...',
+      duration: 0,
+      forbidClick: true
+    });
+
+    // 获取当前用户信息
+    const userInfo = getItem('user', {});
+    const userIdValue = userInfo?.userId || userInfo?.id;
+    const userName = userInfo?.userName || userInfo?.name;
+    if (userIdValue) {
+      userId.value = userIdValue;
+      username.value = userName || 'admin';
+    }
+
+    // 检查是否是编辑模式
+    if (route.params?.taskData) {
+      // 从路由参数获取任务数据
+      try {
+        const taskData = JSON.parse(decodeURIComponent(route.params.taskData));
+        fillFormData(taskData);
+      } catch (e) {
+        console.error('解析任务数据失败:', e);
+      }
+    }
+
+    showToast({
+      type: 'success',
+      message: '数据加载完成',
+      duration: 2000
+    });
+  } catch (error) {
+    console.error('加载数据失败:', error);
+    showToast({ 
+      type: 'fail', 
+      message: '获取数据失败', 
+      duration: 3000 
+    });
+  }
 });
 </script>
 
 <style lang="less" scoped>
-.new-test-task {
-  min-height: 100vh;
-  background-color: #f7f8fa;
+.new-task {
   padding-bottom: 20px;
-
-  .vehicle-selector {
-    height: calc(100% - 46px);
-    overflow-y: auto;
+  
+  .step-indicator {
+    margin: 16px;
   }
 
-  .vehicle-test-content {
-    margin: 8px 0;
+  .step-content {
+    min-height: 400px;
+  }
+
+  .step-section {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .step-navigation {
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+    gap: 10px;
+  }
+
+  .van-cell-group {
+    margin: 12px 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dialog-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  .dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
     
-    .van-field {
-      margin-top: 8px;
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
     }
   }
+  
+  .dialog-body {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+  }
+}
 
-  :deep(.van-field__label) {
-    width: 6em;
+.vehicle-list {
+  margin-top: 20px;
+  
+  .vehicle-item {
+    padding: 12px;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    
+    .vehicle-info {
+      margin-bottom: 10px;
+    }
+    
+    .vehicle-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+  }
+}
+
+.vehicle-section {
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  
+  h4 {
+    margin: 0 0 10px 0;
+  }
+  
+  .test-content-item {
+    padding: 10px;
+    border: 1px solid #e8f4ff;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    
+    .content-info {
+      margin-bottom: 10px;
+    }
   }
 }
 </style>

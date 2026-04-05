@@ -69,10 +69,8 @@ export async function getTestTasks(params = {}) {
       config: {}
     };
   } catch (error) {
-    // 静默处理错误，直接返回mock数据
-    // console.error('获取测试任务列表失败:', error);
-    await delay(500);
-    return mockResponse(mockTestTasks);
+    console.error('获取测试任务列表失败:', error);
+    throw error;
   }
 }
 
@@ -118,13 +116,7 @@ export async function getTestTaskById(taskId) {
     };
   } catch (error) {
     console.error('获取测试任务详情失败:', error);
-    // Fallback to mock data
-    await delay(300);
-    const task = mockTestTasks.content.find(t => t.taskId === taskId);
-    if (!task) {
-      throw new Error('测试任务不存在');
-    }
-    return mockResponse(task);
+    throw error;
   }
 }
 
@@ -605,10 +597,7 @@ export async function getTaskRegistrations(taskId) {
     };
   } catch (error) {
     console.error('获取任务报名列表失败:', error);
-    // Fallback to mock data
-    await delay(500);
-    const taskRegistrations = mockTestRegistrations.filter(r => r.taskId === taskId);
-    return mockResponse(taskRegistrations);
+    throw error;
   }
 }
 
@@ -644,10 +633,8 @@ export async function getTestStats() {
       config: {}
     };
   } catch (error) {
-    // 静默处理错误，直接返回mock数据
-    // console.error('获取测试统计信息失败:', error);
-    await delay(300);
-    return mockResponse(mockTestStats);
+    console.error('获取测试统计信息失败:', error);
+    throw error;
   }
 }
 
@@ -1153,6 +1140,271 @@ export async function cancelExperimentTask(taskId, reason) {
     };
   } catch (error) {
     console.error('取消试验任务失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取任务单号
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getTaskManagementNo() {
+  try {
+    const res = await artemisRequest(TEST_TASK_API.GET_TASK_NO, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      }
+    });
+
+    const result = res?.data;
+
+    console.log('获取任务单号原始API响应:', JSON.stringify(result, null, 2));
+
+    // Transform response to expected format
+    const taskNo = result.data || result;
+
+    return {
+      data: taskNo,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('获取任务单号失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 根据委托单编号获取任务单号
+ * @param {string} contractNo - 委托单编号
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getTaskManagementNoByContract(contractNo) {
+  try {
+    const res = await artemisRequest(`${TEST_TASK_API.GET_TASK_NO_BY_CONTRACT}/${contractNo}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      }
+    });
+
+    const result = res?.data;
+
+    console.log('根据委托单编号获取任务单号原始API响应:', JSON.stringify(result, null, 2));
+
+    // Transform response to expected format
+    const taskNo = result.data || result;
+
+    return {
+      data: taskNo,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('根据委托单编号获取任务单号失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 任务单查询
+ * @param {Object} params - 查询参数
+ * @param {number} params.pageNum - 页码
+ * @param {number} params.pageSize - 每页数量
+ * @param {string} params.userId - 用户ID
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function getTaskList(params = {}) {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params.pageNum) queryParams.append('pageNum', params.pageNum);
+    if (params.pageSize) queryParams.append('pageSize', params.pageSize);
+    if (params.userId) queryParams.append('userId', params.userId);
+
+    const res = await artemisRequest(`${TEST_TASK_API.TASK_LIST}?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      }
+    });
+
+    const result = res?.data;
+
+    console.log('任务单查询原始API响应:', JSON.stringify(result, null, 2));
+
+    // Transform response to expected format
+    const tasks = (result.rows || []).map(task => ({
+      id: task.id,
+      taskNo: task.taskNo,
+      delegatingEntityId: task.delegatingEntityId,
+      projectNo: task.projectNo,
+      projectStatus: task.projectStatus,
+      delegatingEntityNm: task.delegatingEntityNm,
+      productionUnitId: task.productionUnitId,
+      productionUnitNm: task.productionUnitNm,
+      delegationNo: task.delegationNo,
+      entrustedcontractNo: task.entrustedcontractNo,
+      username: task.username,
+      userId: task.userId,
+      userPhone: task.userPhone,
+      plannedStartDate: task.plannedStartDate,
+      plannedEndDate: task.plannedEndDate,
+      testVehicleCount: task.testVehicleCount,
+      participantCount: task.participantCount,
+      accommodationStatus: task.accommodationStatus,
+      status: task.status,
+      diningStatus: task.diningStatus,
+      driverRental: task.driverRental,
+      laborEmployment: task.laborEmployment,
+      equipmentRental: task.equipmentRental,
+      confidentialWorkshopRental: task.confidentialWorkshopRental,
+      imagingRequirement: task.imagingRequirement,
+      remark: task.remark,
+      auxiliaryProjectInfo: task.auxiliaryProjectInfo,
+      auxiliaryProject: task.auxiliaryProject,
+      testVehicles: task.testVehicles,
+      isDeleted: task.isDeleted,
+      createBy: task.createBy,
+      createTime: task.createTime,
+      updateBy: task.updateBy,
+      updateTime: task.updateTime,
+      isAccepted: task.isAccepted,
+      taskProcessingLogs: task.taskProcessingLogs,
+      labDeptId: task.labDeptId,
+      labDeptNm: task.labDeptNm,
+      labLmiId: task.labLmiId,
+      labLmiNm: task.labLmiNm,
+      labLmiTel: task.labLmiTel,
+      itemCategory: task.itemCategory,
+      itemCategoryLabel: task.itemCategoryLabel,
+      testingAgencyId: task.testingAgencyId,
+      testingAgencyNm: task.testingAgencyNm,
+      testingTaskNo: task.testingTaskNo
+    }));
+
+    return {
+      data: {
+        content: tasks,
+        total: result.total || 0,
+        pageable: {
+          pageNumber: params.pageNum || 1,
+          pageSize: params.pageSize || 20
+        }
+      },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('任务单查询失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 创建任务单
+ * @param {Object} taskData - 任务单数据
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function createTask(taskData) {
+  try {
+    const res = await artemisRequest(TEST_TASK_API.CREATE_TASK, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      },
+      body: JSON.stringify(taskData)
+    });
+
+    const result = res?.data;
+
+    console.log('创建任务单原始API响应:', JSON.stringify(result, null, 2));
+
+    return {
+      data: result,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('创建任务单失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 更新任务单
+ * @param {Object} taskData - 任务单数据
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function updateTask(taskData) {
+  try {
+    const res = await artemisRequest(TEST_TASK_API.UPDATE_TASK, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      },
+      body: JSON.stringify(taskData)
+    });
+
+    const result = res?.data;
+
+    console.log('更新任务单原始API响应:', JSON.stringify(result, null, 2));
+
+    return {
+      data: result,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('更新任务单失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 删除任务单
+ * @param {string|Array} ids - 任务单ID，可以是单个ID或ID数组
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function deleteTask(ids) {
+  try {
+    const idsStr = Array.isArray(ids) ? ids.join(',') : ids;
+    const res = await artemisRequest(`${TEST_TASK_API.DELETE_TASK}/${idsStr}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      }
+    });
+
+    const result = res?.data;
+
+    console.log('删除任务单原始API响应:', JSON.stringify(result, null, 2));
+
+    return {
+      data: result,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (error) {
+    console.error('删除任务单失败:', error);
     throw error;
   }
 }

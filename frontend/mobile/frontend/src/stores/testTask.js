@@ -20,7 +20,11 @@ import {
   approveExperimentTask,
   startExperimentTask,
   completeExperimentTask,
-  cancelExperimentTask
+  cancelExperimentTask,
+  getTaskManagementNo,
+  getTaskManagementNoByContract,
+  getTaskList,
+  deleteTask
 } from '../api/testTask';
 import { testRegistrationApi } from '../api/testRegistration';
 
@@ -387,6 +391,70 @@ export const useTestTaskStore = defineStore('testTask', () => {
     }
   };
 
+  // 获取任务单号
+  const fetchTaskManagementNo = async () => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await getTaskManagementNo();
+      return response.data;
+    } catch (err) {
+      error.value = err.message || '获取任务单号失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 根据委托单编号获取任务单号
+  const fetchTaskManagementNoByContract = async (contractNo) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await getTaskManagementNoByContract(contractNo);
+      return response.data;
+    } catch (err) {
+      error.value = err.message || '根据委托单编号获取任务单号失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 任务单查询
+  const fetchTaskList = async (params = {}) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await getTaskList(params);
+      return response.data;
+    } catch (err) {
+      error.value = err.message || '任务单查询失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 删除任务单
+  const deleteTaskItem = async (ids) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await deleteTask(ids);
+      return response.data;
+    } catch (err) {
+      error.value = err.message || '删除任务单失败';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     // 状态
     testTasks,
@@ -411,6 +479,10 @@ export const useTestTaskStore = defineStore('testTask', () => {
     approveTask,
     startTask,
     completeTask,
-    cancelTask
+    cancelTask,
+    fetchTaskManagementNo,
+    fetchTaskManagementNoByContract,
+    fetchTaskList,
+    deleteTaskItem
   };
 });

@@ -148,7 +148,7 @@ export const BOOKING_API = {
   /** 获取预约编号 */
   GET_BOOKING_NO: `${ARTEMIS_PREFIX}/api/v1/booking/getBookingNo`,
   /** 场地列表 */
-  GROUND_LIST: `${ARTEMIS_PREFIX}/ground/list`,
+  GROUND_LIST: `${ARTEMIS_PREFIX}/api/v1/booking/groundList`,
   /** 测试项目 */
   TEST_ITEM: `${ARTEMIS_PREFIX}/api/v1/ground/testItem`,
   /** 场地调度 */
@@ -204,6 +204,18 @@ export const TEST_TASK_API = {
   EXPERIMENT_TASK_COMPLETE: `${ARTEMIS_PREFIX}/api/v1/experiment-task`,
   /** 取消实验任务 */
   EXPERIMENT_TASK_CANCEL: `${ARTEMIS_PREFIX}/api/v1/experiment-task`,
+  /** 获取任务单号 */
+  GET_TASK_NO: `${ARTEMIS_PREFIX}/api/v1/task/getTaskManagementNo`,
+  /** 根据委托单编号获取任务单号 */
+  GET_TASK_NO_BY_CONTRACT: `${ARTEMIS_PREFIX}/api/v1/task/getTaskManagementNo`,
+  /** 任务单查询 */
+  TASK_LIST: `${ARTEMIS_PREFIX}/api/v1/task/list`,
+  /** 创建任务单 */
+  CREATE_TASK: `${ARTEMIS_PREFIX}/api/v1/task`,
+  /** 更新任务单 */
+  UPDATE_TASK: `${ARTEMIS_PREFIX}/api/v1/task`,
+  /** 删除任务单 */
+  DELETE_TASK: `${ARTEMIS_PREFIX}/api/v1/taskDel`,
 };
 
 // ==================== 测试场地相关 API ====================
