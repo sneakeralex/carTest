@@ -1,5 +1,6 @@
 import * as contractMock from '../mock/contract.js';
 import { artemisRequest } from './request';
+import { CONTRACT_API } from './config.js';
 // import { generateArtemisAuthHeaders } from '../../artemis_sign.js';
 
 // 判断是否使用mock数据
@@ -72,7 +73,7 @@ export async function getContracts(params = {}) {
     };
 
     // Use centralized artemisRequest to route via local proxy and apply Authorization
-    const res = await artemisRequest('/artemis/api/v1/contact/queryContract', {
+    const res = await artemisRequest('CONTRACT_API.LIST', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -205,7 +206,7 @@ export async function getContractById(contractId, hideSensitive = true) {
       id: contractId
     };
 
-    const res = await artemisRequest('/artemis/api/v1/contact/queryContractDetail', {
+    const res = await artemisRequest(CONTRACT_API.DETAIL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

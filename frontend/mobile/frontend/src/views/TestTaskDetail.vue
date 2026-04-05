@@ -145,7 +145,7 @@ import { useTestTaskStore } from '../stores/testTask';
 import { showToast, showConfirmDialog } from 'vant';
 import { formatDate } from '../utils/dateFormatter';
 import { getTestTypeText, getDifficultyText, getDifficultyType } from '../utils/typeFormatter';
-import { getUserInfo } from '../utils/auth.js';
+import { getItem } from '../utils/storage.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -172,7 +172,7 @@ const fetchTestTaskDetail = async () => {
     testTask.value = data;
     
     // 获取用户报名信息
-    const userInfo = getUserInfo();
+    const userInfo = getItem('user', {});
     if (userInfo.userId) {
       const registrations = await testTaskStore.fetchUserTestRegistrations(userInfo.userId);
       userRegistrations.value = Array.isArray(registrations) ? registrations : [];
@@ -200,7 +200,7 @@ const registerTask = async () => {
       message: `确定要报名参加"${testTask.value.taskName}"测试任务吗？`,
     });
 
-    const userInfo = getUserInfo();
+    const userInfo = getItem('user', {});
     await testTaskStore.registerTestTask({
       taskId: testTask.value.taskId,
       userId: userInfo.userId

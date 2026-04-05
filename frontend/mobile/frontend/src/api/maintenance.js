@@ -1,6 +1,7 @@
 // import request from './request.js';
 import * as maintenanceMock from '../mock/maintenance.js';
 import { artemisRequest } from './request';
+import { MAINTENANCE_API } from './config.js';
 
 // 判断是否使用mock数据
 const useMock = false; // Changed to false to prefer real API
@@ -26,7 +27,7 @@ const mockResponse = (data) => ({
  */
 export async function getMaintenanceRecords() {
   try {
-    const res = await artemisRequest('/artemis/api/maintenance/v1/records', { method: 'GET' });
+    const res = await artemisRequest('MAINTENANCE_API.LIST', { method: 'GET' });
     const result = res?.data;
     console.log('获取维护记录列表原始API响应:', JSON.stringify(result, null, 2));
 
@@ -84,7 +85,7 @@ export async function getMaintenanceRecords() {
  */
 export async function getMaintenanceById(id) {
   try {
-    const res = await artemisRequest(`/artemis/api/maintenance/v1/records/${id}`, { method: 'GET' });
+    const res = await artemisRequest(`MAINTENANCE_API.LIST/${id}`, { method: 'GET' });
     const result = res?.data;
     console.log('获取维护详情原始API响应:', JSON.stringify(result, null, 2));
 
@@ -141,7 +142,7 @@ export async function getMaintenanceById(id) {
  */
 export async function createMaintenance(maintenanceData) {
   try {
-    const res = await artemisRequest('/artemis/api/maintenance/v1/records', {
+    const res = await artemisRequest('MAINTENANCE_API.LIST', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(maintenanceData)
@@ -206,7 +207,7 @@ export async function createMaintenance(maintenanceData) {
  */
 export async function updateMaintenance(id, maintenanceData) {
   try {
-    const res = await artemisRequest(`/artemis/api/maintenance/v1/records/${id}`, {
+    const res = await artemisRequest(`MAINTENANCE_API.LIST/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(maintenanceData)
@@ -269,7 +270,7 @@ export async function updateMaintenance(id, maintenanceData) {
  */
 export async function cancelMaintenance(id) {
   try {
-    const res = await artemisRequest(`/artemis/api/maintenance/v1/records/${id}/cancel`, { method: 'PUT' });
+    const res = await artemisRequest(`MAINTENANCE_API.LIST/${id}/cancel`, { method: 'PUT' });
     const result = res?.data;
     console.log('取消维护记录原始API响应:', JSON.stringify(result, null, 2));
 

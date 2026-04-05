@@ -387,6 +387,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { showNotify, showToast } from 'vant';
 import { useAuthStore } from '../stores/auth';
+import { getItem, setItem } from '../utils/storage.js';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -486,23 +487,23 @@ const fetchUserInfo = async () => {
 // 加载设置
 const loadSettings = () => {
   // 从本地存储加载设置
-  const savedDarkMode = localStorage.getItem('darkMode');
+  const savedDarkMode = getItem('darkMode');
   if (savedDarkMode !== null) {
     darkMode.value = savedDarkMode === 'true';
     applyDarkMode(darkMode.value);
   }
   
-  const savedNotifications = localStorage.getItem('notificationsEnabled');
+  const savedNotifications = getItem('notificationsEnabled');
   if (savedNotifications !== null) {
     notificationsEnabled.value = savedNotifications === 'true';
   }
   
-  const savedLanguage = localStorage.getItem('language');
+  const savedLanguage = getItem('language');
   if (savedLanguage) {
     language.value = savedLanguage;
   }
   
-  const savedNotificationSettings = localStorage.getItem('notificationSettings');
+  const savedNotificationSettings = getItem('notificationSettings');
   if (savedNotificationSettings) {
     try {
       notificationSettings.value = JSON.parse(savedNotificationSettings);
@@ -630,7 +631,7 @@ const updatePassword = async () => {
 const toggleDarkMode = () => {
   darkMode.value = !darkMode.value;
   applyDarkMode(darkMode.value);
-  localStorage.setItem('darkMode', darkMode.value.toString());
+  setItem('darkMode', darkMode.value.toString());
 };
 
 // 应用深色模式
@@ -645,15 +646,15 @@ const applyDarkMode = (isDark) => {
 // 语言确认
 const onLanguageConfirm = (value) => {
   language.value = value;
-  localStorage.setItem('language', value);
+  setItem('language', value);
   showLanguagePopup.value = false;
   showToast('语言设置已更新');
 };
 
 // 保存通知设置
 const saveNotificationSettings = () => {
-  localStorage.setItem('notificationsEnabled', notificationsEnabled.value.toString());
-  localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings.value));
+  setItem('notificationsEnabled', notificationsEnabled.value.toString());
+  setItem('notificationSettings', JSON.stringify(notificationSettings.value));
   showNotificationPopup.value = false;
   showToast('通知设置已保存');
 };

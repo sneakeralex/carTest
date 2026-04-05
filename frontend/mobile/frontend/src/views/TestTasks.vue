@@ -136,7 +136,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getUserInfo } from '../utils/auth.js';
+import { getItem } from '../utils/storage.js';
 import { useTestTaskStore } from '../stores/testTask';
 import { showToast, showConfirmDialog } from 'vant';
 
@@ -346,7 +346,7 @@ const registerTask = (task) => {
 // 确认报名
 const confirmRegister = async () => {
   try {
-    const userInfo = getUserInfo();
+    const userInfo = getItem('user', {});
     
     const registrationData = {
       taskId: registerForm.taskId,

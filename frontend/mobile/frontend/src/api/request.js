@@ -1,4 +1,13 @@
 import axios from 'axios';
+
+/**
+ * HTTP 请求工具模块
+ * 
+ * 本模块提供两套请求方案：
+ * 1. axios service - 用于同源 API 调用和开发环境的 mock 数据
+ * 2. artemisRequest - 用于 Artemis API 的请求，支持超时、重试和拦截器
+ */
+
 // 导入 node-fetch 以在 Node.js 环境中使用 fetch 函数
 if (typeof window === 'undefined' && typeof fetch === 'undefined') {
   try {
@@ -8,28 +17,50 @@ if (typeof window === 'undefined' && typeof fetch === 'undefined') {
     console.error('Error loading node-fetch:', error);
   }
 }
-// Removed static imports of browser-only modules to allow Node test scripts to import this file
-// import { showNotify } from 'vant';
-// import router from '../router/index.js';
+
 import * as equipmentMock from '../mock/equipment.js';
 import * as maintenanceMock from '../mock/maintenance.js';
 
-// 判断是否使用mock数据 — guard import.meta.env for Node test imports
+// ==================== 配置常量 ====================
+
+/**
+ * 是否使用 mock 数据
+ * 仅在开发模式下启用 mock 数据
+ */
 const useMock = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE === 'development') || false;
 
-// mock处理函数集合
+/**
+ * mock 处理函数集合
+ */
 const mockHandlers = useMock ? { ...equipmentMock, ...maintenanceMock } : {};
 
-// Default proxy base for frontend -> backend proxy
+/**
+ * 默认代理基础路径
+ * 优先级：window.__ARTEMIS_PROXY_BASE__ > VITE_API_BASE > '/api'
+ */
 const DEFAULT_BASE = (typeof window !== 'undefined' && window?.__ARTEMIS_PROXY_BASE__) || (import.meta?.env?.VITE_API_BASE) || '/api';
 
-// 创建axios实例 (用于同源 API 调用和 dev mocks)
+/**
+ * Artemis 上游服务器地址
+ */
+const UPSTREAM_HOST = 'https://cartest.douwifi.cn';
+
+// ==================== Axios Service (同源 API) ====================
+
+/**
+ * 创建 axios 实例
+ * 用于同源 API 调用和开发环境的 mock 数据
+ */
 export const service = axios.create({
   baseURL: DEFAULT_BASE,
   timeout: 15000
 });
 
-// 请求拦截器 (axios service)
+/**
+ * axios 请求拦截器
+ * 1. 在开发环境下尝试使用 mock 数据
+ * 2. 注意：不要在前端添加 Authorization 头，由服务端代理处理
+ */
 service.interceptors.request.use(
   config => {
     // 如果是开发环境且有对应的mock处理函数，使用mock数据
@@ -39,7 +70,7 @@ service.interceptors.request.use(
       const method = (config.method || 'get').toLowerCase();
       let mockKey;
 
-      // 处理不同的URL模式
+      // 根据 URL 模式匹配对应的 mock 函数
       if (urlParts.length === 1) {
         if (baseResource === 'maintenances') {
           mockKey = 'getMaintenances';
@@ -84,23 +115,23 @@ service.interceptors.request.use(
       }
     }
 
-    // NOTE: Do NOT attach Authorization token in frontend headers.
-    // Authorization/signing must be performed server-side by the /api proxy.
-    // Intentionally left blank to avoid client-side secrets leakage.
-
+    // 注意：不要在前端添加 Authorization 头
+    // 授权/签名必须由服务端代理处理，避免客户端密钥泄露
     return config;
   },
   error => Promise.reject(error)
 );
 
-// 响应拦截器 (axios service)
+/**
+ * axios 响应拦截器
+ * 处理各种 HTTP 错误状态码，提供友好的错误提示
+ */
 service.interceptors.response.use(
   response => response,
-  // Make the error handler async and perform dynamic imports of browser-only helpers when running in a browser
   async error => {
     const { response } = error || {};
 
-    // Dynamic imports only when running in a browser environment
+    // 仅在浏览器环境中动态导入 UI 组件
     let showNotifyFn = (opts) => { console.warn('notify:', opts && opts.message ? opts.message : opts); };
     let routerModule = null;
     if (typeof window !== 'undefined') {
@@ -108,14 +139,14 @@ service.interceptors.response.use(
         const vant = await import('vant');
         showNotifyFn = vant.showNotify || vant.Notify || showNotifyFn;
       } catch (e) {
-        // ignore - fallback to console
+        // 忽略错误，降级到 console
       }
 
       try {
         const mod = await import('../router/index.js');
         routerModule = mod && (mod.default || mod);
       } catch (e) {
-        // ignore
+        // 忽略错误
       }
     }
 
@@ -125,7 +156,8 @@ service.interceptors.response.use(
           showNotifyFn({ type: 'danger', message: '请求参数错误' });
           break;
         case 401:
-          try { localStorage.removeItem('token'); localStorage.removeItem('user'); } catch (e) {}
+          // 清除本地存储的认证信息
+          try { import('../utils/storage.js').then(module => { module.removeItem('token'); module.removeItem('user'); }); } catch (e) {}
           if (routerModule && typeof routerModule.push === 'function') routerModule.push('/login');
           showNotifyFn({ type: 'danger', message: '登录已过期，请重新登录' });
           break;
@@ -149,27 +181,60 @@ service.interceptors.response.use(
   }
 );
 
-// Interceptor registries for fetch-based artemisRequest
+// ==================== Artemis Request (专用请求) ====================
+
+/**
+ * 请求拦截器注册表
+ */
 const requestInterceptors = [];
+
+/**
+ * 响应拦截器注册表
+ */
 const responseInterceptors = [];
 
+/**
+ * 添加请求拦截器
+ * @param {Function} fn - 拦截器函数
+ * @returns {Function} 取消拦截器的函数
+ */
 export function addRequestInterceptor(fn) {
   if (typeof fn === 'function') requestInterceptors.push(fn);
   return () => { const i = requestInterceptors.indexOf(fn); if (i >= 0) requestInterceptors.splice(i, 1); };
 }
 
+/**
+ * 添加响应拦截器
+ * @param {Function} fn - 拦截器函数
+ * @returns {Function} 取消拦截器的函数
+ */
 export function addResponseInterceptor(fn) {
   if (typeof fn === 'function') responseInterceptors.push(fn);
   return () => { const i = responseInterceptors.indexOf(fn); if (i >= 0) responseInterceptors.splice(i, 1); };
 }
 
-// Utility: sleep
+// ==================== 工具函数 ====================
+
+/**
+ * 延迟函数
+ * @param {number} ms - 延迟毫秒数
+ */
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-// Exponential backoff with jitter
-function backoffDelay(attempt, base = 200) { const exp = Math.min(30000, base * Math.pow(2, attempt)); const jitter = Math.random() * base; return exp + jitter; }
+/**
+ * 带抖动的指数退避延迟计算
+ * @param {number} attempt - 重试次数
+ * @param {number} base - 基础延迟毫秒数
+ */
+function backoffDelay(attempt, base = 200) {
+  const exp = Math.min(30000, base * Math.pow(2, attempt));
+  const jitter = Math.random() * base;
+  return exp + jitter;
+}
 
-// Normalize response shape returned by this client
+/**
+ * 规范化响应格式
+ */
 function normalizeResponse(status, statusText, headers, data, config = {}) {
   let payload = data;
   if (data && typeof data === 'object') {
@@ -180,7 +245,9 @@ function normalizeResponse(status, statusText, headers, data, config = {}) {
   return { data: payload, status, statusText: statusText || (status ? String(status) : ''), headers: headers || {}, config };
 }
 
-// Map errors to a common shape
+/**
+ * 错误映射，统一错误格式
+ */
 function mapError(err) {
   const mapped = { message: err?.message || 'Unknown error', isNetworkError: false, isTimeout: false, isAuth: false, status: null, original: err };
   if (err instanceof Error && err.name === 'AbortError') { mapped.isTimeout = true; mapped.message = 'Request timed out'; return mapped; }
@@ -190,7 +257,9 @@ function mapError(err) {
   return mapped;
 }
 
-// Helper: run request/response interceptors
+/**
+ * 执行请求拦截器
+ */
 async function runRequestInterceptors(ctx) {
   let cfg = { ...ctx };
   for (const fn of requestInterceptors) {
@@ -200,6 +269,9 @@ async function runRequestInterceptors(ctx) {
   return cfg;
 }
 
+/**
+ * 执行响应拦截器
+ */
 async function runResponseInterceptors(ctx) {
   let res = { ...ctx };
   for (const fn of responseInterceptors) {
@@ -209,59 +281,100 @@ async function runResponseInterceptors(ctx) {
   return res;
 }
 
-// Rewrite logic: convert absolute Artemis URLs and known prefixes to local /artemis proxy
+/**
+ * 确保路径只有一个前导斜杠
+ * @param {string} s - 路径字符串
+ * @returns {string} 规范化的路径
+ */
+const ensureLeadingSlash = (s) => s.startsWith('/') ? s : '/' + s;
+
+/**
+ * 规范化 Artemis 路径
+ * 将各种格式的路径统一转换为标准的 /artemis/... 格式
+ * 
+ * @param {string} path - 原始路径
+ * @returns {string} 规范化后的路径（不含域名）
+ */
+function normalizeArtemisPath(path) {
+  if (!path) return path;
+
+  // 情况1：路径已经以 /artemis 开头
+  if (path.startsWith('/artemis')) {
+    return path;
+  }
+
+  // 情况2：处理已知的前缀简写
+  if (path.startsWith('/apiv1')) {
+    return '/artemis/api/v1' + path.slice('/apiv1'.length);
+  }
+  if (path.startsWith('/apiv2')) {
+    return '/artemis/api/v2' + path.slice('/apiv2'.length);
+  }
+  if (path.startsWith('/v1')) {
+    return '/artemis/v1' + path.slice('/v1'.length);
+  }
+
+  // 其他情况：保持原样
+  return path;
+}
+
+/**
+ * 路径重写函数
+ * 将各种格式的输入路径转换为标准的上游 URL
+ * 
+ * 支持的输入格式：
+ * 1. 绝对 URL：https://cartest.douwifi.cn/artemis/api/v1/test
+ * 2. /artemis 前缀：/artemis/api/v1/test
+ * 3. 简写前缀：/apiv1/test, /apiv2/test, /v1/test
+ * 4. 其他路径：保持原样
+ * 
+ * @param {string} inputPath - 输入路径
+ * @returns {string} 重写后的完整 URL
+ */
 function rewriteToProxy(inputPath) {
   if (!inputPath) return inputPath;
 
-  // Canonical upstream host (absolute) — always use this for Artemis endpoints
-  const UPSTREAM_HOST = 'https://cartest.douwifi.cn';
-
-  // Helper to ensure single leading slash on suffix
-  const ensureLeading = (s) => s.startsWith('/') ? s : '/' + s;
-
-  // If input is an absolute URL that points to the upstream, normalize and return absolute URL
+  // 情况1：输入是指向上游的绝对 URL
   try {
     const u = new URL(inputPath, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
     const hostMatch = /cartest\.douwifi\.cn|artemis/.test(u.hostname);
     if (hostMatch) {
-      // Build canonical upstream URL: https://cartest.douwifi.cn/artemis{path...}
-      const path = u.pathname || '/';
-      const suffix = path.startsWith('/artemis') ? path.slice('/artemis'.length) : path;
-      return UPSTREAM_HOST + '/artemis' + ensureLeading(suffix) + (u.search || '');
+      // 从完整 URL 中提取路径部分，规范化后重新构建
+      const normalizedPath = normalizeArtemisPath(u.pathname || '/');
+      return UPSTREAM_HOST + normalizedPath + (u.search || '');
     }
   } catch (e) {
-    // ignore
+    // 不是有效的 URL，继续处理
   }
 
-  // Map known shorthand or prefixed local paths to upstream absolute URLs
-  if (inputPath.startsWith('/apiv1')) {
-    return UPSTREAM_HOST + '/artemis/api/v1' + inputPath.slice('/apiv1'.length);
-  }
-  if (inputPath.startsWith('/apiv2')) {
-    return UPSTREAM_HOST + '/artemis/api/v2' + inputPath.slice('/apiv2'.length);
-  }
-  if (inputPath.startsWith('/v1')) {
-    return UPSTREAM_HOST + '/artemis/v1' + inputPath.slice('/v1'.length);
+  // 情况2：输入是相对路径或前缀路径
+  const normalizedPath = normalizeArtemisPath(inputPath);
+
+  // 如果是 Artemis 路径，添加上游域名
+  if (normalizedPath.startsWith('/artemis')) {
+    return UPSTREAM_HOST + normalizedPath;
   }
 
-  // If starts with /artemis, map to upstream absolute URL and avoid duplicating the segment
-  if (inputPath.startsWith('/artemis')) {
-    const suffix = inputPath.slice('/artemis'.length);
-    return UPSTREAM_HOST + '/artemis' + (suffix || '');
-  }
-
-  // Non-artemis paths (same-origin APIs or assets) should remain unchanged
+  // 非 Artemis 路径（同源 API 或资源）保持不变
   return inputPath;
 }
 
-// Core fetch with timeout + retries
+/**
+ * Artemis 请求核心函数
+ * 支持超时、重试、拦截器等特性
+ * 
+ * @param {string} inputPath - 请求路径
+ * @param {Object} options - 请求选项
+ * @returns {Promise} 请求结果
+ */
 export async function artemisRequest(inputPath, options = {}) {
   const cfg = { method: 'GET', headers: {}, timeout: 12000, retries: 2, retryOn: [429, 502, 503, 504], ...options };
   const intercepted = await runRequestInterceptors({ path: inputPath, options: cfg });
   const path = intercepted.path ?? inputPath;
   const opts = intercepted.options ?? cfg;
 
-  // Intentionally do not add Authorization here. The server proxy will sign/attach credentials.
+  // 注意：不要在这里添加 Authorization 头
+  // 服务端代理会处理签名和添加凭据
 
   const url = rewriteToProxy(path);
   const fetchInit = { method: opts.method, headers: opts.headers || {}, body: opts.body };

@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { getItem } from '../utils/storage.js';
 
 const routes = [
   {
@@ -233,9 +234,8 @@ const router = createRouter({
 
 // 路由导航守卫
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
+  const token = getItem('token');
+  const user = getItem('user');
 
   // 检查是否需要登录
   if (to.matched.some(record => record.meta.requiresAuth)) {

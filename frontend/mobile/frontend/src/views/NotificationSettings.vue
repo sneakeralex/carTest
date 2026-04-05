@@ -196,6 +196,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { showToast } from 'vant';
+import { getItem, setItem } from '../utils/storage.js';
 
 const router = useRouter();
 
@@ -237,7 +238,7 @@ onMounted(() => {
 // 加载设置
 const loadSettings = () => {
   try {
-    const savedSettings = localStorage.getItem('notificationSettings');
+    const savedSettings = getItem('notificationSettings');
     if (savedSettings) {
       const parsed = JSON.parse(savedSettings);
       settings.value = { ...settings.value, ...parsed };
@@ -257,7 +258,7 @@ const loadSettings = () => {
 // 保存设置
 const saveSettings = () => {
   try {
-    localStorage.setItem('notificationSettings', JSON.stringify(settings.value));
+    setItem('notificationSettings', JSON.stringify(settings.value));
     showToast('设置已保存');
   } catch (error) {
     console.error('保存设置失败:', error);

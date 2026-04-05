@@ -163,6 +163,7 @@ import { useRouter } from 'vue-router';
 import { showNotify } from 'vant';
 import { useEquipmentStore } from '../stores/equipment';
 import { formatDate } from '@/utils/dateFormatter';
+import { getItem, setItem } from '../utils/storage.js';
 
 const router = useRouter();
 const equipmentStore = useEquipmentStore();
@@ -178,10 +179,10 @@ const pageSize = 20;
 const currentPage = ref(1);
 
 // 搜索相关
-const searchText = ref(localStorage.getItem('equipment_search') || '');
+const searchText = ref(getItem('equipment_search') || '');
 const showFilter = ref(false);
-const filterStatus = ref(localStorage.getItem('equipment_status') || '');
-const filterType = ref(localStorage.getItem('equipment_type') || '');
+const filterStatus = ref(getItem('equipment_status') || '');
+const filterType = ref(getItem('equipment_type') || '');
 const showRentable = ref(false);
 
 // 设备类型列表
@@ -202,15 +203,15 @@ const currentEquipment = ref(null);
 
 // 持久化搜索和筛选条件
 watch(searchText, (val) => {
-  localStorage.setItem('equipment_search', val);
+  setItem('equipment_search', val);
 });
 
 watch(filterStatus, (val) => {
-  localStorage.setItem('equipment_status', val);
+  setItem('equipment_status', val);
 });
 
 watch(filterType, (val) => {
-  localStorage.setItem('equipment_type', val);
+  setItem('equipment_type', val);
 });
 
 // 过滤后的设备列表

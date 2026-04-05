@@ -77,6 +77,7 @@ import { useRouter } from 'vue-router';
 import { useTestTaskStore } from '../stores/testTask';
 import { testRegistrationApi } from '@/api/testRegistration';
 import { showToast } from 'vant';
+import { getItem } from '../utils/storage.js';
 
 const router = useRouter();
 const testTaskStore = useTestTaskStore();
@@ -102,8 +103,7 @@ const fetchMyRegistrations = async () => {
     loading.value = true;
     let userInfo;
     try {
-      const userStr = localStorage.getItem('user');
-      userInfo = userStr && userStr !== 'undefined' ? JSON.parse(userStr) : {};
+      userInfo = getItem('user') || {};
     } catch (error) {
       console.error('解析用户信息失败:', error);
       userInfo = {};

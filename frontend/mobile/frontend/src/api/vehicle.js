@@ -1,11 +1,16 @@
 // 模拟API响应延迟
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// 导入存储工具
+import { getItem } from '../utils/storage.js';
+import { artemisRequest } from './request';
+import { VEHICLE_API } from './config.js';
+
 // 获取认证token的辅助函数
 const getAuthToken = () => {
-  // 在浏览器环境中使用localStorage
-  if (typeof localStorage !== 'undefined') {
-    return localStorage.getItem('token') || '';
+  // 在浏览器环境中使用storage工具
+  if (typeof window !== 'undefined') {
+    return getItem('token') || '';
   }
   // 在Node.js测试环境中返回空字符串
   return '';
@@ -42,8 +47,6 @@ const getVehicleTypeName = (typeCode) => {
   return typeMap[typeCode] || '未知';
 };
 
-import { artemisRequest } from './request';
-
 /**
  * 获取车辆列表 (移动端)
  * @param {Object} params - 查询参数
@@ -62,7 +65,7 @@ export async function getMobileVehicles(params = {}) {
       pageSize: params.size || 100 // reduce payload to mitigate ECONNRESET
     });
 
-    const res = await artemisRequest('/artemis/api/resource/v1/vehicle/vehicleList', {
+    const res = await artemisRequest(VEHICLE_API.LIST, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': '*/*' },
       body: bodyStr
@@ -131,7 +134,7 @@ export async function getMobileVehicles(params = {}) {
           pageNo: params.page || 1,
           pageSize: 50
         });
-        const res = await artemisRequest('/artemis/api/resource/v2/vehicle/advance/vehicleList', {
+        const res = await artemisRequest(VEHICLE_API.ADVANCE_LIST, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
           body: retryBody
@@ -204,7 +207,7 @@ export async function getMobileVehicleById(vehicleId) {
       pageSize: 100 // reduce payload
     });
 
-    const res = await artemisRequest('/artemis/api/resource/v1/vehicle/vehicleList', {
+    const res = await artemisRequest(VEHICLE_API.LIST, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -25,8 +25,10 @@ from typing import Dict, List, Optional
 from qcloudsms_py import SmsSingleSender
 from qcloudsms_py.httpclient import HTTPError
 
-from config import SERVICE_CONFIG, API_PROXY_CONFIG, SMS_SERVICE_CONFIG, VERIFICATION_CODE_CONFIG, LOG_CONFIG
+from config import SERVICE_CONFIG, API_PROXY_CONFIG, SMS_SERVICE_CONFIG, VERIFICATION_CODE_CONFIG, LOG_CONFIG, DATABASE_CONFIG
 from verification_code_manager import verification_code_manager
+from sqlite_handler import SQLiteHandler, RequestContextFilter
+from db_manager import get_db_manager
 
 # 配置日志
 logging.basicConfig(
@@ -35,6 +37,13 @@ logging.basicConfig(
     filename=LOG_CONFIG['file']
 )
 logger = logging.getLogger(__name__)
+
+# 如果启用了SQLite日志，添加SQLite处理器
+if LOG_CONFIG['enable_sqlite']:
+    sqlite_handler = SQLiteHandler(DATABASE_CONFIG['db_path'])
+    sqlite_handler.setFormatter(logging.Formatter(LOG_CONFIG['format']))
+    logger.addHandler(sqlite_handler)
+    logger.info(f"SQLite日志系统已启用，数据库路径: {DATABASE_CONFIG['db_path']}")
 
 
 class ApiSigner:
@@ -150,6 +159,66 @@ class ApiSigner:
         return headers_to_add
 
 
+# 自定义HTTP客户端，修复json.loads()的encoding参数问题
+class CustomHTTPClient:
+    def fetch(self, req):
+        import re
+        import json
+        import sys
+        import socket
+        from http import client as httplib
+        from urllib import parse as urlparse
+        
+        class CustomHTTPResponse:
+            def __init__(self, request, code, body, headers=None, reason=None):
+                self.request = request
+                self.code = code
+                self.body = body
+                self.headers = headers
+                self.reason = reason or httplib.responses.get(code, "Unknown")
+            
+            def ok(self):
+                if self.code == 200 or self.code == "200":
+                    return True
+                return False
+            
+            def json(self):
+                # 修复：移除encoding参数
+                if sys.version_info >= (3, ):
+                    return json.loads(self.body.decode("utf-8"))
+                return json.loads(self.body)
+        
+        result = urlparse.urlparse(req.url)
+        host, port = (result.hostname, result.port)
+        
+        if result.scheme == "https":
+            conn = httplib.HTTPSConnection(host, port=port, timeout=60)
+        else:
+            conn = httplib.HTTPConnection(host, port=port, timeout=60)
+        
+        try:
+            conn.request(
+                req.method,
+                "{}?{}".format(result.path, result.query),
+                body=req.body,
+                headers=req.headers
+            )
+            response = conn.getresponse()
+            res = CustomHTTPResponse(
+                request=req,
+                code=response.status,
+                body=response.read(),
+                headers=dict(response.getheaders()),
+                reason=response.reason
+            )
+        except socket.gaierror:
+            raise
+        except OSError:
+            raise
+        finally:
+            conn.close()
+        return res
+
 class SmsService:
     """短信服务类"""
     
@@ -160,11 +229,14 @@ class SmsService:
         self.sign_name = SMS_SERVICE_CONFIG['sign_name']
         
         try:
-            self.sms_sender = SmsSingleSender(self.app_id, self.app_key)
+            # 使用自定义HTTP客户端
+            self.custom_http_client = CustomHTTPClient()
+            self.sms_sender = SmsSingleSender(self.app_id, self.app_key, httpclient=self.custom_http_client)
             logger.info("短信发送器初始化成功")
         except Exception as e:
             logger.error(f"短信发送器初始化失败: {e}")
             self.sms_sender = None
+            self.custom_http_client = None
     
     def generate_verification_code(self, length=6):
         """生成随机验证码"""
@@ -191,13 +263,22 @@ class SmsService:
                 ext=""
             )
             
-            logger.info(f"发送验证码成功: {result}")
-            return {
-                "success": True,
-                "message": "验证码发送成功",
-                "data": result,
-                "code": code
-            }
+            # 检查腾讯云返回的结果
+            if result.get('result') == 0:
+                logger.info(f"发送验证码成功: {result}")
+                return {
+                    "success": True,
+                    "message": "验证码发送成功",
+                    "data": result,
+                    "code": code
+                }
+            else:
+                logger.warning(f"发送验证码失败: {result}")
+                return {
+                    "success": False,
+                    "message": f"发送失败: {result.get('errmsg')}",
+                    "data": result
+                }
             
         except HTTPError as e:
             logger.error(f"HTTP错误: {e}")
@@ -237,6 +318,16 @@ class SmsService:
 # 创建Flask应用
 app = Flask(__name__)
 
+# 2. 强制关闭 ASCII 编码
+app.config['JSON_AS_ASCII'] = False
+
+# 3. 强制使用 UTF-8 编码（gunicorn 环境必须加！）
+app.config['JSONIFY_MIMETYPE'] = 'application/json; charset=utf-8'
+
+# 4. 手动指定 json 编码器（彻底解决）
+app.json.ensure_ascii = False
+app.json.sort_keys = False
+
 # 初始化服务
 sms_service = SmsService() if SERVICE_CONFIG['enable_sms_service'] else None
 
@@ -245,11 +336,23 @@ TARGET_BASE_URL = API_PROXY_CONFIG['target_base_url']
 APP_KEY = API_PROXY_CONFIG['app_key']
 APP_SECRET = API_PROXY_CONFIG['app_secret']
 
+# 数据库管理器
+db_manager = get_db_manager(DATABASE_CONFIG['db_path'])
+
 
 @app.route('/health', methods=['GET'])
 def health_check():
     """统一健康检查接口"""
     try:
+        # 添加上下文信息
+        ip_address = request.remote_addr
+        user_agent = request.headers.get('User-Agent')
+        
+        # 创建带有上下文的日志记录
+        health_logger = logging.getLogger('health')
+        health_logger.addFilter(RequestContextFilter(ip_address, user_agent))
+        health_logger.info("健康检查请求")
+        
         response = {
             "status": "healthy",
             "service": "unified-server",
@@ -257,7 +360,8 @@ def health_check():
             "timestamp": datetime.now().isoformat(),
             "services": {
                 "api_proxy": SERVICE_CONFIG['enable_api_proxy'],
-                "sms_service": SERVICE_CONFIG['enable_sms_service']
+                "sms_service": SERVICE_CONFIG['enable_sms_service'],
+                "sqlite_log": LOG_CONFIG['enable_sqlite']
             }
         }
         return Response(json.dumps(response), status=200, mimetype='application/json')
@@ -275,11 +379,102 @@ def health_check():
 @app.route('/services', methods=['GET'])
 def get_services_status():
     """获取服务状态接口"""
-    return Response(json.dumps({
-        "api_proxy": SERVICE_CONFIG['enable_api_proxy'],
-        "sms_service": SERVICE_CONFIG['enable_sms_service'],
-        "timestamp": datetime.now().isoformat()
-    }), status=200, mimetype='application/json')
+    try:
+        ip_address = request.remote_addr
+        user_agent = request.headers.get('User-Agent')
+        
+        status_logger = logging.getLogger('services')
+        status_logger.addFilter(RequestContextFilter(ip_address, user_agent))
+        status_logger.info("服务状态查询")
+        
+        return Response(json.dumps({
+            "api_proxy": SERVICE_CONFIG['enable_api_proxy'],
+            "sms_service": SERVICE_CONFIG['enable_sms_service'],
+            "sqlite_log": LOG_CONFIG['enable_sqlite'],
+            "timestamp": datetime.now().isoformat()
+        }), status=200, mimetype='application/json')
+    except Exception as e:
+        logger.error(f"Get services status failed: {e}")
+        return Response(json.dumps({"error": str(e)}), status=500, mimetype='application/json')
+
+
+# 日志管理接口
+@app.route('/api/logs', methods=['GET'])
+def get_logs():
+    """获取日志记录"""
+    try:
+        ip_address = request.remote_addr
+        user_agent = request.headers.get('User-Agent')
+        
+        log_logger = logging.getLogger('logs')
+        log_logger.addFilter(RequestContextFilter(ip_address, user_agent))
+        log_logger.info("日志查询请求")
+        
+        # 获取查询参数
+        limit = int(request.args.get('limit', 100))
+        offset = int(request.args.get('offset', 0))
+        level = request.args.get('level')
+        service = request.args.get('service')
+        
+        # 获取日志
+        logs = db_manager.get_logs(limit=limit, offset=offset, level=level, service=service)
+        
+        # 获取统计信息
+        stats = db_manager.get_log_stats()
+        
+        return Response(json.dumps({
+            "logs": logs,
+            "stats": stats,
+            "total": len(logs)
+        }), status=200, mimetype='application/json')
+    except Exception as e:
+        logger.error(f"Get logs failed: {e}")
+        return Response(json.dumps({"error": str(e)}), status=500, mimetype='application/json')
+
+
+@app.route('/api/logs/stats', methods=['GET'])
+def get_log_stats():
+    """获取日志统计信息"""
+    try:
+        ip_address = request.remote_addr
+        user_agent = request.headers.get('User-Agent')
+        
+        log_logger = logging.getLogger('logs')
+        log_logger.addFilter(RequestContextFilter(ip_address, user_agent))
+        log_logger.info("日志统计查询")
+        
+        stats = db_manager.get_log_stats()
+        return Response(json.dumps(stats), status=200, mimetype='application/json')
+    except Exception as e:
+        logger.error(f"Get log stats failed: {e}")
+        return Response(json.dumps({"error": str(e)}), status=500, mimetype='application/json')
+
+
+@app.route('/api/logs/cleanup', methods=['POST'])
+def cleanup_logs():
+    """清理旧日志"""
+    try:
+        ip_address = request.remote_addr
+        user_agent = request.headers.get('User-Agent')
+        
+        log_logger = logging.getLogger('logs')
+        log_logger.addFilter(RequestContextFilter(ip_address, user_agent))
+        log_logger.info("清理旧日志请求")
+        
+        # 获取清理天数
+        data = request.get_json() or {}
+        days = int(data.get('days', DATABASE_CONFIG['auto_cleanup_days']))
+        
+        # 清理日志
+        deleted_count = db_manager.delete_old_logs(days=days)
+        
+        return Response(json.dumps({
+            "message": f"成功清理{deleted_count}条旧日志",
+            "deleted_count": deleted_count
+        }), status=200, mimetype='application/json')
+    except Exception as e:
+        logger.error(f"Cleanup logs failed: {e}")
+        return Response(json.dumps({"error": str(e)}), status=500, mimetype='application/json')
 
 
 # API代理服务路由
@@ -288,6 +483,13 @@ if SERVICE_CONFIG['enable_api_proxy']:
     def login():
         """Login endpoint"""
         try:
+            ip_address = request.remote_addr
+            user_agent = request.headers.get('User-Agent')
+            
+            login_logger = logging.getLogger('login')
+            login_logger.addFilter(RequestContextFilter(ip_address, user_agent))
+            login_logger.info("登录请求")
+            
             payload = request.get_json(silent=True) or {}
             phone = payload.get('phone')
             password = payload.get('password')
@@ -307,14 +509,14 @@ if SERVICE_CONFIG['enable_api_proxy']:
             signature_headers = ApiSigner.sign_request('POST', target_url, internal_body, headers, APP_KEY, APP_SECRET)
             request_headers = {**headers, **signature_headers}
 
-            logger.info(f"[LOGIN] Querying staff API {target_url} with phone={phone}")
+            login_logger.info(f"Querying staff API {target_url} with phone={phone}")
 
             resp = requests.post(target_url, headers=request_headers, data=internal_body, verify=False, timeout=30)
 
             try:
                 resp_json = resp.json()
             except Exception:
-                logger.error(f"[LOGIN] Failed to parse staff API response as JSON: {resp.text}")
+                login_logger.error(f"Failed to parse staff API response as JSON: {resp.text}")
                 return Response(json.dumps({"error": "用户不存在"}, ensure_ascii=False), status=404, mimetype='application/json')
 
             users = None
@@ -361,7 +563,13 @@ if SERVICE_CONFIG['enable_api_proxy']:
             user = matching_user
 
             if verification_code:
-                logger.info(f"[LOGIN] Using verification code login for {phone}")
+                login_logger.info(f"Using verification code login for {phone}")
+                # 验证验证码有效性
+                is_valid = verification_code_manager.verify_code(phone, verification_code)
+                if not is_valid:
+                    login_logger.warning(f"验证码验证失败: {phone}")
+                    return Response(json.dumps({"error": "验证码错误"}, ensure_ascii=False), status=401, mimetype='application/json')
+                login_logger.info(f"验证码验证成功: {phone}")
             else:
                 stored_pwd = None
                 if isinstance(user, dict):
@@ -376,6 +584,7 @@ if SERVICE_CONFIG['enable_api_proxy']:
                 if str(password) != str(stored_pwd):
                     return Response(json.dumps({"error": "登录失败"}, ensure_ascii=False), status=401, mimetype='application/json')
 
+            login_logger.info(f"登录成功: {phone}")
             return Response(json.dumps({"message": "登录成功", "user": user}, ensure_ascii=False), status=200, mimetype='application/json')
 
         except Exception as e:
@@ -389,7 +598,12 @@ if SERVICE_CONFIG['enable_api_proxy']:
     def proxy(path):
         """Proxy all requests to the target server with signing."""
         try:
-            logger.info(f"Received {request.method} {request.url}")
+            ip_address = request.remote_addr
+            user_agent = request.headers.get('User-Agent')
+            
+            proxy_logger = logging.getLogger('proxy')
+            proxy_logger.addFilter(RequestContextFilter(ip_address, user_agent))
+            proxy_logger.info(f"Proxy request: {request.method} {request.url}")
 
             if path and path.strip('/').lower().endswith('login'):
                 return login()
@@ -402,7 +616,7 @@ if SERVICE_CONFIG['enable_api_proxy']:
             if request.query_string:
                 target_url += '?' + request.query_string.decode('utf-8')
 
-            logger.info(f"Target URL: {target_url}")
+            proxy_logger.info(f"Target URL: {target_url}")
 
             body = request.get_data(as_text=True) if request.method in ['POST', 'PUT', 'PATCH'] else None
 
@@ -433,12 +647,19 @@ if SERVICE_CONFIG['enable_api_proxy']:
                 timeout=30
             )
 
-            logger.info(f"Response status: {response.status_code}")
+            proxy_logger.info(f"Response status: {response.status_code}")
+
+            # 构建响应头，排除可能导致编码问题的头
+            response_headers = {}
+            for name, value in response.headers.items():
+                # 排除可能导致编码问题的头
+                if name.lower() not in ['content-encoding', 'content-length', 'transfer-encoding', 'connection']:
+                    response_headers[name] = value
 
             proxy_response = Response(
                 response.content,
                 status=response.status_code,
-                headers=dict(response.headers)
+                headers=response_headers
             )
 
             hop_by_hop_headers = [
@@ -467,21 +688,46 @@ if SERVICE_CONFIG['enable_sms_service']:
     def sms_callback():
         """短信回调接口"""
         try:
+            ip_address = request.remote_addr
+            user_agent = request.headers.get('User-Agent')
+            
+            sms_logger = logging.getLogger('sms')
+            sms_logger.addFilter(RequestContextFilter(ip_address, user_agent))
+            sms_logger.info("短信回调请求")
+            
             callback_data = request.get_json()
-            logger.info(f"收到短信回调: {callback_data}")
+            sms_logger.info(f"收到短信回调: {callback_data}")
             
-            phone_number = callback_data.get('phone', '')
-            status = callback_data.get('status', '')
-            message_id = callback_data.get('messageId', '')
-            error_code = callback_data.get('errorCode', '')
-            error_message = callback_data.get('errorMessage', '')
-            
-            logger.info(f"短信回调详情: 手机号={phone_number}, 状态={status}, 消息ID={message_id}")
-            
-            if status == 'SUCCESS':
-                logger.info(f"短信发送成功: {phone_number}")
+            # 处理回调数据可能是列表的情况
+            if isinstance(callback_data, list):
+                for item in callback_data:
+                    if isinstance(item, dict):
+                        phone_number = item.get('mobile', '')
+                        status = 'SUCCESS' if item.get('report_status') == 'SUCCESS' else 'FAIL'
+                        message_id = item.get('sid', '')
+                        error_code = item.get('errmsg', '')
+                        error_message = item.get('description', '')
+                        
+                        sms_logger.info(f"短信回调详情: 手机号={phone_number}, 状态={status}, 消息ID={message_id}")
+                        
+                        if status == 'SUCCESS':
+                            sms_logger.info(f"短信发送成功: {phone_number}")
+                        else:
+                            sms_logger.warning(f"短信发送失败: {phone_number}, 错误码: {error_code}, 错误信息: {error_message}")
             else:
-                logger.warning(f"短信发送失败: {phone_number}, 错误码: {error_code}, 错误信息: {error_message}")
+                # 处理回调数据是字典的情况
+                phone_number = callback_data.get('phone', '')
+                status = callback_data.get('status', '')
+                message_id = callback_data.get('messageId', '')
+                error_code = callback_data.get('errorCode', '')
+                error_message = callback_data.get('errorMessage', '')
+                
+                sms_logger.info(f"短信回调详情: 手机号={phone_number}, 状态={status}, 消息ID={message_id}")
+                
+                if status == 'SUCCESS':
+                    sms_logger.info(f"短信发送成功: {phone_number}")
+                else:
+                    sms_logger.warning(f"短信发送失败: {phone_number}, 错误码: {error_code}, 错误信息: {error_message}")
             
             return Response(json.dumps({"code": 0, "message": "success"}), status=200, mimetype='application/json')
             
@@ -493,6 +739,13 @@ if SERVICE_CONFIG['enable_sms_service']:
     def sms_send():
         """发送验证码接口"""
         try:
+            ip_address = request.remote_addr
+            user_agent = request.headers.get('User-Agent')
+            
+            sms_logger = logging.getLogger('sms')
+            sms_logger.addFilter(RequestContextFilter(ip_address, user_agent))
+            sms_logger.info("发送验证码请求")
+            
             request_data = request.get_json()
             phone_number = request_data.get('phone')
             
@@ -504,12 +757,20 @@ if SERVICE_CONFIG['enable_sms_service']:
             
             result = sms_service.send_login_verification(phone_number)
             
-            return Response(json.dumps({
+            sms_logger.info(f"验证码发送结果: {result}")
+            
+            # 根据配置决定是否返回验证码
+            response_data = {
                 "code": 0 if result["success"] else -1,
                 "message": result["message"],
-                "data": result.get("data"),
-                "verificationCode": result.get("code")
-            }), status=200, mimetype='application/json')
+                "data": result.get("data")
+            }
+            
+            # 只有当配置启用且发送成功时，才返回验证码
+            if VERIFICATION_CODE_CONFIG['enable_response_code'] and result["success"]:
+                response_data["verificationCode"] = result.get("code")
+            
+            return Response(json.dumps(response_data), status=200, mimetype='application/json')
             
         except Exception as e:
             logger.error(f"处理发送验证码请求失败: {e}")
@@ -519,6 +780,13 @@ if SERVICE_CONFIG['enable_sms_service']:
     def sms_verify():
         """验证验证码接口"""
         try:
+            ip_address = request.remote_addr
+            user_agent = request.headers.get('User-Agent')
+            
+            sms_logger = logging.getLogger('sms')
+            sms_logger.addFilter(RequestContextFilter(ip_address, user_agent))
+            sms_logger.info("验证验证码请求")
+            
             request_data = request.get_json()
             phone_number = request_data.get('phone')
             verification_code = request_data.get('code')
@@ -536,7 +804,7 @@ if SERVICE_CONFIG['enable_sms_service']:
                 return Response(json.dumps({"code": -1, "message": "验证码格式错误"}), status=400, mimetype='application/json')
             
             is_valid = verification_code_manager.verify_code(phone_number, verification_code)
-            logger.info(f"验证验证码: 手机号={phone_number}, 验证码={verification_code}, 结果={is_valid}")
+            sms_logger.info(f"验证验证码: 手机号={phone_number}, 验证码={verification_code}, 结果={is_valid}")
             
             return Response(json.dumps({
                 "code": 0 if is_valid else -1,
@@ -560,10 +828,28 @@ def cleanup_expired_codes():
             time.sleep(60)
 
 
+def cleanup_old_logs():
+    """定期清理旧日志"""
+    while True:
+        try:
+            if LOG_CONFIG['enable_sqlite'] and DATABASE_CONFIG['auto_cleanup_days'] > 0:
+                deleted_count = db_manager.delete_old_logs(DATABASE_CONFIG['auto_cleanup_days'])
+                if deleted_count > 0:
+                    logger.info(f"自动清理了{deleted_count}条旧日志")
+            time.sleep(86400)  # 每天检查一次
+        except Exception as e:
+            logger.error(f"清理旧日志失败: {e}")
+            time.sleep(3600)  # 出错后1小时再尝试
+
+
 if __name__ == '__main__':
     logger.info("Starting Unified Server")
     logger.info(f"API Proxy Service: {'Enabled' if SERVICE_CONFIG['enable_api_proxy'] else 'Disabled'}")
     logger.info(f"SMS Service: {'Enabled' if SERVICE_CONFIG['enable_sms_service'] else 'Disabled'}")
+    logger.info(f"SQLite Log: {'Enabled' if LOG_CONFIG['enable_sqlite'] else 'Disabled'}")
+    auto_cleanup_days = DATABASE_CONFIG['auto_cleanup_days']
+    cleanup_status = 'Disabled' if auto_cleanup_days == 0 else f'Enabled ({auto_cleanup_days} days)'
+    logger.info(f"Log Auto Cleanup: {cleanup_status}")
     logger.info(f"Server will run on http://{SERVICE_CONFIG['host']}:{SERVICE_CONFIG['port']}")
     logger.info("Press Ctrl+C to stop")
     
@@ -572,6 +858,12 @@ if __name__ == '__main__':
         cleanup_thread = threading.Thread(target=cleanup_expired_codes, daemon=True)
         cleanup_thread.start()
         logger.info("Started cleanup thread for expired verification codes")
+    
+    # 启动清理旧日志的线程
+    if LOG_CONFIG['enable_sqlite']:
+        log_cleanup_thread = threading.Thread(target=cleanup_old_logs, daemon=True)
+        log_cleanup_thread.start()
+        logger.info("Started cleanup thread for old logs")
     
     app.run(
         host=SERVICE_CONFIG['host'],

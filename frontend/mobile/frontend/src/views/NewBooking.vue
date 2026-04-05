@@ -430,7 +430,7 @@ import { useBookingStore } from '../stores/booking';
 import { getStaffList } from '../api/staff';
 import { getTestSites } from '../api/testSite';
 import { getVinList, getBookingNo } from '../api/booking';
-import { getUserInfo } from '../utils/auth.js';
+import { getItem } from '../utils/storage.js';
 import { artemisRequest } from '../api/request';
 import { scheduleApi } from '../api/schedule';
 
@@ -538,7 +538,7 @@ const bookingStore = useBookingStore();
 // 获取 VIN 列表
 async function fetchVinList() {
   try {
-    const userInfo = getUserInfo();
+    const userInfo = getItem('user', {});
     const corpId = userInfo?.enterpriseId || userInfo?.corpId;
     if (!corpId) {
       console.warn('未找到企业ID，无法获取VIN列表');
@@ -1240,7 +1240,7 @@ const onSubmit = async () => {
     }
 
     // 从用户信息获取用户ID
-    const userInfo = getUserInfo();
+    const userInfo = getItem('user', {});
     const userId = userInfo?.userId || userInfo?.id;
     if (!userId) {
       showToast({ type: 'fail', message: '用户登录信息已过期，请重新登录' });
@@ -1337,7 +1337,7 @@ onMounted(async () => {
     ]);
 
     // 获取当前用户信息
-    const userInfo = getUserInfo();
+    const userInfo = getItem('user', {});
     const userId = userInfo?.userId || userInfo?.id;
     const userName = userInfo?.userName || userInfo?.name;
     if (userId) {

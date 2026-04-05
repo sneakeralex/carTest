@@ -1,5 +1,6 @@
 import { mockAppointments, SERVICE_TYPES, APPOINTMENT_STATUS } from '../mock/appointment.js';
 import { artemisRequest } from './request';
+import { APPOINTMENT_API } from './config.js';
 
 // 判断是否使用mock数据
 const useMock = false; // Changed to false to prefer real API
@@ -68,7 +69,7 @@ export async function getAppointments(params = {}) {
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments?${queryParams}`, { method: 'GET' });
+    const res = await artemisRequest(`APPOINTMENT_API.LIST?${queryParams}`, { method: 'GET' });
     const result = res?.data;
     console.log('获取预约列表原始API响应:', JSON.stringify(result, null, 2));
 
@@ -153,7 +154,7 @@ export async function getAppointmentById(appointmentId) {
   }
 
   try {
-    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments/${appointmentId}`, { method: 'GET' });
+    const res = await artemisRequest(`APPOINTMENT_API.LIST/${appointmentId}`, { method: 'GET' });
     const result = res?.data;
     console.log('获取预约详情原始API响应:', JSON.stringify(result, null, 2));
 
@@ -228,7 +229,7 @@ export async function createAppointment(appointmentData) {
   }
 
   try {
-    const res = await artemisRequest('/artemis/api/appointment/v1/appointments', {
+    const res = await artemisRequest('APPOINTMENT_API.LIST', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(appointmentData)
@@ -315,7 +316,7 @@ export async function updateAppointment(appointmentId, appointmentData) {
   }
 
   try {
-    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments/${appointmentId}`, {
+    const res = await artemisRequest(`APPOINTMENT_API.LIST/${appointmentId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(appointmentData)
@@ -386,7 +387,7 @@ export async function cancelAppointment(appointmentId) {
   }
 
   try {
-    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments/${appointmentId}/cancel`, { method: 'PUT' });
+    const res = await artemisRequest(`APPOINTMENT_API.LIST/${appointmentId}/cancel`, { method: 'PUT' });
     const result = res?.data;
     console.log('取消预约原始API响应:', JSON.stringify(result, null, 2));
 
@@ -423,7 +424,7 @@ export async function getUserAppointments(userId) {
   }
 
   try {
-    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments/user/${userId}`, { method: 'GET' });
+    const res = await artemisRequest(`APPOINTMENT_API.LIST/user/${userId}`, { method: 'GET' });
     const result = res?.data;
     console.log('获取用户预约列表原始API响应:', JSON.stringify(result, null, 2));
 
@@ -490,7 +491,7 @@ export async function getAvailableTimeSlots(date, serviceType) {
     queryParams.append('date', date);
     if (serviceType) queryParams.append('serviceType', serviceType);
 
-    const res = await artemisRequest(`/artemis/api/appointment/v1/available-slots?${queryParams}`, { method: 'GET' });
+    const res = await artemisRequest(`${APPOINTMENT_API.AVAILABLE_SLOTS}?${queryParams}`, { method: 'GET' });
     const result = res?.data;
     console.log('获取可用时间段原始API响应:', JSON.stringify(result, null, 2));
 
@@ -546,7 +547,7 @@ export async function approveAppointment(appointmentId, data) {
   }
 
   try {
-    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments/${appointmentId}/approve`, {
+    const res = await artemisRequest(`APPOINTMENT_API.LIST/${appointmentId}/approve`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -614,7 +615,7 @@ export async function rescheduleAppointment(appointmentId, data) {
   }
 
   try {
-    const res = await artemisRequest(`/artemis/api/appointment/v1/appointments/${appointmentId}/reschedule`, {
+    const res = await artemisRequest(`APPOINTMENT_API.LIST/${appointmentId}/reschedule`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)

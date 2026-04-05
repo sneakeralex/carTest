@@ -11,7 +11,7 @@ import {
   rescheduleBooking as rescheduleBookingApi
 } from '../api/booking';
 import { getWeatherInfo } from '../api/weather';
-import { getUserInfo } from '../utils/auth.js';
+import { getItem } from '../utils/storage.js';
 
 export const useBookingStore = defineStore('booking', () => {
   // 状态
@@ -28,7 +28,7 @@ export const useBookingStore = defineStore('booking', () => {
 
     try {
       // 获取当前用户信息并添加到参数中
-      const userInfo = getUserInfo();
+      const userInfo = getItem('user', {});
       const userId = userInfo?.userId || userInfo?.id;
       
       // 如果没有传入 userId 且能获取到当前用户ID，则自动添加

@@ -339,7 +339,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { showNotify, showToast } from 'vant';
 import { useAppointmentStore } from '../stores/appointment';
 import { useVehicleStore } from '../stores/vehicle';
-import { getUserInfo } from '../utils/auth.js';
+import { getItem } from '../utils/storage.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -355,7 +355,7 @@ const approvalRemarks = ref('');
 
 // 获取用户信息
 const userInfo = computed(() => {
-  return getUserInfo();
+  return getItem('user', {});
 });
 
 // 判断是否为管理员

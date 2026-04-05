@@ -20,7 +20,7 @@ SERVICE_CONFIG = {
     'enable_api_proxy': os.getenv('ENABLE_API_PROXY', 'True').lower() == 'true',
     'enable_sms_service': os.getenv('ENABLE_SMS_SERVICE', 'True').lower() == 'true',
     'host': os.getenv('SERVER_HOST', '0.0.0.0'),
-    'port': int(os.getenv('SERVER_PORT', '8080')),
+    'port': int(os.getenv('SERVER_PORT', '8889')),
     'debug': os.getenv('SERVER_DEBUG', 'False').lower() == 'true'
 }
 
@@ -43,12 +43,20 @@ SMS_SERVICE_CONFIG = {
 VERIFICATION_CODE_CONFIG = {
     'length': int(os.getenv('VERIFICATION_CODE_LENGTH', '6')),
     'expiration': int(os.getenv('VERIFICATION_CODE_EXPIRATION', '300')),  # 5分钟
-    'rate_limit': int(os.getenv('VERIFICATION_CODE_RATE_LIMIT', '60'))  # 60秒
+    'rate_limit': int(os.getenv('VERIFICATION_CODE_RATE_LIMIT', '60')),  # 60秒
+    'enable_response_code': os.getenv('VERIFICATION_CODE_ENABLE_RESPONSE', 'True').lower() == 'true'  # 是否在响应中返回验证码
+}
+
+# 数据库配置
+DATABASE_CONFIG = {
+    'db_path': os.getenv('DATABASE_PATH', str(BASE_DIR / 'data' / 'logs.db')),
+    'auto_cleanup_days': int(os.getenv('AUTO_CLEANUP_DAYS', '0'))  # 0表示不自动清理
 }
 
 # 日志配置
 LOG_CONFIG = {
     'level': os.getenv('LOG_LEVEL', 'INFO'),
     'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    'file': os.getenv('LOG_FILE', 'python-server.log')
+    'file': os.getenv('LOG_FILE', 'python-server.log'),
+    'enable_sqlite': os.getenv('ENABLE_SQLITE_LOG', 'True').lower() == 'true'  # 是否启用SQLite日志
 }

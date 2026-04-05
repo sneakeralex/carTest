@@ -1,8 +1,9 @@
 import { mockUsers, mockAuth, DEFAULT_CREDENTIALS } from '../mock/auth.js';
 import CryptoJS from 'crypto-js';
-import { artemisRequest, service } from './request';
+import { artemisRequest } from './request';
 import { getStaffList } from './staff.js';
-import { getUserInfo as localGetUserInfo } from '../utils/auth.js';
+import { getItem } from '../utils/storage.js';
+import { AUTH_API } from './config.js';
 
 // 模拟API响应延迟
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -17,11 +18,12 @@ const mockResponse = (data) => ({
 });
 
 // 从localStorage恢复mockAuth状态
-const storedUser = typeof localStorage !== 'undefined' ? localStorage.getItem('user') : null;
-if (storedUser) {
+const storedUser = getItem('user', {});
+const storedToken = getItem('token', '');
+if (Object.keys(storedUser).length > 0) {
   try {
-    mockAuth.currentUser = JSON.parse(storedUser);
-    mockAuth.token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+    mockAuth.currentUser = storedUser;
+    mockAuth.token = storedToken;
   } catch (error) {
     console.error('恢复用户状态失败:', error);
   }
@@ -61,7 +63,7 @@ export async function changePassword(passwordData) {
       salt: salt
     };
 
-    const res = await artemisRequest('/artemis/api/manage/auth/v2/manage/userService/changePassword', {
+    const res = await artemisRequest(AUTH_API.CHANGE_PASSWORD, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(changeData)
@@ -118,7 +120,7 @@ export async function login(phoneNumber, password, verificationCode) {
 
   try {
     // Use artemisRequest to route through local proxy and include JSON content-type
-    const res = await artemisRequest('/artemis/login', {
+    const res = await artemisRequest(AUTH_API.LOGIN, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -173,7 +175,7 @@ export async function register(userData) {
     // Route both duplicate-check and save through the client-side artemisRequest helper
     // so the actual AK/SK signing happens on the server-side proxy.
     const checkBody = { phone: payload.phone, pageSize: 10000, pageNum: 1 };
-    const checkResp = await artemisRequest('/artemis/api/v1/staff', {
+    const checkResp = await artemisRequest(AUTH_API.LIST, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(checkBody)
@@ -186,7 +188,7 @@ export async function register(userData) {
       throw new Error('手机号已存在，请勿重复注册');
     }
 
-    const saveResp = await artemisRequest('/artemis/api/v1/saveStaff', {
+    const saveResp = await artemisRequest(AUTH_API.SAVE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': '*/*' },
       body: JSON.stringify(payload)
@@ -217,8 +219,8 @@ export async function register(userData) {
  */
 export async function getUserInfo(token = null) {
   try {
-    // 首先优先使用本地 utils/auth.js 中保存的用户信息（避免对不存在的后端路径调用）
-    const local = localGetUserInfo();
+    // 首先优先使用本地 storage 中保存的用户信息（避免对不存在的后端路径调用）
+    const local = getItem('user', {});
     if (local && Object.keys(local).length > 0) {
       // 标准化返回格式
       const userInfo = {
@@ -253,7 +255,7 @@ export async function getUserInfo(token = null) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const res = await artemisRequest('/artemis/api/manage/auth/v2/manage/userService/getUserInfo', { method: 'GET', headers });
+    const res = await artemisRequest(AUTH_API.GET_USER_INFO, { method: 'GET', headers });
     const result = res?.data;
     if (result.code !== 200 && result.code !== '0') {
       throw new Error(result.msg || '获取用户信息失败');
@@ -330,7 +332,7 @@ export async function updateUserInfo(userData) {
 export async function getAccessToken(userCode = 'admin', service = '', language = 'zh_CN') {
   try {
     const query = `userCode=${encodeURIComponent(userCode)}&service=${encodeURIComponent(service)}&language=${encodeURIComponent(language)}`;
-    const res = await artemisRequest(`/artemis/v1/tgt/login?${query}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const res = await artemisRequest(`${AUTH_API.GET_ACCESS_TOKEN}?${query}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data || res;
 
     if (result.code !== 200 && result.code !== '0') {
@@ -370,10 +372,10 @@ export async function sendVerificationCode(phoneNumber) {
   }
 
   try {
-    const res = await artemisRequest('/artemis/api/v1/send-sms', {
+    const res = await artemisRequest(AUTH_API.SEND_CODE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: phoneNumber, type: 'LOGIN' })
+      body: JSON.stringify({ phone: phoneNumber })
     });
 
     const result = res?.data || res;
@@ -399,6 +401,57 @@ export async function sendVerificationCode(phoneNumber) {
 }
 
 /**
+ * 验证验证码
+ * @param {string} phoneNumber - 手机号
+ * @param {string} verificationCode - 验证码
+ * @returns {Promise} - 返回Promise对象
+ */
+export async function verifyVerificationCode(phoneNumber, verificationCode) {
+  // 验证手机号格式
+  if (!/^1[3-9]\d{9}$/.test(phoneNumber)) {
+    throw new Error('请输入正确的手机号');
+  }
+
+  // 验证验证码格式
+  if (!/^\d{6}$/.test(verificationCode)) {
+    throw new Error('请输入6位数字验证码');
+  }
+
+  try {
+    // 验证验证码
+    const verifyRes = await artemisRequest(AUTH_API.VERIFY_CODE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: phoneNumber, code: verificationCode })
+    });
+
+    const verifyBody = verifyRes?.data || verifyRes;
+    if (!verifyBody || verifyBody.code !== 0) {
+      throw new Error(verifyBody?.message || '验证码验证失败');
+    }
+
+    return {
+      data: { success: true },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    };
+  } catch (err) {
+    // Map common upstream 404/Not Found or 401 Unauthorized to credential error so UI shows friendly message
+    const status = err?.meta?.status || err?.status || null;
+    const msg = (err && err.message) ? String(err.message) : '';
+
+    if (status === 404 || status === 401 || /401|404|Unauthorized|Not Found|未找到|找不到|未授权/.test(msg)) {
+      throw new Error('验证码错误，请再试');
+    }
+
+    // For other errors, propagate a readable message
+    throw new Error(msg || '验证码验证失败');
+  }
+}
+
+/**
  * 验证码登录
  * @param {string} phoneNumber - 手机号
  * @param {string} verificationCode - 验证码
@@ -416,17 +469,21 @@ export async function loginWithVerificationCode(phoneNumber, verificationCode) {
   }
 
   try {
-    const res = await artemisRequest('/artemis/api/v1/login/sms', {
+    // 先验证验证码
+    await verifyVerificationCode(phoneNumber, verificationCode);
+
+    // 验证码验证成功后，调用登录接口
+    const res = await artemisRequest(AUTH_API.LOGIN, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: phoneNumber, code: verificationCode })
+      body: JSON.stringify({ phone: phoneNumber, verification_code: verificationCode })
     });
 
     const body = res?.data || res;
     if (!body) throw new Error('空响应');
     if (body.error) throw new Error(body.error);
     // If upstream doesn't return a user, treat as credential error
-    if (!body.user) throw new Error('验证码错误，请再试');
+    if (!body.user) throw new Error('登录失败，请再试');
 
     return { data: body, status: 200 };
   } catch (err) {

@@ -1,5 +1,6 @@
 import request, { artemisRequest } from './request';
 import { getWeatherInfo as getMockWeatherInfo } from '../mock/weather';
+import { WEATHER_API } from './config.js';
 
 // 使用mock数据
 const useMock = false; // Changed to false to use real API
@@ -16,7 +17,7 @@ export function getWeatherInfo(siteId, date) {
   formData.append('date', date);
   
   // Call via centralized proxy using artemisRequest (fetch-based)
-  return artemisRequest('/artemis/api/v1/oeeooo7', {
+  return artemisRequest(WEATHER_API.CURRENT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',

@@ -545,6 +545,7 @@ import { showToast } from 'vant';
 import dayjs from 'dayjs';
 import WeatherDetail from '../components/WeatherDetail.vue';
 import { getRecentBookings } from '@/api/dashboard';
+import { getItem } from '../utils/storage.js';
 
 const router = useRouter();
 const vehicleStore = useMobileVehicleStore();
@@ -560,9 +561,9 @@ const userAvatar = ref('https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg');
 // 安全地解析用户信息
 const initUserInfo = () => {
   try {
-    const userStr = localStorage.getItem('user');
-    if (userStr && userStr !== 'undefined') {
-      userInfo.value = JSON.parse(userStr);
+    const user = getItem('user');
+    if (user && Object.keys(user).length > 0) {
+      userInfo.value = user;
     } else {
       userInfo.value = {};
     }

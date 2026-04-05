@@ -1,0 +1,18 @@
+[Unit]
+Description=Python Server Unified Service (Gunicorn)
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/home/cartest/python-server
+Environment="PATH=/home/cartest/python-server/venv/bin"
+EnvironmentFile=/home/cartest/python-server/.env
+ExecStart=/home/cartest/python-server/venv/bin/gunicorn -c gunicorn_config.py server:app
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

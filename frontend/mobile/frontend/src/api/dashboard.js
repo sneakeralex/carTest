@@ -8,6 +8,8 @@ import {
 } from '../mock/dashboard.js';
 import { delay, mockResponse, validateToken, MockApiError } from '../mock/utils.js';
 import { artemisRequest } from './request.js';
+import { getItem } from '../utils/storage.js';
+import { DASHBOARD_API, BOOKING_API, NOTIFICATION_API, WEATHER_API, ALERT_API } from './config.js';
 
 /**
  * 获取移动端仪表板统计信息
@@ -15,7 +17,7 @@ import { artemisRequest } from './request.js';
  */
 export async function getMobileDashboardStats() {
   try {
-    const res = await artemisRequest('/artemis/api/dashboard/v1/mobile/stats', { method: 'GET' });
+    const res = await artemisRequest(DASHBOARD_API.MOBILE_STATS, { method: 'GET' });
     const result = res?.data;
     console.log('获取仪表板统计原始API响应:', JSON.stringify(result, null, 2));
 
@@ -311,11 +313,10 @@ export async function getUserProfileSummary() {
   try {
     validateToken();
     await delay(300);
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
+    const user = getItem('user');
+    if (!user || Object.keys(user).length === 0) {
       throw new Error('未登录');
     }
-    const user = JSON.parse(userStr);
     return mockResponse(user);
   } catch (error) {
     if (error instanceof MockApiError) {

@@ -1,20 +1,21 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { login as loginApi, register as registerApi, getUserInfo as getUserInfoApi, sendVerificationCode as sendVerificationCodeApi, loginWithVerificationCode as loginWithVerificationCodeApi } from '../api/auth.js';
+import { login as loginApi, register as registerApi, getUserInfo as getUserInfoApi, sendVerificationCode as sendVerificationCodeApi, loginWithVerificationCode as loginWithVerificationCodeApi, verifyVerificationCode as verifyVerificationCodeApi } from '../api/auth.js';
+import { getItem, setItem, removeItem } from '../utils/storage.js';
 import router from '../router/index.js';
 
 export const useAuthStore = defineStore('auth', () => {
   // 状态
-  const token = ref(localStorage.getItem('token') || '');
-  const user = ref(null);
+  const token = ref(getItem('token', ''));
+  const user = ref(getItem('user', {}));
   const loading = ref(false);
   const error = ref(null);
 
   // 初始化用户状态
   try {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      user.value = JSON.parse(storedUser);
+    const storedUser = getItem('user', {});
+    if (Object.keys(storedUser).length > 0) {
+      user.value = storedUser;
     }
   } catch (error) {
     console.error('初始化用户状态失败:', error);
@@ -74,18 +75,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (verificationCode) {
         // 调用验证码验证API
         console.log('验证验证码:', verificationCode);
-        const verifyResponse = await fetch('http://localhost:8000/sms/verify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ phone: username, code: verificationCode })
-        });
-        
-        const verifyResult = await verifyResponse.json();
-        if (verifyResult.code !== 0 || !verifyResult.data?.isValid) {
-          throw new Error('验证码验证失败');
-        }
+        await verifyVerificationCodeApi(username, verificationCode);
         console.log('验证码验证成功');
       }
       
@@ -120,8 +110,8 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = sessionToken;
       
       // 存储到localStorage
-      localStorage.setItem('token', token.value);
-      localStorage.setItem('user', JSON.stringify(user.value));
+      setItem('token', token.value);
+      setItem('user', user.value);
       
       await router.push('/');
       return response;
@@ -161,8 +151,8 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null;
     
     // 清除localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    removeItem('token');
+    removeItem('user');
     
     // 跳转到登录页
     router.push('/login');
@@ -177,7 +167,7 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('获取用户信息失败');
       }
       user.value = response.data;
-      localStorage.setItem('user', JSON.stringify(user.value));
+      setUserInfo(user.value);
       return user.value;
     } catch (err) {
       const friendly = mapError(err);
@@ -269,8 +259,8 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = sessionToken;
       
       // 存储到localStorage
-      localStorage.setItem('token', token.value);
-      localStorage.setItem('user', JSON.stringify(user.value));
+      setItem('token', token.value);
+      setItem('user', user.value);
       
       await router.push('/');
       return response;

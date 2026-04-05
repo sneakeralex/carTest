@@ -43,6 +43,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { showNotify } from 'vant';
 import { useAuthStore } from '../stores/auth';
+import { getItem, setItem } from '../utils/storage.js';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -80,7 +81,7 @@ function isMiniProgram() {
 }
 
 onMounted(async () => {
-  const token = localStorage.getItem('token');
+  const token = getItem('token');
   console.log('judge if is weixin -> ', isWeixin());
   // if (isWeixin()) {
   //   if (token) {
@@ -95,7 +96,7 @@ onMounted(async () => {
   //     try {
   //       // 向后台提交 code，后台返回 jwt token
   //       const token = await authStore.wxLogin(code);
-  //       localStorage.setItem('token', token);
+  //       setItem('token', token);
   //       showNotify({ type: 'success', message: '微信登录成功' });
   //       router.replace('/'); // 去首页
   //     } catch (error) {
@@ -125,7 +126,7 @@ onMounted(async () => {
             try {
               // 向后台提交 code，后台返回 jwt token
               const token = await authStore.wxMiniProgramLogin(res.code);
-              localStorage.setItem('token', token);
+              setItem('token', token);
               showNotify({ type: 'success', message: '微信小程序登录成功' });
               router.replace('/');
             } catch (error) {

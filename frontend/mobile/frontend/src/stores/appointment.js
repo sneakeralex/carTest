@@ -141,28 +141,6 @@ export const useAppointmentStore = defineStore('appointment', () => {
     }
   };
 
-  // 审批预约
-  const approveAppointment = async (id, data) => {
-    try {
-      const response = await api.appointment.approveAppointment(id, data);
-      return response.data;
-    } catch (error) {
-      console.error('审批预约失败:', error);
-      throw error.response?.data?.message || '审批预约失败';
-    }
-  };
-
-  // 改期预约
-  const rescheduleAppointment = async (id, data) => {
-    try {
-      const response = await api.appointment.rescheduleAppointment(id, data);
-      return response.data;
-    } catch (error) {
-      console.error('改期预约失败:', error);
-      throw error.response?.data?.message || '改期预约失败';
-    }
-  };
-
   return {
     appointments,
     currentAppointment,
@@ -176,8 +154,6 @@ export const useAppointmentStore = defineStore('appointment', () => {
     updateAppointmentById,
     cancelAppointmentById,
     fetchUserAppointments,
-    fetchAvailableTimeSlots,
-    approveAppointment,
-    rescheduleAppointment
+    fetchAvailableTimeSlots
   };
 });

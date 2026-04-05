@@ -116,7 +116,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { showDialog, showToast } from 'vant';
 import { useEquipmentStore } from '../stores/equipment';
 import { formatDateTime } from '@/utils/dateFormatter';
-import { getUserInfo } from '../utils/auth.js';
+import { getItem } from '../utils/storage.js';
 
 const router = useRouter();
 const route = useRoute();
@@ -132,7 +132,7 @@ const cancelReason = ref('');
 
 // 获取用户信息
 const userInfo = computed(() => {
-  return getUserInfo();
+  return getItem('user', {});
 });
 
 // 判断是否为管理员 

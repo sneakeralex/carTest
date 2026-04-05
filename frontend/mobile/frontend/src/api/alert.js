@@ -1,7 +1,5 @@
 import { artemisRequest } from './request.js';
-
-// 告警信息接口地址
-const ALERT_API = '/artemis/api/v1/alert';
+import { ALERT_API } from './config.js';
 
 /**
  * 获取告警信息列表

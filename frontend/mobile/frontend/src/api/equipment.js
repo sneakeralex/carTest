@@ -87,9 +87,7 @@ const mockResponse = (data) => ({
 });
 
 import { artemisRequest } from './request.js';
-
-// 新的可租用设备清单接口地址
-const RENTABLE_EQUIPMENT_API = '/artemis/api/device/list';
+import { EQUIPMENT_API } from './config.js';
 
 /**
  * 获取设备列表
@@ -126,9 +124,9 @@ export async function getEquipments(params = {}) {
 
     const bodyStr = JSON.stringify(bodyObj);
 
-    const res = await artemisRequest('/artemis/api/iotrm/v1/device/page', {
+    const res = await artemisRequest(EQUIPMENT_API.PAGE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: '*/*' },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*' },
       body: bodyStr
     });
     const result = res?.data || {};
@@ -218,9 +216,9 @@ export async function getEquipmentById(id) {
     const bodyObj = { pageNo: 1, pageSize: 1000, array: [], containChildOrg: false };
     const bodyStr = JSON.stringify(bodyObj);
 
-    const res = await artemisRequest('/artemis/api/iotrm/v1/device/page', {
+    const res = await artemisRequest(EQUIPMENT_API.PAGE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: '*/*' },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*' },
       body: bodyStr
     });
     const result = res?.data || {};
@@ -292,9 +290,9 @@ export async function createEquipment(data) {
       purchasePrice: data.purchasePrice
     };
 
-    const res = await artemisRequest('/artemis/api/iotrm/v1/device', {
+    const res = await artemisRequest(EQUIPMENT_API.CREATE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: '*/*' },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*' },
       body: JSON.stringify(apiData)
     });
     const result = res?.data || {};
@@ -359,9 +357,9 @@ export async function updateEquipment(id, data) {
       purchasePrice: data.purchasePrice
     };
 
-    const res = await artemisRequest('/artemis/api/iotrm/v1/device', {
+    const res = await artemisRequest(EQUIPMENT_API.UPDATE, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Accept: '*/*' },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*' },
       body: JSON.stringify(apiData)
     });
     const result = res?.data || {};
@@ -408,7 +406,7 @@ export async function updateEquipment(id, data) {
  */
 export async function deleteEquipment(id) {
   try {
-    await artemisRequest(`/artemis/api/iotrm/v1/device/${id}`, { method: 'DELETE', headers: { Accept: '*/*' } });
+    await artemisRequest(`${EQUIPMENT_API.DELETE}/${id}`, { method: 'DELETE', headers: { 'Accept': '*/*' } });
     return { data: { message: '删除成功' }, status: 200, statusText: 'OK', headers: {}, config: {} };
   } catch (error) {
     // Fallback to mock data if API fails
@@ -434,9 +432,9 @@ export async function getEquipmentApplications(params = {}) {
 
     const bodyStr = JSON.stringify(bodyObj);
 
-    const res = await artemisRequest('/artemis/api/iotrm/v1/device/application/page', {
+    const res = await artemisRequest(EQUIPMENT_API.APPLICATION_PAGE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: '*/*' },
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*' },
       body: bodyStr
     });
     const result = res?.data || {};
@@ -482,7 +480,7 @@ export async function getEquipmentApplications(params = {}) {
  */
 export async function getEquipmentApplicationById(id) {
   try {
-    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}`, { method: 'GET', headers: { 'Content-Type': 'application/json', Accept: '*/*' } });
+    const res = await artemisRequest(`${EQUIPMENT_API.APPLICATION_DETAIL}/${id}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
     const result = res?.data || {};
     const app = result.data || result;
     const transformedApplication = {
@@ -519,7 +517,7 @@ export async function getEquipmentApplicationById(id) {
 export async function applyEquipment(data) {
   try {
     const requestData = { equipmentId: data.equipmentId, equipmentName: data.equipmentName, equipmentNo: data.equipmentNo, applicantId: data.applicantId, applicantName: data.applicantName, applyType: data.applyType, expectedStartTime: data.expectedStartTime, expectedEndTime: data.expectedEndTime, purpose: data.purpose, ...data };
-    const res = await artemisRequest('/artemis/api/iotrm/v1/device/application', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: '*/*' }, body: JSON.stringify(requestData) });
+    const res = await artemisRequest(EQUIPMENT_API.APPLICATION_CREATE, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' }, body: JSON.stringify(requestData) });
     const result = res?.data || {};
     const app = result.data || result;
     const transformedApplication = { applicationId: app.applicationId || app.id, equipmentId: app.equipmentId || app.deviceId, equipmentName: app.equipmentName || app.deviceName, equipmentNo: app.equipmentNo || app.deviceCode, applicantId: app.applicantId || app.userId, applicantName: app.applicantName || app.userName, applyType: app.applyType || app.type, status: app.status || 'PENDING', applyTime: app.applyTime || app.createTime || new Date().toISOString(), expectedStartTime: app.expectedStartTime || app.startTime, expectedEndTime: app.expectedEndTime || app.endTime, purpose: app.purpose || app.description, ...app };
@@ -541,7 +539,7 @@ export async function applyEquipment(data) {
 export async function updateApplicationStatus(id, data) {
   try {
     const requestData = { status: data.status, updateTime: new Date().toISOString(), ...data };
-    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Accept: '*/*' }, body: JSON.stringify(requestData) });
+    const res = await artemisRequest(`${EQUIPMENT_API.APPLICATION_UPDATE}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' }, body: JSON.stringify(requestData) });
     const result = res?.data || {};
     const app = result.data || result;
     const transformedApplication = { applicationId: app.applicationId || app.id, equipmentId: app.equipmentId || app.deviceId, equipmentName: app.equipmentName || app.deviceName, equipmentNo: app.equipmentNo || app.deviceCode, applicantId: app.applicantId || app.userId, applicantName: app.applicantName || app.userName, applyType: app.applyType || app.type, status: app.status, applyTime: app.applyTime || app.createTime, expectedStartTime: app.expectedStartTime || app.startTime, expectedEndTime: app.expectedEndTime || app.endTime, purpose: app.purpose || app.description, approveTime: app.approveTime, approveRemarks: app.approveRemarks || app.approveRemark, updateTime: app.updateTime || new Date().toISOString(), ...app };
@@ -564,7 +562,7 @@ export async function updateApplicationStatus(id, data) {
 export async function approveEquipmentRequest(id, data) {
   try {
     const requestData = { status: 'APPROVED', approveTime: new Date().toISOString(), approveRemarks: data.approveRemark || data.approveRemarks, ...data };
-    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}/approve`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Accept: '*/*' }, body: JSON.stringify(requestData) });
+    const res = await artemisRequest(`${EQUIPMENT_API.APPLICATION_APPROVE}/${id}/approve`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' }, body: JSON.stringify(requestData) });
     const result = res?.data || {};
     const app = result.data || result;
     const transformedApplication = { applicationId: app.applicationId || app.id, equipmentId: app.equipmentId || app.deviceId, equipmentName: app.equipmentName || app.deviceName, equipmentNo: app.equipmentNo || app.deviceCode, applicantId: app.applicantId || app.userId, applicantName: app.applicantName || app.userName, applyType: app.applyType || app.type, status: app.status || 'APPROVED', applyTime: app.applyTime || app.createTime, expectedStartTime: app.expectedStartTime || app.startTime, expectedEndTime: app.expectedEndTime || app.endTime, purpose: app.purpose || app.description, approveTime: app.approveTime || new Date().toISOString(), approveRemarks: app.approveRemarks || app.approveRemark || data.approveRemark, ...app };
@@ -587,7 +585,7 @@ export async function approveEquipmentRequest(id, data) {
 export async function cancelEquipmentRequest(id, data) {
   try {
     const requestData = { status: 'CANCELLED', cancelRemark: data.cancelRemark, ...data };
-    const res = await artemisRequest(`/artemis/api/iotrm/v1/device/application/${id}/cancel`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Accept: '*/*' }, body: JSON.stringify(requestData) });
+    const res = await artemisRequest(`${EQUIPMENT_API.APPLICATION_CANCEL}/${id}/cancel`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' }, body: JSON.stringify(requestData) });
     const result = res?.data || {};
     const app = result.data || result;
     const transformedApplication = { applicationId: app.applicationId || app.id, equipmentId: app.equipmentId || app.deviceId, equipmentName: app.equipmentName || app.deviceName, equipmentNo: app.equipmentNo || app.deviceCode, applicantId: app.applicantId || app.userId, applicantName: app.applicantName || app.userName, applyType: app.applyType || app.type, status: app.status || 'CANCELLED', applyTime: app.applyTime || app.createTime, expectedStartTime: app.expectedStartTime || app.startTime, expectedEndTime: app.expectedEndTime || app.endTime, purpose: app.purpose || app.description, cancelRemark: app.cancelRemark || data.cancelRemark, ...app };
@@ -625,7 +623,7 @@ export async function getRentableEquipmentList(params = {}) {
       queryParams.append('deviceName', params.deviceName);
     }
     
-    const url = `${RENTABLE_EQUIPMENT_API}?${queryParams.toString()}`;
+    const url = `${EQUIPMENT_API.RENTABLE_LIST}?${queryParams.toString()}`;
     
     const res = await artemisRequest(url, {
       method: 'GET',

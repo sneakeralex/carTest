@@ -3,6 +3,9 @@ export const generateId = () => {
   return Math.random().toString(36).substr(2, 9);
 };
 
+// 导入存储工具
+import { getItem } from '../utils/storage.js';
+
 // 生成随机日期
 export const randomDate = (start, end) => {
   return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
@@ -28,8 +31,8 @@ export const mockResponse = (data) => ({
 // 验证token
 export const validateToken = () => {
   // 检查是否在浏览器环境中
-  if (typeof window !== 'undefined' && window.localStorage) {
-    const token = localStorage.getItem('token');
+  if (typeof window !== 'undefined') {
+    const token = getItem('token');
     if (!token || !token.startsWith('Bearer mock_token_')) {
       throw new Error('未授权访问');
     }

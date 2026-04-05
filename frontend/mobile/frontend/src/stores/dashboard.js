@@ -21,6 +21,7 @@ import {
 import { getBookings } from '../api/booking';
 import { getTestTasks } from '../api/testTask';
 import * as alertApi from '../api/alert';
+import { getItem } from '../utils/storage.js';
 
 export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
   // 状态
@@ -95,10 +96,10 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
     error.value = null;
 
     // 检查登录状态
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
+    const token = getItem('token');
+    const user = getItem('user');
     
-    if (!token || !userStr) {
+    if (!token || !user || Object.keys(user).length === 0) {
       error.value = '请先登录';
       throw new Error('请先登录');
     }

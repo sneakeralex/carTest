@@ -1,4 +1,5 @@
 import { artemisRequest } from './request';
+import { STAFF_API, DRIVER_API } from './config.js';
 
 /**
  * 获取人员列表
@@ -12,7 +13,7 @@ export async function getStaffList(params = {}) {
   const pageSize = params.pageSize || 20;
 
   try {
-    const res = await artemisRequest('/artemis/api/v1/staff', {
+    const res = await artemisRequest(STAFF_API.LIST, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -69,7 +70,7 @@ export async function getStaffList(params = {}) {
  */
 export async function getStaffById(staffId) {
   try {
-    const res = await artemisRequest(`/artemis/api/manage/auth/v2/manage/userService/getUserById/${staffId}`, {
+    const res = await artemisRequest(`${STAFF_API.GET_BY_ID}/${staffId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json', 'Accept': '*/*' }
     });
@@ -137,7 +138,7 @@ export async function createStaff(staffData) {
       ...staffData
     };
 
-    const res = await artemisRequest('/artemis/api/manage/auth/v2/manage/userService/createUser', {
+    const res = await artemisRequest(STAFF_API.CREATE, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -211,7 +212,7 @@ export async function updateStaff(staffData) {
       ...staffData
     };
 
-    const res = await artemisRequest('/artemis/api/manage/auth/v2/manage/userService/updateUser', {
+    const res = await artemisRequest(STAFF_API.UPDATE, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -267,7 +268,7 @@ export async function updateStaff(staffData) {
  */
 export async function deleteStaff(staffId) {
   try {
-    const res = await artemisRequest(`/artemis/api/manage/auth/v2/manage/userService/deleteUser/${staffId}`, {
+    const res = await artemisRequest(`${STAFF_API.DELETE}/${staffId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -300,7 +301,7 @@ export async function deleteStaff(staffId) {
  */
 export async function uploadStaffDocument(formData) {
   try {
-    const res = await artemisRequest('/artemis/api/manage/auth/v2/manage/userService/uploadDocument', {
+    const res = await artemisRequest(STAFF_API.UPLOAD_DOCUMENT, {
       method: 'POST',
       headers: {
         'Accept': '*/*',
@@ -346,7 +347,7 @@ export async function uploadStaffDocument(formData) {
  */
 export async function deleteStaffDocument(staffId, type) {
   try {
-    const res = await artemisRequest(`/artemis/api/manage/auth/v2/manage/userService/deleteDocument/${staffId}/${type}`, {
+    const res = await artemisRequest(`${STAFF_API.DELETE_DOCUMENT}/${staffId}/${type}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -386,7 +387,7 @@ export async function getDriverList(params = {}) {
   const pageSize = params.pageSize || 20;
 
   try {
-    const res = await artemisRequest('/artemis/api/v1/driver/list', {
+    const res = await artemisRequest(DRIVER_API.LIST, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -447,7 +448,7 @@ export async function getDriverList(params = {}) {
  */
 export async function getDriverById(driverId) {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/driver/${driverId}`, {
+    const res = await artemisRequest(`DRIVER_API.DETAIL/${driverId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json', 'Accept': '*/*' }
     });
@@ -517,7 +518,7 @@ export async function createDriver(driverData) {
       ...driverData
     };
 
-    const res = await artemisRequest('/artemis/api/v1/driver', {
+    const res = await artemisRequest('DRIVER_API.DETAIL', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -592,7 +593,7 @@ export async function updateDriver(driverData) {
       ...driverData
     };
 
-    const res = await artemisRequest('/artemis/api/v1/driver', {
+    const res = await artemisRequest('DRIVER_API.DETAIL', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -650,7 +651,7 @@ export async function updateDriver(driverData) {
  */
 export async function deleteDriver(driverId) {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/driver/${driverId}`, {
+    const res = await artemisRequest(`DRIVER_API.DETAIL/${driverId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

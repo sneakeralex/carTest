@@ -250,7 +250,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { showToast, showDialog } from 'vant';
 import { useBookingStore } from '../stores/booking';
-import { getUserInfo } from '../utils/auth.js';
+import { getItem } from '../utils/storage.js';
 import dayjs from 'dayjs';
 
 const route = useRoute();
@@ -274,7 +274,7 @@ const rescheduleForm = ref({
 const approvalRemarks = ref('');
 
 // 获取用户信息
-const userInfo = computed(() => getUserInfo());
+const userInfo = computed(() => getItem('user', {}));
 
 // 判断是否为管理员
 const isAdmin = computed(() => {
