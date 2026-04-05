@@ -725,19 +725,24 @@ if SERVICE_CONFIG['enable_api_proxy']:
 
             proxy_logger.info(f"Target URL: {target_url}")
 
-            body = request.get_data(as_text=True) if request.method in ['POST', 'PUT', 'PATCH'] else None
+            # 获取原始字节数据
+            raw_body = request.get_data() if request.method in ['POST', 'PUT', 'PATCH'] else None
+            
+            # 为了签名生成，将字节数据转换为字符串
+            body_str = raw_body.decode('utf-8') if raw_body else ""
 
             headers = dict(request.headers)
             headers.pop('Host', None)
             headers['appKey'] = APP_KEY
 
-            if body and 'Content-Type' not in headers:
+            # 确保Content-Type头存在
+            if raw_body and 'Content-Type' not in headers:
                 headers['Content-Type'] = 'application/json'
 
             signature_headers = ApiSigner.sign_request(
                 request.method,
                 target_url,
-                body or "",
+                body_str,
                 headers,
                 APP_KEY,
                 APP_SECRET
@@ -749,7 +754,7 @@ if SERVICE_CONFIG['enable_api_proxy']:
                 request.method,
                 target_url,
                 headers=request_headers,
-                data=body,
+                data=raw_body,  # 使用原始字节数据
                 verify=False,
                 timeout=30
             )

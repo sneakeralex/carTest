@@ -63,8 +63,8 @@ DATABASE_CONFIG = {
 
 # 日志配置
 LOG_CONFIG = {
-    'level': os.getenv('LOG_LEVEL', 'INFO'),
+    'level': os.getenv('LOG_LEVEL', 'DEBUG'),
     'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    'file': os.getenv('LOG_FILE', 'python-server.log'),
+    'file': os.getenv('LOG_FILE', str(BASE_DIR / 'python-server.log')),
     'enable_sqlite': os.getenv('ENABLE_SQLITE_LOG', 'True').lower() == 'true'  # 是否启用SQLite日志
 }
