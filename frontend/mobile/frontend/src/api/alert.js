@@ -35,7 +35,7 @@ export async function getAlertList(params = {}) {
       queryParams.append('endTime', params.endTime);
     }
     
-    const url = `${ALERT_API}/list?${queryParams.toString()}`;
+    const url = `${ALERT_API.BASE}/list?${queryParams.toString()}`;
     
     const res = await artemisRequest(url, {
       method: 'GET',
@@ -89,7 +89,7 @@ export async function getAlertList(params = {}) {
  */
 export async function getAlertById(id) {
   try {
-    const url = `${ALERT_API}/${id}`;
+    const url = `${ALERT_API.BASE}/${id}`;
     
     const res = await artemisRequest(url, {
       method: 'GET',
@@ -143,7 +143,7 @@ export async function getAlertById(id) {
  */
 export async function handleAlert(id, data) {
   try {
-    const url = `${ALERT_API}/${id}/handle`;
+    const url = `${ALERT_API.BASE}/${id}/handle`;
     
     const res = await artemisRequest(url, {
       method: 'POST',
@@ -169,7 +169,7 @@ export async function handleAlert(id, data) {
  */
 export async function batchHandleAlerts(ids, data) {
   try {
-    const url = `${ALERT_API}/batch/handle`;
+    const url = `${ALERT_API.BASE}/batch/handle`;
     
     const res = await artemisRequest(url, {
       method: 'POST',

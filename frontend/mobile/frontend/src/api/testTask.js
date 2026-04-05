@@ -618,7 +618,7 @@ export async function getTaskRegistrations(taskId) {
  */
 export async function getTestStats() {
   try {
-    const res = await artemisRequest('/artemis/api/v1/test/stats', { method: 'GET' });
+    const res = await artemisRequest(TEST_TASK_API.STATS, { method: 'GET' });
 
     const result = res?.data;
 
@@ -730,7 +730,7 @@ export async function getExperimentTasks(params = {}) {
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const res = await artemisRequest(`/artemis/api/v1/experiment-task/list?${queryParams}`, { method: 'GET' });
+    const res = await artemisRequest(`${TEST_TASK_API.EXPERIMENT_TASK_LIST}?${queryParams}`, { method: 'GET' });
 
     const result = res?.data;
 
@@ -786,7 +786,7 @@ export async function getExperimentTasks(params = {}) {
  */
 export async function getExperimentTaskById(taskId) {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}`, { method: 'GET' });
+    const res = await artemisRequest(`${TEST_TASK_API.EXPERIMENT_TASK_DETAIL}/${taskId}`, { method: 'GET' });
 
     const result = res?.data;
 
@@ -845,7 +845,7 @@ export async function getExperimentTaskById(taskId) {
  */
 export async function createExperimentTask(taskData) {
   try {
-    const res = await artemisRequest('/artemis/api/v1/experiment-task', {
+    const res = await artemisRequest(TEST_TASK_API.EXPERIMENT_TASK_CREATE, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -910,7 +910,7 @@ export async function createExperimentTask(taskData) {
  */
 export async function updateExperimentTask(taskId, taskData) {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}`, {
+    const res = await artemisRequest(`${TEST_TASK_API.EXPERIMENT_TASK_UPDATE}/${taskId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -970,7 +970,7 @@ export async function updateExperimentTask(taskId, taskData) {
  */
 export async function deleteExperimentTask(taskId) {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}`, {
+    const res = await artemisRequest(`${TEST_TASK_API.EXPERIMENT_TASK_DELETE}/${taskId}`, {
       method: 'DELETE'
     });
 
@@ -1005,7 +1005,7 @@ export async function deleteExperimentTask(taskId) {
  */
 export async function submitExperimentTaskForApproval(taskId) {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}/submit`, {
+    const res = await artemisRequest(`${TEST_TASK_API.EXPERIMENT_TASK_SUBMIT}/${taskId}/submit`, {
       method: 'PUT'
     });
 
@@ -1036,7 +1036,7 @@ export async function submitExperimentTaskForApproval(taskId) {
  */
 export async function approveExperimentTask(taskId, approvalData) {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}/approve`, {
+    const res = await artemisRequest(`${TEST_TASK_API.EXPERIMENT_TASK_APPROVE}/${taskId}/approve`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -1068,7 +1068,7 @@ export async function approveExperimentTask(taskId, approvalData) {
  */
 export async function startExperimentTask(taskId) {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}/start`, {
+    const res = await artemisRequest(`${TEST_TASK_API.EXPERIMENT_TASK_START}/${taskId}/start`, {
       method: 'PUT'
     });
 
@@ -1099,7 +1099,7 @@ export async function startExperimentTask(taskId) {
  */
 export async function completeExperimentTask(taskId, completionData) {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}/complete`, {
+    const res = await artemisRequest(`${TEST_TASK_API.EXPERIMENT_TASK_COMPLETE}/${taskId}/complete`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -1132,7 +1132,7 @@ export async function completeExperimentTask(taskId, completionData) {
  */
 export async function cancelExperimentTask(taskId, reason) {
   try {
-    const res = await artemisRequest(`/artemis/api/v1/experiment-task/${taskId}/cancel`, {
+    const res = await artemisRequest(`${TEST_TASK_API.EXPERIMENT_TASK_CANCEL}/${taskId}/cancel`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'

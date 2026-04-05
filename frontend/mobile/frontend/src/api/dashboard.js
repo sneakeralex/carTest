@@ -72,7 +72,7 @@ export async function getMobileDashboardStats() {
 export async function getRecentBookings(limit = 5) {
   try {
     // 直接调用API获取预约列表
-    const res = await artemisRequest(`/artemis/api/v1/booking/list?pageNum=1&pageSize=${limit}`, { method: 'GET' });
+    const res = await artemisRequest(`${BOOKING_API.LIST}?pageNum=1&pageSize=${limit}`, { method: 'GET' , headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
     const result = res?.data;
     
     console.log('获取最近预约原始API响应:', JSON.stringify(result, null, 2));
@@ -161,7 +161,7 @@ export async function getRecentBookings(limit = 5) {
  */
 export async function getNotifications(limit = 10) {
   try {
-    const res = await artemisRequest(`/artemis/api/notification/v1/list?limit=${limit}`, { method: 'GET' });
+    const res = await artemisRequest(`${NOTIFICATION_API.LIST}?limit=${limit}`, { method: 'GET' });
     const result = res?.data;
     console.log('获取通知列表原始API响应:', JSON.stringify(result, null, 2));
 
@@ -209,7 +209,7 @@ export async function getNotifications(limit = 10) {
  */
 export async function getQuickActions() {
   try {
-    const res = await artemisRequest('/artemis/api/dashboard/v1/quick-actions', { method: 'GET' });
+    const res = await artemisRequest(DASHBOARD_API.QUICK_ACTIONS, { method: 'GET' });
     const result = res?.data;
     console.log('获取快捷操作原始API响应:', JSON.stringify(result, null, 2));
 
@@ -251,7 +251,7 @@ export async function getQuickActions() {
 export async function getWeatherInfo(city = null) {
   try {
     const queryParams = city ? `?city=${encodeURIComponent(city)}` : '';
-    const res = await artemisRequest(`/artemis/api/weather/v1/current${queryParams}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
+    const res = await artemisRequest(`${WEATHER_API.CURRENT}${queryParams}`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' } });
     const result = res?.data || res;
 
     console.log('获取天气信息原始API响应:', JSON.stringify(result, null, 2));
@@ -399,7 +399,7 @@ export async function getUnreadNotificationCount() {
  */
 export async function getEquipmentStats() {
   try {
-    const res = await artemisRequest('/artemis/api/v1/equipment/stats', { method: 'GET' });
+    const res = await artemisRequest(DASHBOARD_API.EQUIPMENT_STATS, { method: 'GET' });
     const result = res?.data;
     console.log('获取设备统计原始API响应:', JSON.stringify(result, null, 2));
 
@@ -451,7 +451,7 @@ export async function getEquipmentStats() {
  */
 export async function getTestTaskStats() {
   try {
-    const res = await artemisRequest('/artemis/api/v1/test-task/stats', { method: 'GET' });
+    const res = await artemisRequest(DASHBOARD_API.TEST_TASK_STATS, { method: 'GET' });
     const result = res?.data;
     console.log('获取测试任务统计原始API响应:', JSON.stringify(result, null, 2));
 
@@ -507,7 +507,7 @@ export async function getTestTaskStats() {
  */
 export async function getStaffStats() {
   try {
-    const res = await artemisRequest('/artemis/api/v1/staff/stats', { method: 'GET' });
+    const res = await artemisRequest(DASHBOARD_API.STAFF_STATS, { method: 'GET' });
     const result = res?.data;
     console.log('获取人员统计原始API响应:', JSON.stringify(result, null, 2));
 
@@ -559,7 +559,7 @@ export async function getStaffStats() {
  */
 export async function getBookingStats() {
   try {
-    const res = await artemisRequest('/artemis/api/v1/booking/stats', { method: 'GET' });
+    const res = await artemisRequest(DASHBOARD_API.BOOKING_STATS, { method: 'GET' });
     const result = res?.data;
     console.log('获取预约统计原始API响应:', JSON.stringify(result, null, 2));
 
@@ -613,7 +613,7 @@ export async function getBookingStats() {
  */
 export async function getAlertStats() {
   try {
-    const res = await artemisRequest('/artemis/api/v1/alert/stats', { method: 'GET' });
+    const res = await artemisRequest(DASHBOARD_API.ALERT_STATS, { method: 'GET' });
     const result = res?.data;
     console.log('获取告警统计原始API响应:', JSON.stringify(result, null, 2));
 
@@ -669,7 +669,7 @@ export async function getAlertStats() {
  */
 export async function getSystemStats() {
   try {
-    const res = await artemisRequest('/artemis/api/v1/system/stats', { method: 'GET' });
+    const res = await artemisRequest(DASHBOARD_API.SYSTEM_STATS, { method: 'GET' });
     const result = res?.data;
     console.log('获取系统统计原始API响应:', JSON.stringify(result, null, 2));
 

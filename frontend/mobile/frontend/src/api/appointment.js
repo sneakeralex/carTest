@@ -551,12 +551,12 @@ export async function approveAppointment(appointmentId, data) {
   }
 
   try {
-    const res = await artemisRequest(`${APPOINTMENT_API.DETAIL}/${appointmentId}/reschedule`, {
+    const res = await artemisRequest(`${APPOINTMENT_API.DETAIL}/${appointmentId}/approve`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(rescheduleData)
+      body: JSON.stringify(data)
     });
     const result = res?.data;
     console.log('审批预约原始API响应:', JSON.stringify(result, null, 2));
@@ -621,7 +621,7 @@ export async function rescheduleAppointment(appointmentId, data) {
   }
 
   try {
-    const res = await artemisRequest(`APPOINTMENT_API.LIST/${appointmentId}/reschedule`, {
+    const res = await artemisRequest(`${APPOINTMENT_API.DETAIL}/${appointmentId}/reschedule`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)

@@ -125,7 +125,7 @@ export async function getTestSiteById(siteId) {
  */
 export async function getAvailableTimeSlots(params) {
   try {
-    const path = `TEST_SITE_API.DETAIL/available-slots`;
+    const path = TEST_SITE_API.AVAILABLE_SLOTS;
     const queryParams = new URLSearchParams();
     if (params.testSiteId) queryParams.append('testSiteId', params.testSiteId);
     if (params.date) queryParams.append('date', params.date);
@@ -189,7 +189,7 @@ export async function createBooking(bookingData) {
  */
 export async function getBookings(params = {}) {
   try {
-    const path = `TEST_SITE_API.DETAIL/bookings`;
+    const path = TEST_SITE_API.BOOKING_LIST;
     const queryParams = new URLSearchParams();
     if (params.status) queryParams.append('status', params.status);
     if (params.page !== undefined) queryParams.append('page', params.page);

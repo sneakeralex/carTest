@@ -497,7 +497,7 @@ export async function getAll(params = {}) {
   }
 
   try {
-    const url = `TEST_TASK_API.REGISTRATION_DETAIL/all`;
+    const url = `${TEST_TASK_API.REGISTRATION_DETAIL}/all`;
     const queryParams = new URLSearchParams();
     
     if (params.status && params.status !== 'ALL') queryParams.append('status', params.status);

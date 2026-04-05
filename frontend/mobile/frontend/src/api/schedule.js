@@ -100,7 +100,7 @@ export async function createBooking(data) {
  */
 export async function getGroundScheduling(params = {}) {
   try {
-    const path = `/artemis/api/v1/ground/scheduling`;
+    const path = BOOKING_API.GROUND_SCHEDULING;
     const queryParams = new URLSearchParams();
     
     // 设置默认值

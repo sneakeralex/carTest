@@ -175,7 +175,7 @@ export async function register(userData) {
     // Route both duplicate-check and save through the client-side artemisRequest helper
     // so the actual AK/SK signing happens on the server-side proxy.
     const checkBody = { phone: payload.phone, pageSize: 10000, pageNum: 1 };
-    const checkResp = await artemisRequest(AUTH_API.LIST, {
+    const checkResp = await artemisRequest(STAFF_API.LIST, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(checkBody)
@@ -188,7 +188,7 @@ export async function register(userData) {
       throw new Error('手机号已存在，请勿重复注册');
     }
 
-    const saveResp = await artemisRequest(AUTH_API.SAVE, {
+    const saveResp = await artemisRequest(STAFF_API.SAVE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': '*/*' },
       body: JSON.stringify(payload)
