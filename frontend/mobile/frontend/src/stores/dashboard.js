@@ -398,7 +398,8 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
           }
         });
       } catch (err) {
-        console.error('获取预约统计数据失败:', err);
+        // 静默处理错误
+        // console.error('获取预约统计数据失败:', err);
       }
 
       // 获取测试数据
@@ -435,14 +436,24 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
           stats.testScore = Math.round(totalScore / completedTasksWithScores.length);
         }
       } catch (err) {
-        console.error('获取测试统计数据失败:', err);
+        // 静默处理错误
+        // console.error('获取测试统计数据失败:', err);
       }
 
       dashboardStats.value = stats;
       return stats;
     } catch (err) {
-      console.error('组装统计数据失败:', err);
-      throw err;
+      // 静默处理错误
+      // console.error('组装统计数据失败:', err);
+      return {
+        appointments: { total: 0, pending: 0, confirmed: 0, completed: 0 },
+        vehicles: { total: 0, active: 0, maintenance: 0 },
+        testRegistrations: { total: 0, pending: 0, approved: 0, completed: 0 },
+        pendingBookings: 0,
+        testScore: 0,
+        totalBookings: 0,
+        completedTests: 0
+      };
     }
   };
 
@@ -560,8 +571,8 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
           fetchSystemStats()
         ]);
       } catch (err) {
-        console.error('核心数据加载失败:', err);
-        throw new Error('核心数据加载失败');
+        // 静默处理错误，让应用继续运行
+        // console.error('核心数据加载失败:', err);
       }
 
       // 第二组：次要数据
@@ -576,8 +587,8 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
           fetchAlertStats()
         ]);
       } catch (err) {
-        console.error('用户数据加载失败:', err);
-        // 不抛出错误，让应用继续运行
+        // 静默处理错误，让应用继续运行
+        // console.error('用户数据加载失败:', err);
       }
 
       // 第三组：附加数据
@@ -588,13 +599,14 @@ export const useMobileDashboardStore = defineStore('mobileDashboard', () => {
           fetchUnreadCount()
         ]);
       } catch (err) {
-        console.error('附加数据加载失败:', err);
-        // 不抛出错误，让应用继续运行
+        // 静默处理错误，让应用继续运行
+        // console.error('附加数据加载失败:', err);
       }
 
     } catch (err) {
-      error.value = err.message || '初始化仪表板数据失败';
-      throw error.value;
+      // 静默处理错误，让应用继续运行
+      // error.value = err.message || '初始化仪表板数据失败';
+      // throw error.value;
     }
   };
 

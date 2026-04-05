@@ -69,8 +69,8 @@ export async function getTestTasks(params = {}) {
       config: {}
     };
   } catch (error) {
-    console.error('获取测试任务列表失败:', error);
-    // Fallback to mock data
+    // 静默处理错误，直接返回mock数据
+    // console.error('获取测试任务列表失败:', error);
     await delay(500);
     return mockResponse(mockTestTasks);
   }
@@ -644,8 +644,8 @@ export async function getTestStats() {
       config: {}
     };
   } catch (error) {
-    console.error('获取测试统计信息失败:', error);
-    // Fallback to mock data
+    // 静默处理错误，直接返回mock数据
+    // console.error('获取测试统计信息失败:', error);
     await delay(300);
     return mockResponse(mockTestStats);
   }
