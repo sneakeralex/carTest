@@ -47,6 +47,14 @@ VERIFICATION_CODE_CONFIG = {
     'enable_response_code': os.getenv('VERIFICATION_CODE_ENABLE_RESPONSE', 'True').lower() == 'true'  # 是否在响应中返回验证码
 }
 
+# 安全配置
+SECURITY_CONFIG = {
+    'password_error_limit': int(os.getenv('PASSWORD_ERROR_LIMIT', '3')),  # 密码错误次数限制（触发验证码）
+    'password_lock_limit': int(os.getenv('PASSWORD_LOCK_LIMIT', '5')),  # 密码错误次数限制（触发锁定）
+    'account_lock_duration': int(os.getenv('ACCOUNT_LOCK_DURATION', '15')),  # 账户锁定时长（分钟）
+    'password_error_expiration': int(os.getenv('PASSWORD_ERROR_EXPIRATION', '24')),  # 密码错误记录过期时间（小时）
+}
+
 # 数据库配置
 DATABASE_CONFIG = {
     'db_path': os.getenv('DATABASE_PATH', str(BASE_DIR / 'data' / 'logs.db')),

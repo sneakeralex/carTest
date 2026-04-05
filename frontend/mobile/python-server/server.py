@@ -25,7 +25,7 @@ from typing import Dict, List, Optional
 from qcloudsms_py import SmsSingleSender
 from qcloudsms_py.httpclient import HTTPError
 
-from config import SERVICE_CONFIG, API_PROXY_CONFIG, SMS_SERVICE_CONFIG, VERIFICATION_CODE_CONFIG, LOG_CONFIG, DATABASE_CONFIG
+from config import SERVICE_CONFIG, API_PROXY_CONFIG, SMS_SERVICE_CONFIG, VERIFICATION_CODE_CONFIG, LOG_CONFIG, DATABASE_CONFIG, SECURITY_CONFIG
 from verification_code_manager import verification_code_manager
 from sqlite_handler import SQLiteHandler, RequestContextFilter
 from db_manager import get_db_manager
@@ -562,6 +562,12 @@ if SERVICE_CONFIG['enable_api_proxy']:
 
             user = matching_user
 
+            # 检查账户是否被锁定
+            if verification_code_manager.is_account_locked(phone):
+                login_logger.warning(f"账户已被锁定: {phone}")
+                lock_duration = SECURITY_CONFIG['account_lock_duration']
+                return Response(json.dumps({"error": f"账户已被锁定，请{lock_duration}分钟后再试"}, ensure_ascii=False), status=403, mimetype='application/json')
+
             if verification_code:
                 login_logger.info(f"Using verification code login for {phone}")
                 # 验证验证码有效性
@@ -570,7 +576,16 @@ if SERVICE_CONFIG['enable_api_proxy']:
                     login_logger.warning(f"验证码验证失败: {phone}")
                     return Response(json.dumps({"error": "验证码错误"}, ensure_ascii=False), status=401, mimetype='application/json')
                 login_logger.info(f"验证码验证成功: {phone}")
+                # 验证码登录成功，重置密码错误次数并解锁账户
+                verification_code_manager.reset_password_errors(phone)
+                verification_code_manager.unlock_account(phone)
             else:
+                # 检查是否需要验证码
+                need_verification = verification_code_manager.check_password_error_limit(phone)
+                if need_verification:
+                    login_logger.info(f"密码错误次数过多，需要验证码: {phone}")
+                    return Response(json.dumps({"error": "密码错误次数过多，请使用验证码登录"}, ensure_ascii=False), status=401, mimetype='application/json')
+                
                 stored_pwd = None
                 if isinstance(user, dict):
                     for key in ('password', 'passwd', 'pwd', 'passWord'):
@@ -582,7 +597,14 @@ if SERVICE_CONFIG['enable_api_proxy']:
                     return Response(json.dumps({"error": "无法验证用户密码"}, ensure_ascii=False), status=502, mimetype='application/json')
 
                 if str(password) != str(stored_pwd):
-                    return Response(json.dumps({"error": "登录失败"}, ensure_ascii=False), status=401, mimetype='application/json')
+                    # 记录密码错误
+                    error_info = verification_code_manager.record_password_error(phone)
+                    login_logger.warning(f"密码错误: {phone}, {error_info['message']}")
+                    return Response(json.dumps({"error": error_info['message']}, ensure_ascii=False), status=401, mimetype='application/json')
+                else:
+                    # 密码正确，重置错误次数并解锁账户
+                    verification_code_manager.reset_password_errors(phone)
+                    verification_code_manager.unlock_account(phone)
 
             login_logger.info(f"登录成功: {phone}")
             return Response(json.dumps({"message": "登录成功", "user": user}, ensure_ascii=False), status=200, mimetype='application/json')
