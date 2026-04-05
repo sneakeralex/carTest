@@ -448,9 +448,12 @@ export async function getDriverList(params = {}) {
  */
 export async function getDriverById(driverId) {
   try {
-    const res = await artemisRequest(`DRIVER_API.DETAIL/${driverId}`, {
+    const res = await artemisRequest(`${DRIVER_API.GET_BY_ID}/${driverId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json', 'Accept': '*/*' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      }
     });
 
     const result = res?.data;
@@ -518,13 +521,13 @@ export async function createDriver(driverData) {
       ...driverData
     };
 
-    const res = await artemisRequest('DRIVER_API.DETAIL', {
+    const res = await artemisRequest(DRIVER_API.CREATE, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': '*/*'
       },
-      body: JSON.stringify(requestData)
+      body: JSON.stringify(driverData)
     });
 
     const result = res?.data;
@@ -593,13 +596,13 @@ export async function updateDriver(driverData) {
       ...driverData
     };
 
-    const res = await artemisRequest('DRIVER_API.DETAIL', {
+    const res = await artemisRequest(DRIVER_API.UPDATE, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Accept': '*/*'
       },
-      body: JSON.stringify(requestData)
+      body: JSON.stringify(driverData)
     });
 
     const result = res?.data;
@@ -651,7 +654,7 @@ export async function updateDriver(driverData) {
  */
 export async function deleteDriver(driverId) {
   try {
-    const res = await artemisRequest(`DRIVER_API.DETAIL/${driverId}`, {
+    const res = await artemisRequest(`${DRIVER_API.DELETE}/${driverId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

@@ -167,7 +167,9 @@ async function fetchLogs(reset = true) {
       queryParams.append('service', filter.value.service);
     }
     
-    const response = await fetch(`/sms/api/logs?${queryParams.toString()}`);
+    const response = await fetch(`/api/logs?${queryParams.toString()}`, {
+      credentials: 'include'
+    });
     const data = await response.json();
     
     if (data.error) {
@@ -203,12 +205,13 @@ function loadMore() {
 // 清理日志
 async function cleanupLogs() {
   try {
-    const response = await fetch('/sms/api/logs/cleanup', {
+    const response = await fetch('/api/logs/cleanup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ days: parseInt(cleanupDays.value) || 7 })
+      body: JSON.stringify({ days: parseInt(cleanupDays.value) || 7 }),
+      credentials: 'include'
     });
     
     const data = await response.json();

@@ -88,7 +88,7 @@ export async function getTestSites(params = {}) {
 export async function getTestSiteById(siteId) {
   try {
     // Route through /artemis proxy
-    const res = await artemisRequest(`TEST_SITE_API.DETAIL/${siteId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const res = await artemisRequest(`${TEST_SITE_API.DETAIL}/${siteId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
     console.log('获取测试场详情原始API响应:', JSON.stringify(result, null, 2));
 
@@ -153,7 +153,7 @@ export async function getAvailableTimeSlots(params) {
  */
 export async function createBooking(bookingData) {
   try {
-    const res = await artemisRequest('TEST_SITE_API.DETAIL/booking', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookingData) });
+    const res = await artemisRequest(`${TEST_SITE_API.CREATE_BOOKING}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookingData) });
     const result = res?.data;
     console.log('创建测试场预约原始API响应:', JSON.stringify(result, null, 2));
 
@@ -238,7 +238,7 @@ export async function getBookings(params = {}) {
  */
 export async function getBookingById(bookingId) {
   try {
-    const res = await artemisRequest(`TEST_SITE_API.DETAIL/booking/${bookingId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const res = await artemisRequest(`${TEST_SITE_API.BOOKING_DETAIL}/${bookingId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
     console.log('获取预约详情原始API响应:', JSON.stringify(result, null, 2));
 
@@ -274,7 +274,7 @@ export async function getBookingById(bookingId) {
  */
 export async function updateBooking(bookingId, bookingData) {
   try {
-    const res = await artemisRequest(`TEST_SITE_API.DETAIL/booking/${bookingId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookingData) });
+    const res = await artemisRequest(`${TEST_SITE_API.BOOKING_UPDATE}/${bookingId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookingData) });
     const result = res?.data;
     console.log('更新预约原始API响应:', JSON.stringify(result, null, 2));
 
@@ -310,7 +310,7 @@ export async function updateBooking(bookingId, bookingData) {
  */
 export async function cancelBooking(bookingId, data) {
   try {
-    const res = await artemisRequest(`TEST_SITE_API.DETAIL/booking/${bookingId}/cancel`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const res = await artemisRequest(`${TEST_SITE_API.BOOKING_CANCEL}/${bookingId}/cancel`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     const result = res?.data;
     console.log('取消预约原始API响应:', JSON.stringify(result, null, 2));
 
@@ -347,7 +347,7 @@ export async function cancelBooking(bookingId, data) {
  */
 export async function getUserBookings(userId) {
   try {
-    const res = await artemisRequest(`TEST_SITE_API.DETAIL/user/${userId}/bookings`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const res = await artemisRequest(`${TEST_SITE_API.BOOKING_LIST}/user/${userId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
     console.log('获取用户预约列表原始API响应:', JSON.stringify(result, null, 2));
 
@@ -382,7 +382,7 @@ export async function getUserBookings(userId) {
  */
 export async function getBookingStats() {
   try {
-    const res = await artemisRequest(`TEST_SITE_API.DETAIL/booking/stats`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const res = await artemisRequest(`${TEST_SITE_API.BOOKING_DETAIL}/stats`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
     console.log('获取预约统计原始API响应:', JSON.stringify(result, null, 2));
 

@@ -31,7 +31,7 @@ export async function getTestTasks(params = {}) {
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const res = await artemisRequest(`TEST_TASK_API.DETAIL/list?${queryParams}`, { method: 'GET' });
+    const res = await artemisRequest(`${TEST_TASK_API.LIST}?${queryParams}`, { method: 'GET' });
 
     const result = res?.data;
 
@@ -83,7 +83,7 @@ export async function getTestTasks(params = {}) {
  */
 export async function getTestTaskById(taskId) {
   try {
-    const res = await artemisRequest(`TEST_TASK_API.DETAIL/${taskId}`, { method: 'GET' });
+    const res = await artemisRequest(`${TEST_TASK_API.DETAIL}/${taskId}`, { method: 'GET' });
 
     const result = res?.data;
 
@@ -143,7 +143,7 @@ export async function getTestRegistrations(params = {}) {
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/list?${queryParams}`, { method: 'GET' });
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_LIST}?${queryParams}`, { method: 'GET' });
 
     const result = res?.data;
 
@@ -193,7 +193,7 @@ export async function getTestRegistrations(params = {}) {
  */
 export async function getTestRegistrationById(registrationId) {
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/${registrationId}`, { method: 'GET' });
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_DETAIL}/${registrationId}`, { method: 'GET' });
 
     const result = res?.data;
 
@@ -246,7 +246,7 @@ export async function getTestRegistrationById(registrationId) {
  */
 export async function createTestRegistration(registrationData) {
   try {
-    const res = await artemisRequest('TEST_TASK_API.REGISTRATION_DETAIL', {
+    const res = await artemisRequest(TEST_TASK_API.REGISTRATION_CREATE, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -307,7 +307,7 @@ export async function createTestRegistration(registrationData) {
  */
 export async function updateTestRegistration(registrationId, registrationData) {
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/${registrationId}`, {
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_UPDATE}/${registrationId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -368,7 +368,7 @@ export async function updateTestRegistration(registrationId, registrationData) {
  */
 export async function cancelTestRegistration(registrationId) {
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/${registrationId}/cancel`, {
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_DETAIL}/${registrationId}/cancel`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -409,7 +409,7 @@ export async function cancelTestRegistration(registrationId) {
  */
 export async function scheduleTest(registrationId, scheduleData) {
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/${registrationId}/schedule`, {
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_DETAIL}/${registrationId}/schedule`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -472,7 +472,7 @@ export async function scheduleTest(registrationId, scheduleData) {
  */
 export async function completeTest(registrationId, resultData) {
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/${registrationId}/complete`, {
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_DETAIL}/${registrationId}/complete`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -531,7 +531,7 @@ export async function completeTest(registrationId, resultData) {
  */
 export async function getUserTestRegistrations(userId) {
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/user/${userId}`, { method: 'GET' });
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_USER}/${userId}`, { method: 'GET' });
 
     const result = res?.data;
 
@@ -575,7 +575,7 @@ export async function getUserTestRegistrations(userId) {
  */
 export async function getTaskRegistrations(taskId) {
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/task/${taskId}`, { method: 'GET' });
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_TASK}/${taskId}`, { method: 'GET' });
 
     const result = res?.data;
 
@@ -658,7 +658,7 @@ export async function getTestStats() {
  */
 export async function createTestTask(taskData) {
   try {
-    const res = await artemisRequest('TEST_TASK_API.DETAIL', {
+    const res = await artemisRequest(TEST_TASK_API.CREATE, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

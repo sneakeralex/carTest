@@ -69,7 +69,7 @@ export async function getUserTestRegistrations(userId, params = {}) {
     if (params.size) queryParams.append('size', params.size);
 
     // Route this call through the local /artemis proxy so server-side signing is used when required
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/user/${userId}?${queryParams}`, { method: 'GET' });
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_USER}?${queryParams}`, { method: 'GET' });
     const result = res?.data;
 
     // Transform response to expected format
@@ -147,7 +147,7 @@ export async function getTestRegistrationById(registrationId) {
   }
 
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/${registrationId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_DETAIL}/${registrationId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
 
     // Transform response
@@ -206,7 +206,7 @@ export async function createTestRegistration(registrationData) {
   }
 
   try {
-    const res = await artemisRequest('TEST_TASK_API.REGISTRATION_DETAIL', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(registrationData) });
+    const res = await artemisRequest(TEST_TASK_API.REGISTRATION_CREATE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(registrationData) });
     const result = res?.data;
 
     // Transform response
@@ -270,7 +270,7 @@ export async function updateTestRegistration(registrationId, updateData) {
   }
 
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/${registrationId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updateData) });
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_UPDATE}/${registrationId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updateData) });
     const result = res?.data;
 
     // Transform response
@@ -340,7 +340,7 @@ export async function cancelTestRegistration(registrationId, reason) {
   }
 
   try {
-    await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/${registrationId}/cancel`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) });
+    await artemisRequest(`${TEST_TASK_API.REGISTRATION_DETAIL}/${registrationId}/cancel`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) });
 
     return mockResponse({ success: true });
   } catch (error) {
@@ -405,7 +405,7 @@ export async function getTestRegistrationStats(userId) {
   }
 
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/stats/${userId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_DETAIL}/stats/${userId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
 
     // Transform response
@@ -564,7 +564,7 @@ export async function getById(id) {
   }
 
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/${id}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_DETAIL}/${id}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
 
     // Transform response
@@ -623,7 +623,7 @@ export async function create(data) {
   }
 
   try {
-    const res = await artemisRequest('TEST_TASK_API.REGISTRATION_DETAIL', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const res = await artemisRequest(TEST_TASK_API.REGISTRATION_CREATE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     const result = res?.data;
 
     // Transform response
@@ -681,7 +681,7 @@ export async function update(id, data) {
   }
 
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_UPDATE}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     const result = res?.data;
 
     // Transform response
@@ -733,7 +733,7 @@ export async function deleteTestRegistration(id) {
   }
 
   try {
-    const res = await artemisRequest(`TEST_TASK_API.REGISTRATION_DETAIL/${id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } });
+    const res = await artemisRequest(`${TEST_TASK_API.REGISTRATION_DETAIL}/${id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } });
     const result = res?.data;
 
     return { success: true, message: '测试报名已删除' };

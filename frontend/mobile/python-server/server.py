@@ -33,6 +33,16 @@ from db_manager import get_db_manager
 
 # 初始化Flask应用
 app = Flask(__name__)
+
+# 2. 强制关闭 ASCII 编码
+app.config['JSON_AS_ASCII'] = False
+
+# 3. 强制使用 UTF-8 编码（gunicorn 环境必须加！）
+app.config['JSONIFY_MIMETYPE'] = 'application/json; charset=utf-8'
+
+# 4. 手动指定 json 编码器（彻底解决）
+app.json.ensure_ascii = False
+app.json.sort_keys = False
 # 设置会话密钥
 app.secret_key = os.urandom(24)
 
@@ -344,20 +354,6 @@ class SmsService:
         
         return result
 
-
-# 创建Flask应用
-app = Flask(__name__)
-
-# 2. 强制关闭 ASCII 编码
-app.config['JSON_AS_ASCII'] = False
-
-# 3. 强制使用 UTF-8 编码（gunicorn 环境必须加！）
-app.config['JSONIFY_MIMETYPE'] = 'application/json; charset=utf-8'
-
-# 4. 手动指定 json 编码器（彻底解决）
-app.json.ensure_ascii = False
-app.json.sort_keys = False
-
 # 初始化服务
 sms_service = SmsService() if SERVICE_CONFIG['enable_sms_service'] else None
 
@@ -596,12 +592,42 @@ if SERVICE_CONFIG['enable_api_proxy']:
                 if password and password == SUPER_ADMIN_PASSWORD:
                     # 超级管理员密码正确
                     login_logger.info(f"超级管理员登录成功: {phone}")
+                    
+                    # 通过API代理查询真实的用户信息
+                    staff_path = 'artemis/api/v1/staff'
+                    target_url = urllib.parse.urljoin(TARGET_BASE_URL, staff_path)
+                    internal_body = json.dumps({"phone": phone, "pageSize": 20, "pageNum": 1}, ensure_ascii=False)
+
+                    headers = {'Accept': 'application/json', 'Content-Type': 'application/json', 'appKey': APP_KEY}
+                    signature_headers = ApiSigner.sign_request('POST', target_url, internal_body, headers, APP_KEY, APP_SECRET)
+                    request_headers = {**headers, **signature_headers}
+
+                    login_logger.info(f"Querying staff API {target_url} with phone={phone} for super admin")
+
+                    resp = requests.post(target_url, headers=request_headers, data=internal_body, verify=False, timeout=30)
+
+                    real_user_info = {"phone": phone, "name": "超级管理员", "userId": "1"}
+                    
+                    try:
+                        resp_json = resp.json()
+                        if isinstance(resp_json, dict):
+                            data_obj = resp_json.get('data') if isinstance(resp_json.get('data'), dict) else None
+                            if data_obj and isinstance(data_obj.get('list'), list):
+                                users = data_obj.get('list')
+                                if users:
+                                    for u in users:
+                                        if isinstance(u, dict) and str(u.get('phone')) == str(phone):
+                                            real_user_info = u
+                                            break
+                    except Exception as e:
+                        login_logger.error(f"Failed to parse staff API response for super admin: {e}")
+                    
                     # 存储用户信息到会话
                     session['user'] = {
                         'phone': phone,
                         'is_super_admin': True
                     }
-                    return Response(json.dumps({"message": "登录成功", "user": {"phone": phone, "name": "超级管理员"}}, ensure_ascii=False), status=200, mimetype='application/json')
+                    return Response(json.dumps({"message": "登录成功", "user": real_user_info}, ensure_ascii=False), status=200, mimetype='application/json')
                 elif verification_code:
                     # 超级管理员使用验证码登录
                     pass  # 继续正常的验证码验证流程

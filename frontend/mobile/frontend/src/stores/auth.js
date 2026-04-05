@@ -167,7 +167,8 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('获取用户信息失败');
       }
       user.value = response.data;
-      setUserInfo(user.value);
+      // 存储到localStorage
+      setItem('user', user.value);
       return user.value;
     } catch (err) {
       const friendly = mapError(err);

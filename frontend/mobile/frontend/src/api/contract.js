@@ -73,7 +73,7 @@ export async function getContracts(params = {}) {
     };
 
     // Use centralized artemisRequest to route via local proxy and apply Authorization
-    const res = await artemisRequest('CONTRACT_API.LIST', {
+    const res = await artemisRequest(CONTRACT_API.LIST, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

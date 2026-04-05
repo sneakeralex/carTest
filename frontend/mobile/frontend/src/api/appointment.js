@@ -69,7 +69,7 @@ export async function getAppointments(params = {}) {
     if (params.page !== undefined) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
 
-    const res = await artemisRequest(`APPOINTMENT_API.LIST?${queryParams}`, { method: 'GET' });
+    const res = await artemisRequest(`${APPOINTMENT_API.LIST}?${queryParams}`, { method: 'GET' });
     const result = res?.data;
     console.log('获取预约列表原始API响应:', JSON.stringify(result, null, 2));
 
@@ -154,7 +154,7 @@ export async function getAppointmentById(appointmentId) {
   }
 
   try {
-    const res = await artemisRequest(`APPOINTMENT_API.LIST/${appointmentId}`, { method: 'GET' });
+    const res = await artemisRequest(`${APPOINTMENT_API.DETAIL}/${appointmentId}`, { method: 'GET' });
     const result = res?.data;
     console.log('获取预约详情原始API响应:', JSON.stringify(result, null, 2));
 
@@ -229,9 +229,11 @@ export async function createAppointment(appointmentData) {
   }
 
   try {
-    const res = await artemisRequest('APPOINTMENT_API.LIST', {
+    const res = await artemisRequest(APPOINTMENT_API.LIST, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(appointmentData)
     });
     const result = res?.data;
@@ -316,9 +318,11 @@ export async function updateAppointment(appointmentId, appointmentData) {
   }
 
   try {
-    const res = await artemisRequest(`APPOINTMENT_API.LIST/${appointmentId}`, {
+    const res = await artemisRequest(`${APPOINTMENT_API.DETAIL}/${appointmentId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(appointmentData)
     });
     const result = res?.data;
@@ -387,7 +391,7 @@ export async function cancelAppointment(appointmentId) {
   }
 
   try {
-    const res = await artemisRequest(`APPOINTMENT_API.LIST/${appointmentId}/cancel`, { method: 'PUT' });
+    const res = await artemisRequest(`${APPOINTMENT_API.DETAIL}/${appointmentId}/cancel`, { method: 'PUT' });
     const result = res?.data;
     console.log('取消预约原始API响应:', JSON.stringify(result, null, 2));
 
@@ -424,7 +428,7 @@ export async function getUserAppointments(userId) {
   }
 
   try {
-    const res = await artemisRequest(`APPOINTMENT_API.LIST/user/${userId}`, { method: 'GET' });
+    const res = await artemisRequest(`${APPOINTMENT_API.DETAIL}/user/${userId}`, { method: 'GET' });
     const result = res?.data;
     console.log('获取用户预约列表原始API响应:', JSON.stringify(result, null, 2));
 
@@ -547,10 +551,12 @@ export async function approveAppointment(appointmentId, data) {
   }
 
   try {
-    const res = await artemisRequest(`APPOINTMENT_API.LIST/${appointmentId}/approve`, {
+    const res = await artemisRequest(`${APPOINTMENT_API.DETAIL}/${appointmentId}/reschedule`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(rescheduleData)
     });
     const result = res?.data;
     console.log('审批预约原始API响应:', JSON.stringify(result, null, 2));

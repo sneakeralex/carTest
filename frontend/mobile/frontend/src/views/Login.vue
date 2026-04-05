@@ -5,13 +5,25 @@
       <h1 class="title">车辆管理系统</h1>
     </div>
 
-    <van-form @submit="onSubmit" class="login-form">
+    <van-form class="login-form">
+      <!-- 登录方式选择 -->
+      <van-cell-group inset>
+        <van-radio-group v-model="loginMethod" class="login-method-selector">
+          <van-radio name="password" icon-size="20">手机号密码登录</van-radio>
+          <van-radio name="verification" icon-size="20">手机号验证码登录</van-radio>
+        </van-radio-group>
+      </van-cell-group>
+
       <van-cell-group inset>
         <van-field v-model="phoneNumber" name="phoneNumber" label="手机号" placeholder="请输入手机号"
           :rules="[{ required: true, message: '请输入手机号' }, { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' }]" />
-        <van-field v-model="password" type="password" name="password" label="密码" placeholder="请输入密码（默认手机号后四位）"
+        
+        <!-- 密码输入框（仅密码登录时显示） -->
+        <van-field v-if="loginMethod === 'password'" v-model="password" type="password" name="password" label="密码" placeholder="请输入密码（默认手机号后四位）"
           :rules="[{ required: true, message: '请输入密码' }]" />
-        <van-field v-model="verificationCode" name="verificationCode" label="验证码" placeholder="请输入验证码"
+        
+        <!-- 验证码输入框（验证码登录时或密码登录失败次数过多时显示） -->
+        <van-field v-if="loginMethod === 'verification' || passwordLoginFailedCount >= maxFailedAttempts" v-model="verificationCode" name="verificationCode" label="验证码" placeholder="请输入验证码"
           :rules="[{ required: true, message: '请输入验证码' }]">
           <template #button>
             <van-button size="small" :disabled="countdown > 0" @click="sendVerificationCode">
@@ -22,10 +34,10 @@
       </van-cell-group>
 
       <div class="form-actions">
-        <van-button round block type="primary" native-type="submit" :loading="loading">
+        <van-button v-if="loginMethod === 'password'" round block type="primary" @click="onPasswordSubmit" :loading="loading">
           登录
         </van-button>
-        <van-button round block type="info" style="margin-top: 12px" @click="loginWithVerificationCode" :loading="loading">
+        <van-button v-else round block type="primary" @click="onVerificationSubmit" :loading="loading">
           验证码登录
         </van-button>
 
@@ -43,17 +55,24 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { showNotify } from 'vant';
 import { useAuthStore } from '../stores/auth';
-import { getItem, setItem } from '../utils/storage.js';
+import { getItem, setItem, removeItem } from '../utils/storage.js';
 
 const router = useRouter();
 const authStore = useAuthStore();
 
+// 登录方式：password - 密码登录，verification - 验证码登录
+const loginMethod = ref('password');
 // 表单数据
 const phoneNumber = ref('');
 const password = ref('');
 const verificationCode = ref('');
 const countdown = ref(0);
 const loading = ref(false);
+
+// 密码登录失败次数
+const passwordLoginFailedCount = ref(parseInt(getItem('passwordLoginFailedCount', '0')) || 0);
+// 最大失败尝试次数
+const maxFailedAttempts = 3;
 
 // 判断微信环境方法有重复
 function isWeixin() {
@@ -174,8 +193,8 @@ const sendVerificationCode = async () => {
   }
 };
 
-// 验证码登录
-const loginWithVerificationCode = async () => {
+// 验证码登录提交
+const onVerificationSubmit = async () => {
   if (!phoneNumber.value || !/^1[3-9]\d{9}$/.test(phoneNumber.value)) {
     showNotify({ type: 'danger', message: '请输入正确的手机号' });
     return;
@@ -190,6 +209,9 @@ const loginWithVerificationCode = async () => {
 
   try {
     await authStore.loginWithVerificationCode(phoneNumber.value, verificationCode.value);
+    // 登录成功，重置失败次数
+    passwordLoginFailedCount.value = 0;
+    removeItem('passwordLoginFailedCount');
     showNotify({ type: 'success', message: '登录成功' });
   } catch (error) {
     let msg = '';
@@ -204,9 +226,20 @@ const loginWithVerificationCode = async () => {
   }
 };
 
-// 提交表单
-const onSubmit = async () => {
-  if (!verificationCode.value) {
+// 密码登录提交
+const onPasswordSubmit = async () => {
+  if (!phoneNumber.value || !/^1[3-9]\d{9}$/.test(phoneNumber.value)) {
+    showNotify({ type: 'danger', message: '请输入正确的手机号' });
+    return;
+  }
+
+  if (!password.value) {
+    showNotify({ type: 'danger', message: '请输入密码' });
+    return;
+  }
+
+  // 检查是否需要验证码
+  if (passwordLoginFailedCount.value >= maxFailedAttempts && !verificationCode.value) {
     showNotify({ type: 'danger', message: '请输入验证码' });
     return;
   }
@@ -215,14 +248,27 @@ const onSubmit = async () => {
 
   try {
     await authStore.login(phoneNumber.value, password.value, verificationCode.value);
+    // 登录成功，重置失败次数
+    passwordLoginFailedCount.value = 0;
+    removeItem('passwordLoginFailedCount');
     showNotify({ type: 'success', message: '登录成功' });
   } catch (error) {
-    // Ensure we pass a string message to showNotify
+    // 登录失败，增加失败次数
+    passwordLoginFailedCount.value++;
+    setItem('passwordLoginFailedCount', passwordLoginFailedCount.value.toString());
+    
     let msg = '';
-    if (!error) msg = '登录失败，请检查手机号、密码和验证码';
+    if (!error) msg = '登录失败，请检查手机号和密码';
     else if (typeof error === 'string') msg = error;
     else if (error.message) msg = error.message;
     else msg = String(error);
+
+    // 显示失败次数提示
+    if (passwordLoginFailedCount.value >= maxFailedAttempts) {
+      msg += '，您已连续失败' + passwordLoginFailedCount.value + '次，接下来需要输入验证码';
+    } else {
+      msg += '，您已连续失败' + passwordLoginFailedCount.value + '次，还有' + (maxFailedAttempts - passwordLoginFailedCount.value) + '次机会';
+    }
 
     showNotify({ type: 'danger', message: msg });
   } finally {
@@ -259,6 +305,19 @@ const onSubmit = async () => {
 
 .login-form {
   width: 100%;
+}
+
+.login-method-selector {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+  padding: 10px 0;
+  border-bottom: 1px solid #ebedf0;
+
+  .van-radio {
+    font-size: 16px;
+    font-weight: 500;
+  }
 }
 
 .form-actions {
