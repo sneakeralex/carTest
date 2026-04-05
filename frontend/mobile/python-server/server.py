@@ -19,7 +19,8 @@ import logging
 import re
 import threading
 import time
-from flask import Flask, request, Response
+import os
+from flask import Flask, request, Response, session
 from typing import Dict, List, Optional
 
 from qcloudsms_py import SmsSingleSender
@@ -29,6 +30,35 @@ from config import SERVICE_CONFIG, API_PROXY_CONFIG, SMS_SERVICE_CONFIG, VERIFIC
 from verification_code_manager import verification_code_manager
 from sqlite_handler import SQLiteHandler, RequestContextFilter
 from db_manager import get_db_manager
+
+# 初始化Flask应用
+app = Flask(__name__)
+# 设置会话密钥
+app.secret_key = os.urandom(24)
+
+# 超级管理员手机号
+SUPER_ADMIN_PHONE = '13651895278'
+SUPER_ADMIN_PASSWORD = 'ar1978@#!'
+
+import functools
+
+def require_super_admin(func):
+    """
+    要求超级管理员权限的装饰器
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        # 检查用户是否登录
+        if 'user' not in session:
+            return Response(json.dumps({"error": "未登录"}, ensure_ascii=False), status=401, mimetype='application/json')
+        
+        # 检查是否是超级管理员
+        user = session['user']
+        if not user.get('is_super_admin', False):
+            return Response(json.dumps({"error": "权限不足，需要超级管理员权限"}, ensure_ascii=False), status=403, mimetype='application/json')
+        
+        return func(*args, **kwargs)
+    return wrapper
 
 # 配置日志
 logging.basicConfig(
@@ -400,6 +430,7 @@ def get_services_status():
 
 # 日志管理接口
 @app.route('/api/logs', methods=['GET'])
+@require_super_admin
 def get_logs():
     """获取日志记录"""
     try:
@@ -433,6 +464,7 @@ def get_logs():
 
 
 @app.route('/api/logs/stats', methods=['GET'])
+@require_super_admin
 def get_log_stats():
     """获取日志统计信息"""
     try:
@@ -451,6 +483,7 @@ def get_log_stats():
 
 
 @app.route('/api/logs/cleanup', methods=['POST'])
+@require_super_admin
 def cleanup_logs():
     """清理旧日志"""
     try:
@@ -557,6 +590,27 @@ if SERVICE_CONFIG['enable_api_proxy']:
                     matching_user = u
                     break
 
+            # 检查是否是超级管理员
+            if phone == SUPER_ADMIN_PHONE:
+                # 超级管理员特殊处理
+                if password and password == SUPER_ADMIN_PASSWORD:
+                    # 超级管理员密码正确
+                    login_logger.info(f"超级管理员登录成功: {phone}")
+                    # 存储用户信息到会话
+                    session['user'] = {
+                        'phone': phone,
+                        'is_super_admin': True
+                    }
+                    return Response(json.dumps({"message": "登录成功", "user": {"phone": phone, "name": "超级管理员"}}, ensure_ascii=False), status=200, mimetype='application/json')
+                elif verification_code:
+                    # 超级管理员使用验证码登录
+                    pass  # 继续正常的验证码验证流程
+                else:
+                    # 超级管理员密码错误
+                    error_info = verification_code_manager.record_password_error(phone)
+                    login_logger.warning(f"超级管理员密码错误: {phone}, {error_info['message']}")
+                    return Response(json.dumps({"error": error_info['message']}, ensure_ascii=False), status=401, mimetype='application/json')
+            
             if matching_user is None:
                 return Response(json.dumps({"error": "用户不存在"}, ensure_ascii=False), status=404, mimetype='application/json')
 
@@ -607,6 +661,11 @@ if SERVICE_CONFIG['enable_api_proxy']:
                     verification_code_manager.unlock_account(phone)
 
             login_logger.info(f"登录成功: {phone}")
+            # 存储用户信息到会话
+            session['user'] = {
+                'phone': phone,
+                'is_super_admin': phone == '13651895278'
+            }
             return Response(json.dumps({"message": "登录成功", "user": user}, ensure_ascii=False), status=200, mimetype='application/json')
 
         except Exception as e:

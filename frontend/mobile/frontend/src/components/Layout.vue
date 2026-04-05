@@ -15,6 +15,26 @@
         {{ item.title }}
       </van-tabbar-item>
     </van-tabbar>
+    
+    <!-- 管理员导航菜单 -->
+    <div class="admin-nav" v-if="isAdmin">
+      <van-popup v-model:show="showAdminMenu" position="right" :style="{ width: '200px' }">
+        <div class="admin-nav-header">
+          <h3>管理员菜单</h3>
+          <van-icon name="cross" @click="showAdminMenu = false" />
+        </div>
+        <van-cell-group>
+          <van-cell 
+            v-for="(item, index) in adminNavItems" 
+            :key="index"
+            :title="item.title"
+            :icon="item.icon"
+            @click="navigateTo(item.path)"
+          />
+        </van-cell-group>
+      </van-popup>
+      <van-icon name="setting-o" class="admin-nav-btn" @click="showAdminMenu = true" />
+    </div>
   </div>
 </template>
 
@@ -54,8 +74,22 @@ const navItems = computed(() => {
   return items;
 });
 
+// 侧边导航栏项目（仅超级管理员可见）
+const adminNavItems = computed(() => {
+  const items = [];
+  
+  // 超级管理员显示日志管理菜单
+  if (isAdmin.value) {
+    items.push({ title: '系统日志', icon: 'info-o', path: '/logs' });
+  }
+  
+  return items;
+});
+
 // 当前激活的标签页 (可写 ref，与路由同步)
 const activeTab = ref(0);
+// 管理员菜单显示状态
+const showAdminMenu = ref(false);
 
 function updateActiveTabFromRoute() {
   const currentPath = route.path;
@@ -80,6 +114,12 @@ const onTabChange = (index) => {
   // ensure activeTab stays in sync
   activeTab.value = index;
 };
+
+// 导航到指定路径
+const navigateTo = (path) => {
+  router.push(path);
+  showAdminMenu.value = false;
+};
 </script>
 
 <style lang="less" scoped>
@@ -94,5 +134,45 @@ const onTabChange = (index) => {
   flex: 1;
   overflow-y: auto;
   padding-bottom: 50px; // 为底部导航栏留出空间
+}
+
+.admin-nav {
+  position: fixed;
+  bottom: 60px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.admin-nav-btn {
+  font-size: 32px;
+  color: #1989fa;
+  background-color: #fff;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.admin-nav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.admin-nav-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.admin-nav-header .van-icon {
+  font-size: 20px;
+  cursor: pointer;
 }
 </style>

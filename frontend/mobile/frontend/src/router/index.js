@@ -13,6 +13,14 @@ const routes = [
     component: () => import('../views/Register.vue'),
     meta: { requiresAuth: false }
   },
+  { path: '/logs', 
+    name: 'Logs',
+    component: () => import('../views/Logs.vue'),
+    meta: { 
+      requiresAuth: true,
+      requiresAdmin: true
+    }
+  },
   {
     path: '/',
     component: () => import('../components/Layout.vue'),
