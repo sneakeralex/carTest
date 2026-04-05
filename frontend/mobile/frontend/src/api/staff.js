@@ -387,43 +387,56 @@ export async function getDriverList(params = {}) {
   const pageSize = params.pageSize || 20;
 
   try {
-    const res = await artemisRequest(DRIVER_API.LIST, {
-      method: 'POST',
+    // 构建查询参数
+    const queryParams = new URLSearchParams({
+      pageNum: pageNum.toString(),
+      pageSize: pageSize.toString()
+    });
+    
+    if (params.status) {
+      queryParams.append('status', params.status);
+    }
+    if (params.keyword) {
+      queryParams.append('keyword', params.keyword);
+    }
+
+    const res = await artemisRequest(`${DRIVER_API.LIST}?${queryParams.toString()}`, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'Accept': '*/*'
-      },
-      body: JSON.stringify({ pageSize, pageNum, status: params.status, keyword: params.keyword })
+      }
     });
 
     const result = res?.data;
 
     console.log('驾驶员列表原始API响应:', JSON.stringify(result, null, 2));
 
-    if (result.code !== '0') {
+    if (result.code !== '0' && result.code !== 200) {
       throw new Error(result.msg || '获取驾驶员列表失败');
     }
 
     // Transform the response to match the expected format
-    const transformedDrivers = result.data.list.map(driver => ({
+    const driversList = result.rows || [];
+    const transformedDrivers = driversList.map(driver => ({
       userId: driver.id,
       name: driver.driverName,
       type: 'DRIVER',
-      phone: driver.phone,
-      gender: driver.gender,
-      genderText: driver.genderName,
+      phone: driver.driverPhone,
+      gender: driver.driverGender,
+      genderText: driver.driverGender === '1' ? '男' : '女',
       position: '驾驶员',
-      department: driver.enterpriseName,
+      department: driver.outUnitName,
       employeeId: driver.id,
-      driverLicense: driver.driverLicense,
-      driverLicenseExpiry: driver.driverLicenseExpiry,
-      driverLicenseType: driver.driverLicenseType,
-      drivingExperience: driver.drivingExperience,
+      driverLicense: driver.driverLicenseUrl,
+      driverLicenseExpiry: driver.driverUsedEnd,
+      driverLicenseType: driver.driverType,
+      drivingExperience: driver.driverExperience,
       status: driver.status,
-      address: driver.address,
-      remarks: driver.remarks,
+      address: '',
+      remarks: driver.remark,
       createdAt: driver.createTime,
-      updatedAt: driver.updateTime,
+      updatedAt: driver.createTime,
       // Keep original fields for compatibility
       ...driver
     }));
