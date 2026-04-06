@@ -915,7 +915,8 @@ if SERVICE_CONFIG['enable_sms_service']:
             if not re.match(r'^\d{6}$', verification_code):
                 return Response(json.dumps({"code": -1, "message": "验证码格式错误"}), status=400, mimetype='application/json')
             
-            is_valid = verification_code_manager.verify_code(phone_number, verification_code)
+            # 验证验证码，但验证成功后不删除，留待登录时使用
+            is_valid = verification_code_manager.verify_code(phone_number, verification_code, delete_on_success=False)
             sms_logger.info(f"验证验证码: 手机号={phone_number}, 验证码={verification_code}, 结果={is_valid}")
             
             return Response(json.dumps({
@@ -953,6 +954,71 @@ def cleanup_old_logs():
             logger.error(f"清理旧日志失败: {e}")
             time.sleep(3600)  # 出错后1小时再尝试
 
+
+def mask_sensitive_info(config, sensitive_keys=['password', 'key', 'secret', 'token']):
+    """屏蔽敏感信息"""
+    if isinstance(config, dict):
+        masked = {}
+        for key, value in config.items():
+            if any(sensitive in key.lower() for sensitive in sensitive_keys):
+                if isinstance(value, str) and len(value) > 4:
+                    masked[key] = value[:2] + '***' + value[-2:]
+                else:
+                    masked[key] = '***'
+            elif isinstance(value, dict):
+                masked[key] = mask_sensitive_info(value, sensitive_keys)
+            elif isinstance(value, list):
+                masked[key] = [mask_sensitive_info(item, sensitive_keys) if isinstance(item, dict) else item for item in value]
+            else:
+                masked[key] = value
+        return masked
+    return config
+
+# 显示配置信息的函数
+def display_config():
+    logger.info("=== Server Configuration ===")
+    
+    # 服务配置
+    logger.info("\n1. Service Configuration:")
+    for key, value in SERVICE_CONFIG.items():
+        logger.info(f"   {key}: {value}")
+    
+    # API代理配置（屏蔽敏感信息）
+    logger.info("\n2. API Proxy Configuration:")
+    masked_api_config = mask_sensitive_info(API_PROXY_CONFIG)
+    for key, value in masked_api_config.items():
+        logger.info(f"   {key}: {value}")
+    
+    # 短信服务配置（屏蔽敏感信息）
+    logger.info("\n3. SMS Service Configuration:")
+    masked_sms_config = mask_sensitive_info(SMS_SERVICE_CONFIG)
+    for key, value in masked_sms_config.items():
+        logger.info(f"   {key}: {value}")
+    
+    # 验证码配置
+    logger.info("\n4. Verification Code Configuration:")
+    for key, value in VERIFICATION_CODE_CONFIG.items():
+        logger.info(f"   {key}: {value}")
+    
+    # 日志配置
+    logger.info("\n5. Log Configuration:")
+    for key, value in LOG_CONFIG.items():
+        logger.info(f"   {key}: {value}")
+    
+    # 数据库配置
+    logger.info("\n6. Database Configuration:")
+    for key, value in DATABASE_CONFIG.items():
+        logger.info(f"   {key}: {value}")
+    
+    # 安全配置
+    logger.info("\n7. Security Configuration:")
+    for key, value in SECURITY_CONFIG.items():
+        logger.info(f"   {key}: {value}")
+    
+    logger.info("\n=== End of Configuration ===")
+
+# 模块导入时显示配置信息
+display_config()
 
 if __name__ == '__main__':
     logger.info("Starting Unified Server")

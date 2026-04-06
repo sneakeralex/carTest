@@ -51,9 +51,9 @@ class VerificationCodeManager:
                     codes = {}
                     for phone, info in data.get('codes', {}).items():
                         codes[phone] = (
-                            info['code'],
-                            info['timestamp'],
-                            info['attempts']
+                            info.get('code', ''),
+                            info.get('timestamp', 0),
+                            info.get('attempts', 0)
                         )
                     send_times = data.get('send_times', {})
                     
@@ -61,16 +61,16 @@ class VerificationCodeManager:
                     password_errors = {}
                     for phone, info in data.get('password_errors', {}).items():
                         password_errors[phone] = (
-                            info['count'],
-                            info['last_error_time']
+                            info.get('count', 0),
+                            info.get('last_error_time', 0)
                         )
                     
                     # 处理账户锁定
                     locked_accounts = {}
                     for phone, info in data.get('locked_accounts', {}).items():
                         locked_accounts[phone] = (
-                            info['locked_time'],
-                            info['lock_reason']
+                            info.get('locked_time', 0),
+                            info.get('lock_reason', '')
                         )
                     
                     return {
@@ -155,33 +155,55 @@ class VerificationCodeManager:
             data = self._get_data()
             codes = data['codes']
             send_times = data['send_times']
+            password_errors = data['password_errors']
+            locked_accounts = data['locked_accounts']
             
             logger.info(f"存储前的验证码数量: {len(codes)}")
+            logger.info(f"存储前的发送时间数量: {len(send_times)}")
+            logger.info(f"存储前的密码错误数量: {len(password_errors)}")
+            logger.info(f"存储前的锁定账户数量: {len(locked_accounts)}")
             
             # 更新数据
             codes[phone_number] = (code, time.time(), 0)
             send_times[phone_number] = time.time()
             
             # 保存数据
-            self._save_data(codes, send_times)
+            self._save_data(codes, send_times, password_errors, locked_accounts)
             
-            logger.info(f"存储后的验证码数量: {len(codes)}")
-            logger.info(f"当前存储的验证码手机号: {list(codes.keys())}")
+            # 再次读取数据，验证是否保存成功
+            verify_data = self._get_data()
+            logger.info(f"验证存储后 - 验证码数量: {len(verify_data['codes'])}")
+            logger.info(f"验证存储后 - 验证码手机号: {list(verify_data['codes'].keys())}")
+            logger.info(f"验证存储后 - 发送时间手机号: {list(verify_data['send_times'].keys())}")
+            
+            # 检查新手机号是否在存储中
+            if phone_number in verify_data['codes']:
+                logger.info(f"✅ 验证码存储成功: 手机号={phone_number} 在存储中")
+            else:
+                logger.error(f"❌ 验证码存储失败: 手机号={phone_number} 不在存储中")
+            
+            if phone_number in verify_data['send_times']:
+                logger.info(f"✅ 发送时间存储成功: 手机号={phone_number} 在存储中")
+            else:
+                logger.error(f"❌ 发送时间存储失败: 手机号={phone_number} 不在存储中")
     
-    def verify_code(self, phone_number: str, code: str) -> bool:
+    def verify_code(self, phone_number: str, code: str, delete_on_success: bool = True) -> bool:
         """
         验证验证码
         :param phone_number: 手机号码
         :param code: 验证码
+        :param delete_on_success: 验证成功后是否删除验证码
         :return: 是否验证成功
         """
         with self._lock:
-            logger.info(f"验证验证码: 手机号={phone_number}, 验证码={code}")
+            logger.info(f"验证验证码: 手机号={phone_number}, 验证码={code}, delete_on_success={delete_on_success}")
             
             # 读取数据
             data = self._get_data()
             codes = data['codes']
             send_times = data['send_times']
+            password_errors = data['password_errors']
+            locked_accounts = data['locked_accounts']
             
             logger.info(f"验证前，当前存储的验证码手机号: {list(codes.keys())}")
             
@@ -200,7 +222,7 @@ class VerificationCodeManager:
                 del codes[phone_number]
                 if phone_number in send_times:
                     del send_times[phone_number]
-                self._save_data(codes, send_times)
+                self._save_data(codes, send_times, password_errors, locked_accounts)
                 logger.info(f"删除过期验证码后，存储的验证码数量: {len(codes)}")
                 return False
             
@@ -210,25 +232,31 @@ class VerificationCodeManager:
                 del codes[phone_number]
                 if phone_number in send_times:
                     del send_times[phone_number]
-                self._save_data(codes, send_times)
+                self._save_data(codes, send_times, password_errors, locked_accounts)
                 logger.info(f"删除超过尝试次数的验证码后，存储的验证码数量: {len(codes)}")
                 return False
             
             # 验证验证码
             if stored_code == code:
-                # 验证成功，删除验证码
+                # 验证成功
                 logger.info(f"验证码验证成功: 手机号={phone_number}, 验证码={code}")
-                del codes[phone_number]
-                if phone_number in send_times:
-                    del send_times[phone_number]
-                self._save_data(codes, send_times)
-                logger.info(f"验证成功后，存储的验证码数量: {len(codes)}")
+                
+                # 只有在需要删除时才删除验证码
+                if delete_on_success:
+                    del codes[phone_number]
+                    if phone_number in send_times:
+                        del send_times[phone_number]
+                    logger.info(f"验证成功后删除验证码，存储的验证码数量: {len(codes)}")
+                else:
+                    logger.info(f"验证成功后保留验证码，存储的验证码数量: {len(codes)}")
+                
+                self._save_data(codes, send_times, password_errors, locked_accounts)
                 return True
             else:
                 # 验证失败，增加尝试次数
                 logger.warning(f"验证码验证失败: 手机号={phone_number}, 输入验证码={code}, 存储验证码={stored_code}")
                 codes[phone_number] = (stored_code, timestamp, attempts + 1)
-                self._save_data(codes, send_times)
+                self._save_data(codes, send_times, password_errors, locked_accounts)
                 logger.info(f"验证失败后，尝试次数增加到: {attempts + 1}")
                 return False
     

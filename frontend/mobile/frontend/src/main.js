@@ -6,16 +6,17 @@ import 'vant/lib/index.css';
 import './assets/styles/global.less';
 
 // 在开发环境下引入Mock
-if (process.env.NODE_ENV === 'development') {
-  console.log('Loading mock data...');
-  Promise.all([
-    import('./mock/equipment.js'),
-    import('./mock/maintenance.js'),
-    // Add other mock files here
-  ]).then(() => {
-    console.log('Mock data loaded successfully');
-  });
-}
+// 暂时禁用mock数据，使用真实接口
+// if (process.env.NODE_ENV === 'development') {
+//   console.log('Loading mock data...');
+//   Promise.all([
+//     import('./mock/equipment.js'),
+//     import('./mock/maintenance.js'),
+//     // Add other mock files here
+//   ]).then(() => {
+//     console.log('Mock data loaded successfully');
+//   });
+// }
 
 // 按需导入Vant组件
 import {

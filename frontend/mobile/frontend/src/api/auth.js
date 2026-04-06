@@ -379,8 +379,9 @@ export async function sendVerificationCode(phoneNumber) {
     });
 
     const result = res?.data || res;
-    if (result.code !== 200 && result.code !== '0') {
-      throw new Error(result.msg || '发送验证码失败');
+    const code = String(result.code);
+    if (code !== '200' && code !== '0') {
+      throw new Error(result.msg || result.message || '发送验证码失败');
     }
 
     return {
@@ -392,11 +393,8 @@ export async function sendVerificationCode(phoneNumber) {
     };
   } catch (error) {
     console.error('发送验证码失败:', error);
-    // Fallback to mock implementation
-    await delay(500);
-    console.log('模拟发送验证码到:', phoneNumber);
-    console.log('模拟验证码:', '123456');
-    return mockResponse({ success: true });
+    // 不再使用模拟数据，直接抛出错误
+    throw new Error(error?.message || '发送验证码失败');
   }
 }
 
