@@ -49,29 +49,48 @@ class VerificationCodeManager:
                     data = json.load(f)
                     # 转换数据格式
                     codes = {}
-                    for phone, info in data.get('codes', {}).items():
-                        codes[phone] = (
-                            info.get('code', ''),
-                            info.get('timestamp', 0),
-                            info.get('attempts', 0)
-                        )
+                    codes_data = data.get('codes', {})
+                    # 确保codes是字典
+                    if isinstance(codes_data, dict):
+                        for phone, info in codes_data.items():
+                            # 确保info是字典
+                            if isinstance(info, dict):
+                                codes[phone] = (
+                                    info.get('code', ''),
+                                    info.get('timestamp', 0),
+                                    info.get('attempts', 0)
+                                )
+                    
                     send_times = data.get('send_times', {})
+                    # 确保send_times是字典
+                    if not isinstance(send_times, dict):
+                        send_times = {}
                     
                     # 处理密码错误次数
                     password_errors = {}
-                    for phone, info in data.get('password_errors', {}).items():
-                        password_errors[phone] = (
-                            info.get('count', 0),
-                            info.get('last_error_time', 0)
-                        )
+                    password_errors_data = data.get('password_errors', {})
+                    # 确保password_errors是字典
+                    if isinstance(password_errors_data, dict):
+                        for phone, info in password_errors_data.items():
+                            # 确保info是字典
+                            if isinstance(info, dict):
+                                password_errors[phone] = (
+                                    info.get('count', 0),
+                                    info.get('last_error_time', 0)
+                                )
                     
                     # 处理账户锁定
                     locked_accounts = {}
-                    for phone, info in data.get('locked_accounts', {}).items():
-                        locked_accounts[phone] = (
-                            info.get('locked_time', 0),
-                            info.get('lock_reason', '')
-                        )
+                    locked_accounts_data = data.get('locked_accounts', {})
+                    # 确保locked_accounts是字典
+                    if isinstance(locked_accounts_data, dict):
+                        for phone, info in locked_accounts_data.items():
+                            # 确保info是字典
+                            if isinstance(info, dict):
+                                locked_accounts[phone] = (
+                                    info.get('locked_time', 0),
+                                    info.get('lock_reason', '')
+                                )
                     
                     return {
                         'codes': codes,

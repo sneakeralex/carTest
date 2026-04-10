@@ -577,14 +577,22 @@ if SERVICE_CONFIG['enable_api_proxy']:
 
             matching_user = None
             for u in users:
-                if not isinstance(u, dict):
-                    continue
-                u_phone = u.get('phone')
-                if u_phone is None:
-                    continue
-                if str(u_phone) == str(phone):
-                    matching_user = u
-                    break
+                # 处理嵌套列表的情况
+                if isinstance(u, list):
+                    # 递归处理嵌套列表
+                    for nested_u in u:
+                        if isinstance(nested_u, dict):
+                            nested_phone = nested_u.get('phone')
+                            if nested_phone is not None and str(nested_phone) == str(phone):
+                                matching_user = nested_u
+                                break
+                    if matching_user:
+                        break
+                elif isinstance(u, dict):
+                    u_phone = u.get('phone')
+                    if u_phone is not None and str(u_phone) == str(phone):
+                        matching_user = u
+                        break
 
             # 检查是否是超级管理员
             if phone == SUPER_ADMIN_PHONE:
@@ -616,7 +624,16 @@ if SERVICE_CONFIG['enable_api_proxy']:
                                 users = data_obj.get('list')
                                 if users:
                                     for u in users:
-                                        if isinstance(u, dict) and str(u.get('phone')) == str(phone):
+                                        # 处理嵌套列表的情况
+                                        if isinstance(u, list):
+                                            # 递归处理嵌套列表
+                                            for nested_u in u:
+                                                if isinstance(nested_u, dict) and str(nested_u.get('phone')) == str(phone):
+                                                    real_user_info = nested_u
+                                                    break
+                                            if real_user_info != {"phone": phone, "name": "超级管理员", "userId": "1"}:
+                                                break
+                                        elif isinstance(u, dict) and str(u.get('phone')) == str(phone):
                                             real_user_info = u
                                             break
                     except Exception as e:
@@ -928,6 +945,22 @@ if SERVICE_CONFIG['enable_sms_service']:
         except Exception as e:
             logger.error(f"处理验证码验证请求失败: {e}")
             return Response(json.dumps({"code": -1, "message": f"处理失败: {str(e)}"}), status=500, mimetype='application/json')
+
+    # 为了支持前端的 /artemis/sms/ 路径，添加对应的路由
+    @app.route('/artemis/sms/callback', methods=['POST'])
+    def artemis_sms_callback():
+        """短信回调接口 (artemis 路径)"""
+        return sms_callback()
+
+    @app.route('/artemis/sms/send', methods=['POST'])
+    def artemis_sms_send():
+        """发送验证码接口 (artemis 路径)"""
+        return sms_send()
+
+    @app.route('/artemis/sms/verify', methods=['POST'])
+    def artemis_sms_verify():
+        """验证验证码接口 (artemis 路径)"""
+        return sms_verify()
 
 
 def cleanup_expired_codes():

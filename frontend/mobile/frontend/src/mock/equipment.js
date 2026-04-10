@@ -5,68 +5,8 @@ import { getQueryParams, mockResponse, MockApiError } from './utils.js';
 export const mockEquipments = [];
 export const mockEquipmentApplications = [];
 
-// 生成测试设备数据
-const generateEquipmentList = (params = {}) => {
-  const pageSize = params.size || 20;
-  const page = params.page || 1;
-  const total = 85; // 总记录数
-
-  // 生成所有设备数据
-  const allEquipments = Mock.mock({
-    [`list|${total}`]: [{
-      'equipmentId|+1': 1,
-      'equipmentNo': /EQ[A-Z]{2}\d{4}/,
-      'equipmentName': '@ctitle(3, 8)',
-      'equipmentType|1': ['压力测试仪', '温度检测仪', '电压表', '万用表', '示波器', '信号发生器', '专用工具', '其他设备'],
-      'specification': '@string("upper", 2, 2)@natural(100, 999)',
-      'manufacturer': '@ctitle(3, 8)科技有限公司',
-      'purchaseDate': '@date("yyyy-MM-dd")',
-      'status|1': ['IN_USE', 'IDLE', 'MAINTENANCE', 'RETIRED'],
-      'location': '@ctitle(5, 10)实验室',
-      'departmentName': '@ctitle(3, 6)部',
-      'description': '@cparagraph(1, 2)',
-      'maintenanceCycle': '@integer(30, 180)',
-      'lastMaintenanceDate': '@date("yyyy-MM-dd")',
-      'responsiblePerson': '@cname',
-      'contactInfo': /1[3-9]\d{9}/,
-      'purchasePrice': '@float(1000, 100000, 2, 2)'
-    }]
-  }).list;
-
-  // 应用筛选
-  let filteredList = [...allEquipments];
-  
-  if (params.status) {
-    filteredList = filteredList.filter(item => item.status === params.status);
-  }
-  
-  if (params.type) { // Changed from equipmentType to type to match frontend params
-    filteredList = filteredList.filter(item => item.equipmentType === params.type);
-  }
-  
-  if (params.keyword) {
-    const keyword = params.keyword.toLowerCase();
-    filteredList = filteredList.filter(item => 
-      item.equipmentName.toLowerCase().includes(keyword) ||
-      item.equipmentNo.toLowerCase().includes(keyword)
-    );
-  }
-
-  // 计算分页
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
-  const records = filteredList.slice(start, end);
-
-  return {
-    records: records,
-    total: filteredList.length,
-    page: page,
-    pageSize: pageSize
-  };
-};
-
 // 生成测试设备申请记录数据
-const equipmentApplicationList = Mock.mock({
+export const equipmentApplicationList = Mock.mock({
   'list|15-30': [{
     'id|+1': 1,
     'equipmentId|1-20': 1,
@@ -148,6 +88,66 @@ const equipmentApplicationList = Mock.mock({
   }]
 }).list;
 
+// 生成测试设备数据
+const generateEquipmentList = (params = {}) => {
+  const pageSize = params.size || 20;
+  const page = params.page || 1;
+  const total = 85; // 总记录数
+
+  // 生成所有设备数据
+  const allEquipments = Mock.mock({
+    [`list|${total}`]: [{
+      'equipmentId|+1': 1,
+      'equipmentNo': /EQ[A-Z]{2}\d{4}/,
+      'equipmentName': '@ctitle(3, 8)',
+      'equipmentType|1': ['压力测试仪', '温度检测仪', '电压表', '万用表', '示波器', '信号发生器', '专用工具', '其他设备'],
+      'specification': '@string("upper", 2, 2)@natural(100, 999)',
+      'manufacturer': '@ctitle(3, 8)科技有限公司',
+      'purchaseDate': '@date("yyyy-MM-dd")',
+      'status|1': ['IN_USE', 'IDLE', 'MAINTENANCE', 'RETIRED'],
+      'location': '@ctitle(5, 10)实验室',
+      'departmentName': '@ctitle(3, 6)部',
+      'description': '@cparagraph(1, 2)',
+      'maintenanceCycle': '@integer(30, 180)',
+      'lastMaintenanceDate': '@date("yyyy-MM-dd")',
+      'responsiblePerson': '@cname',
+      'contactInfo': /1[3-9]\d{9}/,
+      'purchasePrice': '@float(1000, 100000, 2, 2)'
+    }]
+  }).list;
+
+  // 应用筛选
+  let filteredList = [...allEquipments];
+  
+  if (params.status) {
+    filteredList = filteredList.filter(item => item.status === params.status);
+  }
+  
+  if (params.type) { // Changed from equipmentType to type to match frontend params
+    filteredList = filteredList.filter(item => item.equipmentType === params.type);
+  }
+  
+  if (params.keyword) {
+    const keyword = params.keyword.toLowerCase();
+    filteredList = filteredList.filter(item => 
+      item.equipmentName.toLowerCase().includes(keyword) ||
+      item.equipmentNo.toLowerCase().includes(keyword)
+    );
+  }
+
+  // 计算分页
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+  const records = filteredList.slice(start, end);
+
+  return {
+    records: records,
+    total: filteredList.length,
+    page: page,
+    pageSize: pageSize
+  };
+};
+
 // 获取设备列表
 export function getEquipments(config) {
   const params = getQueryParams(config.url);
@@ -184,7 +184,7 @@ export function createEquipment(config) {
 export function updateEquipment(config) {
   const id = parseInt(config.url.match(/\/equipments\/(\d+)/)[1]);
   const updateData = JSON.parse(config.data);
-  const index = equipmentList.findIndex(item => item.equipmentId === id);
+  const index = mockEquipments.findIndex(item => item.equipmentId === id);
   
   if (index === -1) {
     throw new MockApiError('设备不存在', 404);
@@ -243,7 +243,7 @@ export function getEquipmentApplicationById(config) {
 // 提交设备申请
 export function applyEquipment(config) {
   const applyData = JSON.parse(config.data);
-  const equipment = equipmentList.find(item => item.id === applyData.equipmentId);
+  const equipment = mockEquipments.find(item => item.equipmentId === applyData.equipmentId);
   
   if (!equipment) {
     throw new Error('设备不存在');
@@ -256,8 +256,8 @@ export function applyEquipment(config) {
   const newApplication = {
     ...applyData,
     id: equipmentApplicationList.length + 1,
-    equipmentName: equipment.name,
-    equipmentCode: equipment.code,
+    equipmentName: equipment.equipmentName,
+    equipmentCode: equipment.equipmentNo,
     status: 'PENDING',
     applicantId: 1, // 当前登录用户ID
     applicantName: '张三', // 当前登录用户名
@@ -287,7 +287,7 @@ export function updateApplicationStatus(config) {
   
   // 如果拒绝或取消申请，将设备状态改回空闲
   if (status === 'REJECTED' || status === 'CANCELLED') {
-    const equipment = equipmentList.find(item => item.id === application.equipmentId);
+    const equipment = mockEquipments.find(item => item.equipmentId === application.equipmentId);
     if (equipment) {
       equipment.status = 'IDLE';
     }

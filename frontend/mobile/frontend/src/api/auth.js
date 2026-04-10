@@ -1,33 +1,8 @@
-import { mockUsers, mockAuth, DEFAULT_CREDENTIALS } from '../mock/auth.js';
 import CryptoJS from 'crypto-js';
 import { artemisRequest } from './request';
 import { getStaffList } from './staff.js';
 import { getItem } from '../utils/storage.js';
 import { AUTH_API } from './config.js';
-
-// 模拟API响应延迟
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// 模拟API响应格式
-const mockResponse = (data) => ({
-  data,
-  status: 200,
-  statusText: 'OK',
-  headers: {},
-  config: {}
-});
-
-// 从localStorage恢复mockAuth状态
-const storedUser = getItem('user', {});
-const storedToken = getItem('token', '');
-if (Object.keys(storedUser).length > 0) {
-  try {
-    mockAuth.currentUser = storedUser;
-    mockAuth.token = storedToken;
-  } catch (error) {
-    console.error('恢复用户状态失败:', error);
-  }
-}
 
 // Helper functions for encryption
 function generateUUID() {
@@ -82,19 +57,7 @@ export async function changePassword(passwordData) {
     };
   } catch (error) {
     console.error('修改密码失败:', error);
-    // Fallback to mock implementation
-    await delay(800);
-    if (!mockAuth.currentUser) {
-      throw new Error('未登录');
-    }
-    
-    // Validate old password
-    if (passwordData.oldPassword !== DEFAULT_CREDENTIALS.password) {
-      throw new Error('旧密码错误');
-    }
-    
-    // In actual application, should update password
-    return mockResponse({ success: true });
+    throw new Error(error?.message || '修改密码失败');
   }
 }
 
@@ -287,12 +250,7 @@ export async function getUserInfo(token = null) {
     };
   } catch (error) {
     console.error('获取用户信息失败:', error);
-    // Fallback to mock data if API fails
-    await delay(300);
-    if (!mockAuth.currentUser) {
-      throw new Error('未登录');
-    }
-    return mockResponse(mockAuth.currentUser);
+    throw new Error(error?.message || '获取用户信息失败');
   }
 }
 
@@ -354,9 +312,7 @@ export async function getAccessToken(userCode = 'admin', service = '', language 
     };
   } catch (error) {
     console.error('获取token失败:', error);
-    // Fallback to mock token
-    await delay(300);
-    return mockResponse({ token: 'mock-token-' + Date.now() });
+    throw new Error(error?.message || '获取token失败');
   }
 }
 

@@ -49,13 +49,13 @@ export default defineConfig({
     port: 5173,
     https: false, // 开发环境使用 HTTP，但可以配置 CSP
     cors: {
-      origin: ['http://localhost:5173', 'https://localhost:5173'],
+      origin: ['http://localhost:5173', 'https://localhost:5175'],
       credentials: true
     },
     proxy: {
       // Only proxy /artemis to the upstream Artemis host during development
       '/artemis': {
-        target: 'https://cartest.douwifi.cn',
+        target: 'http://localhost:8889',
         changeOrigin: true,
         secure: false,
         // keep the /artemis prefix when forwarding

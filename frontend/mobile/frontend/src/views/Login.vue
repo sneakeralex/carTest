@@ -22,8 +22,8 @@
         <van-field v-if="loginMethod === 'password'" v-model="password" type="password" name="password" label="密码" placeholder="请输入密码（默认手机号后四位）"
           :rules="[{ required: true, message: '请输入密码' }]" />
         
-        <!-- 验证码输入框（验证码登录时或密码登录失败次数过多时显示） -->
-        <van-field v-if="loginMethod === 'verification' || passwordLoginFailedCount >= maxFailedAttempts" v-model="verificationCode" name="verificationCode" label="验证码" placeholder="请输入验证码"
+        <!-- 验证码输入框（验证码登录时或后端要求时显示） -->
+        <van-field v-if="loginMethod === 'verification' || needVerificationCode" v-model="verificationCode" name="verificationCode" label="验证码" placeholder="请输入验证码"
           :rules="[{ required: true, message: '请输入验证码' }]">
           <template #button>
             <van-button size="small" :disabled="countdown > 0" @click="sendVerificationCode">
@@ -69,10 +69,8 @@ const verificationCode = ref('');
 const countdown = ref(0);
 const loading = ref(false);
 
-// 密码登录失败次数
-const passwordLoginFailedCount = ref(parseInt(getItem('passwordLoginFailedCount', '0')) || 0);
-// 最大失败尝试次数
-const maxFailedAttempts = 3;
+// 是否需要验证码
+const needVerificationCode = ref(false);
 
 // 判断微信环境方法有重复
 function isWeixin() {
@@ -238,36 +236,21 @@ const onPasswordSubmit = async () => {
     return;
   }
 
-  // 检查是否需要验证码
-  if (passwordLoginFailedCount.value >= maxFailedAttempts && !verificationCode.value) {
-    showNotify({ type: 'danger', message: '请输入验证码' });
-    return;
-  }
-
   loading.value = true;
 
   try {
     await authStore.login(phoneNumber.value, password.value, verificationCode.value);
-    // 登录成功，重置失败次数
-    passwordLoginFailedCount.value = 0;
-    removeItem('passwordLoginFailedCount');
     showNotify({ type: 'success', message: '登录成功' });
   } catch (error) {
-    // 登录失败，增加失败次数
-    passwordLoginFailedCount.value++;
-    setItem('passwordLoginFailedCount', passwordLoginFailedCount.value.toString());
-    
     let msg = '';
     if (!error) msg = '登录失败，请检查手机号和密码';
     else if (typeof error === 'string') msg = error;
     else if (error.message) msg = error.message;
     else msg = String(error);
 
-    // 显示失败次数提示
-    if (passwordLoginFailedCount.value >= maxFailedAttempts) {
-      msg += '，您已连续失败' + passwordLoginFailedCount.value + '次，接下来需要输入验证码';
-    } else {
-      msg += '，您已连续失败' + passwordLoginFailedCount.value + '次，还有' + (maxFailedAttempts - passwordLoginFailedCount.value) + '次机会';
+    // 检查是否需要验证码
+    if (msg.includes('需要验证码') || msg.includes('验证码')) {
+      needVerificationCode.value = true;
     }
 
     showNotify({ type: 'danger', message: msg });

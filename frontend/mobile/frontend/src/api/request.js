@@ -2,11 +2,7 @@ import axios from 'axios';
 
 /**
  * HTTP 请求工具模块
- * 
- * 本模块提供两套请求方案：
- * 1. axios service - 用于同源 API 调用和开发环境的 mock 数据
- * 2. artemisRequest - 用于 Artemis API 的请求，支持超时、重试和拦截器
- */
+ * /
 
 // 导入 node-fetch 以在 Node.js 环境中使用 fetch 函数
 if (typeof window === 'undefined' && typeof fetch === 'undefined') {
@@ -18,21 +14,18 @@ if (typeof window === 'undefined' && typeof fetch === 'undefined') {
   }
 }
 
-import * as equipmentMock from '../mock/equipment.js';
-import * as maintenanceMock from '../mock/maintenance.js';
-
 // ==================== 配置常量 ====================
 
 /**
  * 是否使用 mock 数据
  * 仅在开发模式下启用 mock 数据
  */
-const useMock = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE === 'development') || false;
+const useMock = false;
 
 /**
  * mock 处理函数集合
  */
-const mockHandlers = useMock ? { ...equipmentMock, ...maintenanceMock } : {};
+const mockHandlers = {};
 
 /**
  * 默认代理基础路径
@@ -334,6 +327,9 @@ function normalizeArtemisPath(path) {
 function rewriteToProxy(inputPath) {
   if (!inputPath) return inputPath;
 
+  // 检查是否为开发环境
+  const isDev = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE === 'development');
+
   // 情况1：输入是指向上游的绝对 URL
   try {
     const u = new URL(inputPath, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
@@ -341,7 +337,13 @@ function rewriteToProxy(inputPath) {
     if (hostMatch) {
       // 从完整 URL 中提取路径部分，规范化后重新构建
       const normalizedPath = normalizeArtemisPath(u.pathname || '/');
-      return UPSTREAM_HOST + normalizedPath + (u.search || '');
+      if (isDev) {
+        // 开发环境：使用相对路径，通过本地代理
+        return normalizedPath + (u.search || '');
+      } else {
+        // 生产环境：使用上游域名
+        return UPSTREAM_HOST + normalizedPath + (u.search || '');
+      }
     }
   } catch (e) {
     // 不是有效的 URL，继续处理
@@ -350,9 +352,15 @@ function rewriteToProxy(inputPath) {
   // 情况2：输入是相对路径或前缀路径
   const normalizedPath = normalizeArtemisPath(inputPath);
 
-  // 如果是 Artemis 路径，添加上游域名
+  // 如果是 Artemis 路径
   if (normalizedPath.startsWith('/artemis')) {
-    return UPSTREAM_HOST + normalizedPath;
+    if (isDev) {
+      // 开发环境：使用相对路径，通过 Vite 代理
+      return normalizedPath;
+    } else {
+      // 生产环境：使用上游域名
+      return UPSTREAM_HOST + normalizedPath;
+    }
   }
 
   // 非 Artemis 路径（同源 API 或资源）保持不变

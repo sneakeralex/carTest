@@ -23,10 +23,9 @@ export const AUTH_API = {
   /** 获取访问令牌 */
   GET_ACCESS_TOKEN: `${ARTEMIS_PREFIX}/v1/tgt/login`,
   /** 验证验证码 */
-  // VERIFY_CODE: `${ARTEMIS_PREFIX}/sms/verify`,
-  VERIFY_CODE: '/sms/verify',
+  VERIFY_CODE: `${ARTEMIS_PREFIX}/sms/verify`,
   /** 发送验证码 */
-  SEND_CODE: '/sms/send',
+  SEND_CODE: `${ARTEMIS_PREFIX}/sms/send`,
 };
 
 // ==================== 员工相关 API ====================
